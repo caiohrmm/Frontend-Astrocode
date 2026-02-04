@@ -18,6 +18,21 @@ export default createVuetify({
   theme: {
     defaultTheme: 'light',
   },
+  defaults: {
+    global: {
+      ripple: false,
+    },
+  },
+  display: {
+    mobileBreakpoint: 'sm',
+    thresholds: {
+      xs: 0,
+      sm: 600,
+      md: 960,
+      lg: 1280,
+      xl: 1920,
+    },
+  },
 })
 
 
