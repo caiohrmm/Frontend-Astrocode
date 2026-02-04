@@ -9,7 +9,7 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/modules/auth/pages/LoginPage.vue'),
     meta: {
       layout: 'auth',
-      requiresAuth: false,
+      requiresAuth: false, // Public route
     },
   },
   {
@@ -18,7 +18,7 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/modules/auth/pages/OAuthCallbackPage.vue'),
     meta: {
       layout: 'auth',
-      requiresAuth: false,
+      requiresAuth: false, // Public route (handles OAuth callback)
     },
   },
   {
@@ -27,7 +27,7 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/modules/dashboard/pages/DashboardPage.vue'),
     meta: {
       layout: 'app',
-      requiresAuth: true,
+      requiresAuth: true, // Protected route
     },
   },
 ]
@@ -38,16 +38,55 @@ const router = createRouter({
 })
 
 // Navigation guard to protect routes
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
   
-  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    next({ name: 'login' })
-  } else if (to.name === 'login' && authStore.isAuthenticated) {
-    next({ name: 'dashboard' })
-  } else {
-    next()
+  // Check if route requires authentication (default is true if not specified)
+  const requiresAuth = to.meta.requiresAuth !== false
+  
+  // If route requires auth, check authentication
+  if (requiresAuth) {
+    // Check if token exists in store or localStorage
+    const storedToken = authStore.token || authStore.getToken() || localStorage.getItem('auth_token')
+    
+    if (!storedToken) {
+      // No token, redirect to login
+      next({ name: 'login' })
+      return
+    }
+    
+    // If token exists but user is not loaded, try to fetch user
+    if (!authStore.user && storedToken) {
+      try {
+        // Set token in store if it exists in localStorage but not in store
+        if (!authStore.token && storedToken) {
+          authStore.setToken(storedToken)
+        }
+        // Fetch user info to validate token
+        await authStore.fetchCurrentUser()
+      } catch (error) {
+        // Token is invalid or expired, clear and redirect to login
+        await authStore.logout()
+        next({ name: 'login' })
+        return
+      }
+    }
+    
+    // Final verification: user must be authenticated
+    if (!authStore.isAuthenticated) {
+      next({ name: 'login' })
+      return
+    }
   }
+  
+  // If user is authenticated and trying to access login, redirect to dashboard
+  if (to.name === 'login' && authStore.isAuthenticated) {
+    next({ name: 'dashboard' })
+    return
+  }
+  
+  // Allow navigation
+  next()
 })
 
 export default router
