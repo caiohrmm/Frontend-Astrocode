@@ -229,7 +229,6 @@ const headers = [
     title: 'Ações',
     key: 'actions',
     sortable: false,
-    align: 'end',
   },
 ]
 
