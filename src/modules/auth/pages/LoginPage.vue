@@ -1,91 +1,181 @@
 <template>
-  <v-card>
-    <v-card-title class="text-h5 text-center pa-6">
-      Login
+  <v-card
+    class="login-card"
+    elevation="8"
+    rounded="xl"
+  >
+    <v-card-title class="text-center pa-8 pb-4">
+      <div class="d-flex flex-column align-center">
+        <v-icon
+          size="64"
+          color="primary"
+          class="mb-4"
+        >
+          mdi-home-city
+        </v-icon>
+        <h1 class="text-h4 font-weight-bold mb-2">
+          Bem-vindo
+        </h1>
+        <p class="text-body-1 text-medium-emphasis">
+          Faça login para continuar
+        </p>
+      </div>
     </v-card-title>
-    <v-card-text>
+
+    <v-card-text class="pa-6 pt-2">
       <v-alert
         v-if="authStore.error"
         type="error"
         variant="tonal"
-        class="mb-4"
+        density="compact"
+        class="mb-6"
         closable
         @click:close="authStore.clearError()"
       >
         {{ authStore.error }}
       </v-alert>
 
-      <v-form @submit.prevent="handleLogin">
+      <v-form
+        ref="formRef"
+        @submit.prevent="handleLogin"
+      >
         <v-text-field
           v-model="email"
           label="Email"
           type="email"
-          prepend-inner-icon="mdi-email"
+          prepend-inner-icon="mdi-email-outline"
           variant="outlined"
+          density="comfortable"
           class="mb-4"
           :disabled="authStore.isLoading"
           :rules="[rules.required, rules.email]"
+          :error-messages="emailErrors"
+          autocomplete="email"
+          clearable
         ></v-text-field>
+
         <v-text-field
           v-model="password"
-          label="Senha"
-          type="password"
-          prepend-inner-icon="mdi-lock"
+          :label="'Senha'"
+          :type="showPassword ? 'text' : 'password'"
+          prepend-inner-icon="mdi-lock-outline"
           variant="outlined"
-          class="mb-4"
+          density="comfortable"
+          class="mb-2"
           :disabled="authStore.isLoading"
-          :rules="[rules.required]"
+          :rules="[rules.required, rules.minLength]"
+          :error-messages="passwordErrors"
+          autocomplete="current-password"
+          :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
+          @click:append-inner="showPassword = !showPassword"
         ></v-text-field>
+
         <v-btn
           color="primary"
           block
           size="large"
           type="submit"
           :loading="authStore.isLoading"
-          :disabled="authStore.isLoading"
+          :disabled="authStore.isLoading || !isFormValid"
+          class="mb-4 mt-2"
+          elevation="2"
         >
+          <v-icon start>mdi-login</v-icon>
           Entrar
         </v-btn>
       </v-form>
 
-      <v-divider class="my-6"></v-divider>
+      <v-divider class="my-6">
+        <span class="text-caption text-medium-emphasis px-4">
+          ou
+        </span>
+      </v-divider>
 
       <v-btn
-        color="blue"
+        color="white"
         variant="outlined"
         block
         size="large"
         :disabled="authStore.isLoading"
+        class="google-btn"
         @click="handleGoogleLogin"
       >
-        <v-icon start>mdi-google</v-icon>
-        Entrar com Google
+        <v-icon
+          start
+          color="red"
+          size="24"
+        >
+          mdi-google
+        </v-icon>
+        <span class="text-body-1 font-weight-medium">
+          Continuar com Google
+        </span>
       </v-btn>
     </v-card-text>
   </v-card>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import type { VForm } from 'vuetify/components'
 import { useAuthStore } from '@/app/store/auth.store'
 import { authService } from '@/shared/services/auth.service'
 
 const router = useRouter()
 const authStore = useAuthStore()
 
+const formRef = ref<VForm | null>(null)
 const email = ref('')
 const password = ref('')
+const showPassword = ref(false)
 
 const rules = {
-  required: (value: string) => !!value || 'Campo obrigatório',
+  required: (value: string) => {
+    if (!value || !value.trim()) {
+      return 'Campo obrigatório'
+    }
+    return true
+  },
   email: (value: string) => {
+    if (!value) return true
     const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     return pattern.test(value) || 'Email inválido'
   },
+  minLength: (value: string) => {
+    if (!value) return true
+    return value.length >= 6 || 'Senha deve ter no mínimo 6 caracteres'
+  },
 }
 
+const emailErrors = computed(() => {
+  if (!email.value) return []
+  const emailRule = rules.email(email.value)
+  return emailRule === true ? [] : [emailRule]
+})
+
+const passwordErrors = computed(() => {
+  if (!password.value) return []
+  const minLengthRule = rules.minLength(password.value)
+  return minLengthRule === true ? [] : [minLengthRule]
+})
+
+const isFormValid = computed(() => {
+  return (
+    email.value.trim().length > 0 &&
+    password.value.length > 0 &&
+    rules.email(email.value) === true &&
+    rules.minLength(password.value) === true
+  )
+})
+
 const handleLogin = async () => {
+  const { valid } = await formRef.value?.validate() ?? { valid: false }
+  
+  if (!valid) {
+    return
+  }
+
   try {
     await authStore.login({
       email: email.value.trim().toLowerCase(),
@@ -106,3 +196,24 @@ const handleGoogleLogin = () => {
   window.location.href = googleLoginUrl
 }
 </script>
+
+<style scoped>
+.login-card {
+  max-width: 450px;
+  width: 100%;
+}
+
+.google-btn {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  transition: all 0.3s ease;
+}
+
+.google-btn:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.24);
+}
+
+.google-btn:disabled {
+  opacity: 0.6;
+}
+</style>
