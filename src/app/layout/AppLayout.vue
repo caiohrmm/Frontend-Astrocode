@@ -134,6 +134,14 @@
           :to="{ name: 'dashboard' }"
           @click="drawer = false"
         ></v-list-item>
+        <v-list-item
+          v-if="authStore.hasRole.value('gestor')"
+          prepend-icon="mdi-account-group"
+          title="Usuários"
+          value="users"
+          :to="{ name: 'users' }"
+          @click="drawer = false"
+        ></v-list-item>
       </v-list>
     </v-navigation-drawer>
 

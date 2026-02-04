@@ -30,6 +30,16 @@ const routes: RouteRecordRaw[] = [
       requiresAuth: true, // Protected route
     },
   },
+  {
+    path: '/users',
+    name: 'users',
+    component: () => import('@/modules/users/pages/UsersPage.vue'),
+    meta: {
+      layout: 'app',
+      requiresAuth: true,
+      requiresManager: true, // Only managers can access
+    },
+  },
 ]
 
 const router = createRouter({
@@ -76,6 +86,15 @@ router.beforeEach(async (to, from, next) => {
     if (!authStore.isAuthenticated) {
       next({ name: 'login' })
       return
+    }
+
+    // Check if route requires manager role
+    if (to.meta.requiresManager) {
+      if (!authStore.hasRole.value('gestor')) {
+        // User doesn't have manager role, redirect to dashboard
+        next({ name: 'dashboard' })
+        return
+      }
     }
   }
   
