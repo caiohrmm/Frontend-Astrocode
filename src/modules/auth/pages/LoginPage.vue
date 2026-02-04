@@ -52,6 +52,7 @@
           :error-messages="emailErrors"
           autocomplete="email"
           clearable
+          @click:clear="email = ''"
         ></v-text-field>
 
         <v-text-field
@@ -92,7 +93,6 @@
       </v-divider>
 
       <v-btn
-        color="white"
         variant="outlined"
         block
         size="large"
@@ -107,9 +107,7 @@
         >
           mdi-google
         </v-icon>
-        <span class="text-body-1 font-weight-medium">
-          Continuar com Google
-        </span>
+        Continuar com Google
       </v-btn>
     </v-card-text>
   </v-card>
@@ -199,13 +197,14 @@ const handleGoogleLogin = () => {
 
 <style scoped>
 .login-card {
-  max-width: 450px;
   width: 100%;
+  margin: 0 auto;
 }
 
 .google-btn {
   border: 1px solid rgba(0, 0, 0, 0.12);
   transition: all 0.3s ease;
+  color: rgba(0, 0, 0, 0.87) !important;
 }
 
 .google-btn:hover {
