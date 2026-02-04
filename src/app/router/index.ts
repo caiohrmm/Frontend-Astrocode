@@ -40,6 +40,42 @@ const routes: RouteRecordRaw[] = [
       requiresManager: true, // Only managers can access
     },
   },
+  {
+    path: '/properties',
+    name: 'properties',
+    component: () => import('@/modules/properties/pages/PropertiesListPage.vue'),
+    meta: {
+      layout: 'app',
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/properties/create',
+    name: 'properties-create',
+    component: () => import('@/modules/properties/pages/PropertyFormPage.vue'),
+    meta: {
+      layout: 'app',
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/properties/:id/edit',
+    name: 'properties-edit',
+    component: () => import('@/modules/properties/pages/PropertyFormPage.vue'),
+    meta: {
+      layout: 'app',
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/properties/:id',
+    name: 'properties-details',
+    component: () => import('@/modules/properties/pages/PropertyDetailsPage.vue'),
+    meta: {
+      layout: 'app',
+      requiresAuth: true,
+    },
+  },
 ]
 
 const router = createRouter({
