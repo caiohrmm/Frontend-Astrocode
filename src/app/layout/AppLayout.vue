@@ -1,7 +1,7 @@
 <template>
   <v-app>
     <v-app-bar color="primary" prominent>
-      <v-app-bar-nav-icon></v-app-bar-nav-icon>
+      <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
       <v-toolbar-title>Astrocode Backend</v-toolbar-title>
       <v-spacer></v-spacer>
       
@@ -122,13 +122,17 @@
       </v-card>
     </v-dialog>
 
-    <v-navigation-drawer permanent>
+    <v-navigation-drawer
+      v-model="drawer"
+      temporary
+    >
       <v-list>
         <v-list-item
           prepend-icon="mdi-view-dashboard"
           title="Dashboard"
           value="dashboard"
           :to="{ name: 'dashboard' }"
+          @click="drawer = false"
         ></v-list-item>
       </v-list>
     </v-navigation-drawer>
@@ -152,6 +156,7 @@ const authStore = useAuthStore()
 const userMenu = ref(false)
 const showLogoutDialog = ref(false)
 const isLoggingOut = ref(false)
+const drawer = ref(false)
 
 const handleLogout = async () => {
   isLoggingOut.value = true
