@@ -23,6 +23,12 @@ export interface UpdateUserRolesRequest {
   role_names: string[]
 }
 
+export interface UpdateUserRequest {
+  email?: string
+  full_name?: string
+  is_active?: boolean
+}
+
 class UsersService {
   /**
    * List all users (manager only)
@@ -36,6 +42,13 @@ class UsersService {
    */
   async getUserById(userId: string): Promise<User> {
     return apiClient.get<User>(`/users/${userId}`)
+  }
+
+  /**
+   * Update user information (manager only)
+   */
+  async updateUser(userId: string, userData: UpdateUserRequest): Promise<User> {
+    return apiClient.put<User>(`/users/${userId}`, userData)
   }
 
   /**

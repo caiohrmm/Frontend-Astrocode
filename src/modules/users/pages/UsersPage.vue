@@ -313,10 +313,23 @@ const saveUserRoles = async () => {
 }
 
 const toggleUserStatus = async (user: User) => {
-  // TODO: Implement when backend endpoint is available
-  console.log('Toggle user status:', user.id, !user.is_active)
-  // For now, just show a message
-  alert('Funcionalidade de ativar/desativar usuário será implementada quando o endpoint estiver disponível no backend.')
+  try {
+    const updatedUser = await usersService.updateUser(user.id, {
+      is_active: !user.is_active,
+    })
+    
+    // Update user in list
+    const index = users.value.findIndex(u => u.id === updatedUser.id)
+    if (index !== -1) {
+      users.value[index] = updatedUser
+    }
+    
+    // TODO: Show success notification
+  } catch (error) {
+    console.error('Error updating user status:', error)
+    // TODO: Show error notification
+    alert(error instanceof Error ? error.message : 'Erro ao atualizar status do usuário')
+  }
 }
 
 onMounted(() => {
