@@ -90,7 +90,8 @@ router.beforeEach(async (to, from, next) => {
 
     // Check if route requires manager role
     if (to.meta.requiresManager) {
-      if (!authStore.hasRole.value('gestor')) {
+      const userRoles = authStore.userRoles
+      if (!userRoles.includes('gestor')) {
         // User doesn't have manager role, redirect to dashboard
         next({ name: 'dashboard' })
         return

@@ -135,7 +135,7 @@
           @click="drawer = false"
         ></v-list-item>
         <v-list-item
-          v-if="authStore.hasRole.value('gestor')"
+          v-if="authStore.hasRole('gestor')"
           prepend-icon="mdi-account-group"
           title="Usuários"
           value="users"
