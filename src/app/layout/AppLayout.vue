@@ -68,7 +68,7 @@
               variant="text"
               block
               prepend-icon="mdi-logout"
-              @click="handleLogout"
+              @click="showLogoutDialog = true"
             >
               Sair
             </v-btn>
@@ -76,6 +76,51 @@
         </v-card>
       </v-menu>
     </v-app-bar>
+
+    <!-- Logout Confirmation Dialog -->
+    <v-dialog
+      v-model="showLogoutDialog"
+      max-width="400"
+      persistent
+    >
+      <v-card>
+        <v-card-title class="d-flex align-center">
+          <v-icon
+            color="warning"
+            class="mr-3"
+            size="32"
+          >
+            mdi-alert-circle-outline
+          </v-icon>
+          <span class="text-h6">Confirmar saída</span>
+        </v-card-title>
+
+        <v-card-text class="pt-4">
+          <p class="text-body-1">
+            Tem certeza que deseja sair da sua conta?
+          </p>
+        </v-card-text>
+
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            variant="text"
+            @click="showLogoutDialog = false"
+          >
+            Cancelar
+          </v-btn>
+          <v-btn
+            color="error"
+            variant="flat"
+            prepend-icon="mdi-logout"
+            :loading="isLoggingOut"
+            @click="handleLogout"
+          >
+            Sair
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <v-navigation-drawer permanent>
       <v-list>
@@ -105,10 +150,20 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const userMenu = ref(false)
+const showLogoutDialog = ref(false)
+const isLoggingOut = ref(false)
 
 const handleLogout = async () => {
-  await authStore.logout()
-  userMenu.value = false
-  router.push({ name: 'login' })
+  isLoggingOut.value = true
+  try {
+    await authStore.logout()
+    userMenu.value = false
+    showLogoutDialog.value = false
+    router.push({ name: 'login' })
+  } catch (error) {
+    console.error('Logout error:', error)
+  } finally {
+    isLoggingOut.value = false
+  }
 }
 </script>
