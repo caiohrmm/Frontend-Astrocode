@@ -9,12 +9,20 @@
         <v-btn
           color="primary"
           prepend-icon="mdi-plus"
-          @click="goToCreate"
+          @click="showCreateDialog = true"
         >
           Novo Cliente
         </v-btn>
       </v-card-title>
     </v-card>
+
+    <!-- Create/Edit Client Dialog -->
+    <ClientCreateDialog
+      v-model="showCreateDialog"
+      :client="clientToEdit"
+      @saved="handleClientSaved"
+      @error="handleClientError"
+    />
 
     <!-- Filters Card -->
     <v-card elevation="2" class="mb-4">
@@ -193,7 +201,7 @@
               v-if="!hasActiveFilters"
               color="primary"
               prepend-icon="mdi-plus"
-              @click="goToCreate"
+              @click="showCreateDialog = true"
             >
               Novo Cliente
             </v-btn>
@@ -215,6 +223,7 @@ import {
 } from '@/shared/services/clients.service'
 import { usersService, type User } from '@/shared/services/users.service'
 import { formatPhone } from '@/shared/utils/masks'
+import ClientCreateDialog from '@/shared/components/ClientCreateDialog.vue'
 
 const router = useRouter()
 
@@ -228,6 +237,8 @@ const filters = ref({
   assigned_agent_id: null as string | null,
 })
 const agents = ref<User[]>([])
+const showCreateDialog = ref(false)
+const clientToEdit = ref<Client | null>(null)
 
 // Table Headers
 const headers = [
@@ -353,8 +364,17 @@ const handleRowClick = (_event: Event, { item }: { item: Client }) => {
   router.push({ name: 'clients-details', params: { id: item.id } })
 }
 
-const goToCreate = () => {
-  router.push({ name: 'clients-create' })
+const handleClientSaved = async (client: Client) => {
+  // Reload clients list to show the new/updated client
+  await loadClients()
+  // Optionally show success message
+  console.log('Client saved successfully:', client)
+}
+
+const handleClientError = (error: string) => {
+  // Show error to user
+  alert(`Erro ao salvar cliente: ${error}`)
+  console.error('Client save error:', error)
 }
 
 // Formatting helpers
