@@ -18,29 +18,32 @@
         class="mb-4"
         rounded="lg"
       >
-        <v-img
-          :src="property.main_image_url"
-          height="400"
-          cover
-          gradient="to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.5)"
-        >
-          <template #placeholder>
-            <div class="d-flex align-center justify-center fill-height">
-              <v-progress-circular
-                indeterminate
-                color="primary"
-              ></v-progress-circular>
-            </div>
-          </template>
-          <template #error>
-            <div class="d-flex align-center justify-center fill-height bg-grey-lighten-3">
-              <v-icon color="grey" size="64">mdi-image-off</v-icon>
-            </div>
-          </template>
-          <v-card-title class="text-white text-h4 font-weight-bold">
-            {{ property.title }}
-          </v-card-title>
-        </v-img>
+        <div class="d-flex justify-center pa-4 bg-grey-lighten-5">
+          <v-img
+            :src="property.main_image_url"
+            max-height="200"
+            max-width="100%"
+            contain
+            class="rounded"
+          >
+            <template #placeholder>
+              <div class="d-flex align-center justify-center fill-height">
+                <v-progress-circular
+                  indeterminate
+                  color="primary"
+                ></v-progress-circular>
+              </div>
+            </template>
+            <template #error>
+              <div class="d-flex align-center justify-center fill-height bg-grey-lighten-3">
+                <v-icon color="grey" size="64">mdi-image-off</v-icon>
+              </div>
+            </template>
+          </v-img>
+        </div>
+        <v-card-title class="pa-4 text-h4 font-weight-bold">
+          {{ property.title }}
+        </v-card-title>
       </v-card>
 
       <!-- Header Card -->
