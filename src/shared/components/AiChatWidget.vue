@@ -30,37 +30,64 @@
             <v-icon class="mr-2">mdi-robot</v-icon>
             <span>Assistente AI</span>
           </div>
-          <v-btn
-            icon="mdi-close"
-            variant="text"
-            color="white"
-            size="small"
-            @click="closeChat"
-          >
-            <v-icon>mdi-close</v-icon>
-          </v-btn>
+          <div class="d-flex align-center gap-2">
+            <!-- Context Toggle Button in Header -->
+            <v-tooltip location="bottom" v-if="availableContext && contextDescription">
+              <template #activator="{ props }">
+                <v-btn
+                  v-bind="props"
+                  icon
+                  variant="text"
+                  color="white"
+                  size="small"
+                  :class="{ 'context-active': useContext, 'context-inactive': !useContext }"
+                  @click="useContext = !useContext"
+                >
+                  <v-icon v-if="useContext" color="white">mdi-link</v-icon>
+                  <v-icon v-else color="white" style="opacity: 0.6;">mdi-link-off</v-icon>
+                </v-btn>
+              </template>
+              <span>{{ useContext ? 'Desativar contexto' : 'Ativar contexto' }}</span>
+            </v-tooltip>
+            <v-btn
+              icon="mdi-close"
+              variant="text"
+              color="white"
+              size="small"
+              @click="closeChat"
+            >
+              <v-icon>mdi-close</v-icon>
+            </v-btn>
+          </div>
         </v-card-title>
         
-        <!-- Context Banner -->
+        <!-- Context Banner - Active -->
         <v-card
-          v-if="currentContext && contextDescription && useContext"
+          v-if="availableContext && contextDescription && useContext"
           variant="tonal"
           color="info"
           class="ma-3"
         >
-          <v-card-text class="pa-2">
+          <v-card-text class="pa-3">
             <div class="d-flex align-center justify-space-between">
-              <div class="d-flex align-center">
+              <div class="d-flex align-center flex-grow-1">
                 <v-icon color="info" size="small" class="mr-2">mdi-information</v-icon>
-                <span class="text-caption">
-                  Respondendo com contexto: <strong>{{ contextDescription }}</strong>
-                </span>
+                <div class="flex-grow-1">
+                  <div class="text-caption font-weight-medium mb-1">
+                    Contexto ativo
+                  </div>
+                  <div class="text-body-2">
+                    Respondendo sobre: <strong>{{ contextDescription }}</strong>
+                  </div>
+                </div>
               </div>
               <v-btn
                 icon
-                size="x-small"
+                size="small"
                 variant="text"
+                color="info"
                 @click="useContext = false"
+                class="ml-2"
               >
                 <v-icon size="small">mdi-close</v-icon>
               </v-btn>
@@ -68,26 +95,36 @@
           </v-card-text>
         </v-card>
         
-        <!-- No Context Banner -->
+        <!-- Context Banner - Inactive -->
         <v-card
-          v-else-if="!useContext && currentContext"
-          variant="tonal"
+          v-else-if="availableContext && contextDescription && !useContext"
+          variant="outlined"
           color="warning"
           class="ma-3"
         >
-          <v-card-text class="pa-2">
+          <v-card-text class="pa-3">
             <div class="d-flex align-center justify-space-between">
-              <div class="d-flex align-center">
-                <v-icon color="warning" size="small" class="mr-2">mdi-alert-circle</v-icon>
-                <span class="text-caption">
-                  Contexto desabilitado. Faça perguntas gerais sobre o sistema.
-                </span>
+              <div class="d-flex align-center flex-grow-1">
+                <v-icon color="warning" size="small" class="mr-2">mdi-link-off</v-icon>
+                <div class="flex-grow-1">
+                  <div class="text-caption font-weight-medium mb-1 text-warning">
+                    Contexto disponível mas desativado
+                  </div>
+                  <div class="text-body-2 text-grey-darken-1">
+                    Contexto: <strong>{{ contextDescription }}</strong> está disponível, mas não será usado.
+                  </div>
+                  <div class="text-caption text-grey mt-1">
+                    Você pode fazer perguntas gerais sobre o sistema.
+                  </div>
+                </div>
               </div>
               <v-btn
-                size="x-small"
-                variant="text"
                 color="warning"
+                size="small"
+                variant="flat"
+                prepend-icon="mdi-link"
                 @click="useContext = true"
+                class="ml-2"
               >
                 Ativar
               </v-btn>
@@ -107,32 +144,40 @@
               Faça perguntas sobre clientes, propriedades ou atendimentos
             </p>
             
-            <!-- Context Info -->
+            <!-- Context Info Card (when no messages) -->
             <v-card
-              v-if="currentContext && contextDescription"
+              v-if="availableContext && contextDescription"
               variant="outlined"
-              color="primary"
+              :color="useContext ? 'primary' : 'grey'"
               class="mt-4"
             >
               <v-card-text class="pa-3">
                 <div class="d-flex align-center justify-space-between">
-                  <div class="d-flex align-center">
-                    <v-icon color="primary" size="small" class="mr-2">mdi-information</v-icon>
-                    <span class="text-body-2">
-                      Contexto ativo: <strong>{{ contextDescription }}</strong>
-                    </span>
+                  <div class="d-flex align-center flex-grow-1">
+                    <v-icon 
+                      :color="useContext ? 'primary' : 'grey'" 
+                      size="small" 
+                      class="mr-2"
+                    >
+                      {{ useContext ? 'mdi-link' : 'mdi-link-off' }}
+                    </v-icon>
+                    <div>
+                      <div class="text-body-2 font-weight-medium">
+                        Contexto: <strong>{{ contextDescription }}</strong>
+                      </div>
+                      <div class="text-caption text-grey mt-1">
+                        {{ useContext ? 'O assistente usará informações deste contexto' : 'Contexto desativado - perguntas gerais' }}
+                      </div>
+                    </div>
                   </div>
                   <v-switch
                     v-model="useContext"
                     density="compact"
                     hide-details
                     color="primary"
-                    class="ml-2"
-                  >
-                    <template #label>
-                      <span class="text-caption">Usar contexto</span>
-                    </template>
-                  </v-switch>
+                    class="ml-3"
+                    :label="useContext ? 'Ativo' : 'Inativo'"
+                  ></v-switch>
                 </div>
               </v-card-text>
             </v-card>
@@ -287,10 +332,8 @@ const isLoading = ref(false)
 const error = ref<string | null>(null)
 const useContext = ref(true) // Toggle to enable/disable context
 
-// Detect context from current route
-const currentContext = computed<ChatContext | null>(() => {
-  if (!useContext.value) return null
-
+// Detect available context from current route (independent of toggle)
+const availableContext = computed<ChatContext | null>(() => {
   const context: ChatContext = {}
   
   // Detect property context
@@ -325,43 +368,49 @@ const currentContext = computed<ChatContext | null>(() => {
   return null
 })
 
-// Context description for UI
+// Context that will be sent to API (depends on toggle)
+const currentContext = computed<ChatContext | null>(() => {
+  if (!useContext.value || !availableContext.value) return null
+  return availableContext.value
+})
+
+// Context description for UI (based on available context, not sent context)
 const contextDescription = computed(() => {
-  if (!currentContext.value) return null
+  if (!availableContext.value) return null
   
   const parts: string[] = []
-  if (currentContext.value.property_id) {
+  if (availableContext.value.property_id) {
     parts.push('Propriedade')
   }
-  if (currentContext.value.client_id) {
+  if (availableContext.value.client_id) {
     parts.push('Cliente')
   }
-  if (currentContext.value.attendance_id) {
+  if (availableContext.value.attendance_id) {
     parts.push('Atendimento')
   }
   
   return parts.length > 0 ? parts.join(', ') : null
 })
 
-// Suggested questions based on context
+// Suggested questions based on available context
 const suggestedQuestions = computed(() => {
-  if (!currentContext.value) return []
+  if (!availableContext.value) return []
   
   const suggestions: string[] = []
   
-  if (currentContext.value.property_id) {
+  if (availableContext.value.property_id) {
     suggestions.push('Qual o status desta propriedade?')
     suggestions.push('Quais são as características principais?')
     suggestions.push('Qual o preço desta propriedade?')
   }
   
-  if (currentContext.value.client_id) {
+  if (availableContext.value.client_id) {
     suggestions.push('Qual o status deste cliente?')
     suggestions.push('Qual o interesse deste cliente?')
     suggestions.push('Qual o orçamento deste cliente?')
   }
   
-  if (currentContext.value.attendance_id) {
+  if (availableContext.value.attendance_id) {
     suggestions.push('O que foi discutido neste atendimento?')
     suggestions.push('Qual o resumo deste atendimento?')
   }
@@ -553,6 +602,14 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+}
+
+.context-active {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.context-inactive {
+  opacity: 0.7;
 }
 </style>
 
