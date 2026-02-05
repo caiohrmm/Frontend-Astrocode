@@ -194,6 +194,23 @@ class PropertiesService {
   async geocodeAddress(address: string): Promise<AddressData> {
     return apiClient.get<AddressData>(`/properties/geocode/address?address=${encodeURIComponent(address)}`)
   }
+
+  /**
+   * Upload main image for a property
+   * @param propertyId - Property UUID
+   * @param file - Image file to upload (JPEG, PNG, or WebP, max 10MB)
+   * @returns Updated property with new main_image_url
+   */
+  async uploadPropertyMainImage(propertyId: string, file: File): Promise<Property> {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    // Note: Don't set Content-Type header - browser will set it automatically with boundary
+    return apiClient.post<Property>(
+      `/properties/${propertyId}/main-image`,
+      formData
+    )
+  }
 }
 
 export const propertiesService = new PropertiesService()

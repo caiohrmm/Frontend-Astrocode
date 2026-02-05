@@ -85,10 +85,23 @@ export class ApiClient {
   }
 
   async post<T>(endpoint: string, data?: unknown, options?: RequestInit): Promise<T> {
+    // Check if data is FormData - if so, don't stringify and don't set Content-Type
+    const isFormData = data instanceof FormData
+    
+    const headers: HeadersInit = {
+      ...(options?.headers as HeadersInit),
+    }
+    
+    // Only set Content-Type for JSON, not for FormData
+    if (!isFormData && !headers['Content-Type']) {
+      headers['Content-Type'] = 'application/json'
+    }
+    
     return this.request<T>(endpoint, {
       ...options,
       method: 'POST',
-      body: data ? JSON.stringify(data) : undefined,
+      headers,
+      body: isFormData ? data as BodyInit : (data ? JSON.stringify(data) : undefined),
     })
   }
 

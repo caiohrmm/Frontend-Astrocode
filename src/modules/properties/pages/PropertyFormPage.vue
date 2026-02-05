@@ -496,44 +496,21 @@
             <v-window-item value="media">
               <v-row>
                 <v-col cols="12">
-                  <v-text-field
+                  <div class="text-h6 mb-4">
+                    <v-icon class="mr-2" color="primary">mdi-image</v-icon>
+                    Imagem Principal do Imóvel
+                  </div>
+                  <div class="text-body-2 text-medium-emphasis mb-4">
+                    Faça upload da imagem principal do imóvel. A imagem será armazenada no Cloudinary
+                    e otimizada automaticamente para melhor performance.
+                  </div>
+                  <PropertyImageUpload
                     v-model="formData.main_image_url"
-                    label="URL da Imagem Principal"
-                    variant="outlined"
-                    hint="URL da imagem principal do imóvel"
-                    persistent-hint
-                  ></v-text-field>
-                </v-col>
-                <v-col
-                  v-if="formData.main_image_url"
-                  cols="12"
-                  md="6"
-                >
-                  <v-card>
-                    <v-card-title class="text-subtitle-2 pa-2">
-                      Preview
-                    </v-card-title>
-                    <v-img
-                      :src="formData.main_image_url"
-                      height="200"
-                      cover
-                      class="align-center justify-center"
-                    >
-                      <template #placeholder>
-                        <div class="d-flex align-center justify-center fill-height">
-                          <v-progress-circular
-                            indeterminate
-                            color="primary"
-                          ></v-progress-circular>
-                        </div>
-                      </template>
-                      <template #error>
-                        <div class="d-flex align-center justify-center fill-height">
-                          <v-icon color="error" size="48">mdi-image-off</v-icon>
-                        </div>
-                      </template>
-                    </v-img>
-                  </v-card>
+                    :property-id="isEditMode ? (route.params.id as string) : null"
+                    :disabled="isSaving"
+                    @uploaded="handleImageUploaded"
+                    @error="handleImageError"
+                  />
                 </v-col>
               </v-row>
             </v-window-item>
@@ -551,6 +528,7 @@ import type { VForm } from 'vuetify/components'
 import { propertiesService, type Property, type PropertyCreate, type PropertyUpdate, type AddressData } from '@/shared/services/properties.service'
 import { usersService, type User } from '@/shared/services/users.service'
 import { formatCurrency, parseCurrency, formatCurrencyInput, formatPhone, parsePhone } from '@/shared/utils/masks'
+import PropertyImageUpload from '@/shared/components/PropertyImageUpload.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -838,6 +816,24 @@ const handleSave = async () => {
 
 const goBack = () => {
   router.push({ name: 'properties' })
+}
+
+/**
+ * Handle image upload success
+ */
+const handleImageUploaded = (imageUrl: string) => {
+  // Image URL is already updated via v-model
+  // Optionally show success notification here
+  console.log('Image uploaded successfully:', imageUrl)
+}
+
+/**
+ * Handle image upload error
+ */
+const handleImageError = (error: string) => {
+  // Error is already shown in the component
+  // Optionally show additional notification here
+  console.error('Image upload error:', error)
 }
 
 const handleGeocodeAddress = async () => {
