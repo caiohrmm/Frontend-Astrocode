@@ -73,7 +73,12 @@
       </v-tabs>
 
       <v-card-text class="pa-6" style="overflow: visible !important; padding-top: 32px !important;">
-        <v-form ref="formRef" v-model="isFormValid" style="overflow: visible !important;">
+        <v-form 
+          ref="formRef" 
+          v-model="isFormValid" 
+          style="overflow: visible !important;"
+          @submit.prevent="handleSave"
+        >
           <v-window v-model="activeTab" style="overflow: visible !important;">
             <!-- Tab: Geral -->
             <v-window-item value="general">
@@ -744,11 +749,14 @@ const loadCorretores = async () => {
 }
 
 const handleSave = async () => {
-  // Validate form
+  // Validate form (skip validation if there's an image being uploaded)
   if (formRef.value) {
     const { valid } = await formRef.value.validate()
     if (!valid) {
       console.log('Form validation failed')
+      // Log validation errors for debugging
+      const errors = formRef.value.errors
+      console.log('Validation errors:', errors)
       // Focus on first tab with errors
       activeTab.value = 'general'
       return
@@ -790,8 +798,16 @@ const handleSave = async () => {
       owner_name: formData.value.owner_name || null,
       owner_contact: formData.value.owner_contact || null,
       ideal_client_profile: formData.value.ideal_client_profile || null,
+      // Ensure main_image_url is included if it exists
+      // Use the value directly from formData, don't convert empty strings to null here
+      // The backend will handle null/empty string conversion
       main_image_url: formData.value.main_image_url || null,
     }
+
+    // Log for debugging
+    console.log('Saving property with main_image_url:', propertyData.main_image_url)
+    console.log('formData.main_image_url value:', formData.value.main_image_url)
+    console.log('Full formData:', JSON.stringify(formData.value, null, 2))
 
     if (isEditMode.value) {
       await propertiesService.updateProperty(route.params.id as string, propertyData as PropertyUpdate)
@@ -821,10 +837,35 @@ const goBack = () => {
 /**
  * Handle image upload success
  */
-const handleImageUploaded = (imageUrl: string) => {
-  // Image URL is already updated via v-model
-  // Optionally show success notification here
-  console.log('Image uploaded successfully:', imageUrl)
+const handleImageUploaded = async (imageUrl: string) => {
+  console.log('handleImageUploaded called with imageUrl:', imageUrl)
+  console.log('formData.main_image_url BEFORE update:', formData.value.main_image_url)
+  
+  // Explicitly set the value - v-model should handle this, but let's be sure
+  formData.value.main_image_url = imageUrl
+  
+  console.log('formData.main_image_url AFTER explicit set:', formData.value.main_image_url)
+  
+  // Force a reactive update by creating a new object reference
+  // This ensures Vue's reactivity system picks up the change
+  formData.value = { ...formData.value, main_image_url: imageUrl }
+  
+  console.log('formData.main_image_url AFTER spread:', formData.value.main_image_url)
+  
+  // If in edit mode, reload property to ensure sync with backend
+  if (isEditMode.value && route.params.id) {
+    try {
+      const updatedProperty = await propertiesService.getPropertyById(route.params.id as string)
+      property.value = updatedProperty
+      // Update formData with the latest property data, especially main_image_url
+      formData.value.main_image_url = updatedProperty.main_image_url || imageUrl
+      console.log('Property reloaded, main_image_url:', updatedProperty.main_image_url)
+      console.log('formData.main_image_url after reload:', formData.value.main_image_url)
+    } catch (error) {
+      console.warn('Could not reload property after image upload:', error)
+      // Continue anyway - the image URL is already set
+    }
+  }
 }
 
 /**

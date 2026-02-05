@@ -1,4 +1,8 @@
 <template>
+  <!-- 
+    This component is isolated from form validation to avoid interference.
+    File validation is handled internally, not by the parent form.
+  -->
   <div class="property-image-upload">
     <!-- Image Preview Section -->
     <v-card
@@ -66,12 +70,15 @@
           <v-file-input
             ref="fileInputRef"
             v-model="selectedFile"
-            :rules="fileRules"
             accept="image/jpeg,image/jpg,image/png,image/webp"
             prepend-icon="mdi-camera"
             label="Selecionar imagem"
             variant="outlined"
-            :disabled="isUploading"
+            :disabled="isUploading || disabled"
+            :error="false"
+            :error-messages="[]"
+            :rules="[]"
+            hide-details="auto"
             @update:model-value="handleFileSelect"
           ></v-file-input>
         </div>
@@ -174,6 +181,12 @@ const fileRules = [
     if (!files || files.length === 0) return true
     
     const file = files[0]
+    
+    // Check if file exists and has required properties
+    if (!file || !file.type || !file.size) {
+      return 'Arquivo inválido. Por favor, selecione um arquivo válido.'
+    }
+    
     const maxSize = 10 * 1024 * 1024 // 10MB
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
     
@@ -196,10 +209,19 @@ const handleFileSelect = async (files: File[] | null) => {
   error.value = null
   
   if (!files || files.length === 0) {
+    // Clear selection if no file
+    selectedFile.value = []
     return
   }
 
   const file = files[0]
+  
+  // Check if file exists and is valid
+  if (!file) {
+    error.value = 'Arquivo inválido. Por favor, selecione um arquivo válido.'
+    selectedFile.value = []
+    return
+  }
 
   // Validate file
   const validation = fileRules[0](files)
@@ -270,10 +292,15 @@ const handleRemove = () => {
  */
 watch(() => props.modelValue, (newValue) => {
   // Clear file input when image URL is set externally
-  if (newValue && selectedFile.value.length > 0) {
+  // This prevents the file input from interfering with form validation
+  if (newValue) {
     selectedFile.value = []
+    // Reset file input if it exists
+    if (fileInputRef.value) {
+      fileInputRef.value.reset()
+    }
   }
-})
+}, { immediate: true })
 </script>
 
 <style scoped>
