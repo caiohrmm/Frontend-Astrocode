@@ -55,6 +55,14 @@
               {{ getUrgencyLabel(client.current_urgency_level) }}
             </v-chip>
           </div>
+          <v-btn
+            color="primary"
+            prepend-icon="mdi-pencil"
+            class="ml-4"
+            @click="showEditDialog = true"
+          >
+            Editar
+          </v-btn>
         </v-card-title>
 
         <!-- Lead Score -->
@@ -449,7 +457,16 @@
       >
         Voltar para Lista
       </v-btn>
-    </v-card>
+      </v-card>
+    </div>
+
+    <!-- Edit Client Dialog -->
+    <ClientCreateDialog
+      v-model="showEditDialog"
+      :client="client"
+      @saved="handleClientSaved"
+      @error="handleClientError"
+    />
   </div>
 </template>
 
@@ -467,6 +484,7 @@ import {
 } from '@/shared/services/clients.service'
 import { usersService, type User } from '@/shared/services/users.service'
 import { formatPhone, formatCurrency, parseCurrency } from '@/shared/utils/masks'
+import ClientCreateDialog from '@/shared/components/ClientCreateDialog.vue'
 // Markdown formatting (using simple parser, not marked library)
 
 const route = useRoute()
@@ -478,6 +496,7 @@ const isLoading = ref(true)
 const activeTab = ref('overview')
 const agents = ref<User[]>([])
 const showScheduleDialog = ref(false)
+const showEditDialog = ref(false)
 
 // Editable fields (for inline editing)
 const editableFields = ref<Partial<ClientUpdate>>({})
@@ -812,6 +831,17 @@ const getLeadScoreMessage = (score: number): string => {
   if (score >= 60) return 'Bom potencial de conversão. Cliente qualificado.'
   if (score >= 40) return 'Potencial moderado. Requer mais qualificação.'
   return 'Baixo potencial. Necessita mais informações e qualificação.'
+}
+
+const handleClientSaved = async (updatedClient: Client) => {
+  // Reload client to show updated data
+  await loadClient()
+  showEditDialog.value = false
+}
+
+const handleClientError = (error: string) => {
+  alert(`Erro ao salvar cliente: ${error}`)
+  console.error('Client save error:', error)
 }
 
 const goBack = () => {
