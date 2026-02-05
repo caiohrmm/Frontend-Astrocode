@@ -21,7 +21,7 @@
         <v-btn
           color="primary"
           :loading="isSaving"
-          :disabled="!isFormValid"
+          :disabled="isSaving"
           prepend-icon="mdi-content-save"
           @click="handleSave"
         >
@@ -328,15 +328,13 @@
                   md="6"
                 >
                   <v-text-field
-                    v-model="formData.price"
+                    v-model="priceFormatted"
                     label="Preço de Venda"
                     variant="outlined"
-                    type="number"
-                    min="0"
-                    step="0.01"
                     prefix="R$"
-                    hint="Valor em reais"
+                    hint="Valor em reais (ex: 1.234,56)"
                     persistent-hint
+                    @blur="priceFormatted = formatCurrency(formData.price)"
                   ></v-text-field>
                 </v-col>
                 <v-col
@@ -345,41 +343,35 @@
                   md="6"
                 >
                   <v-text-field
-                    v-model="formData.rent_price"
+                    v-model="rentPriceFormatted"
                     label="Preço de Aluguel"
                     variant="outlined"
-                    type="number"
-                    min="0"
-                    step="0.01"
                     prefix="R$"
-                    hint="Valor mensal em reais"
+                    hint="Valor mensal em reais (ex: 1.234,56)"
                     persistent-hint
+                    @blur="rentPriceFormatted = formatCurrency(formData.rent_price)"
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12" md="6">
                   <v-text-field
-                    v-model="formData.condo_fee"
+                    v-model="condoFeeFormatted"
                     label="Condomínio"
                     variant="outlined"
-                    type="number"
-                    min="0"
-                    step="0.01"
                     prefix="R$"
-                    hint="Valor mensal"
+                    hint="Valor mensal (ex: 1.234,56)"
                     persistent-hint
+                    @blur="condoFeeFormatted = formatCurrency(formData.condo_fee)"
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12" md="6">
                   <v-text-field
-                    v-model="formData.iptu"
+                    v-model="iptuFormatted"
                     label="IPTU"
                     variant="outlined"
-                    type="number"
-                    min="0"
-                    step="0.01"
                     prefix="R$"
-                    hint="Valor anual"
+                    hint="Valor anual (ex: 1.234,56)"
                     persistent-hint
+                    @blur="iptuFormatted = formatCurrency(formData.iptu)"
                   ></v-text-field>
                 </v-col>
               </v-row>
@@ -438,11 +430,12 @@
                 </v-col>
                 <v-col cols="12" md="6">
                   <v-text-field
-                    v-model="formData.owner_contact"
+                    v-model="ownerContactFormatted"
                     label="Contato do Proprietário"
                     variant="outlined"
-                    hint="Telefone, email ou outro contato"
+                    hint="Telefone (ex: (11) 98765-4321) ou email"
                     persistent-hint
+                    @blur="ownerContactFormatted = formatPhone(formData.owner_contact || '')"
                   ></v-text-field>
                 </v-col>
               </v-row>
@@ -553,6 +546,7 @@ import { useRoute, useRouter } from 'vue-router'
 import type { VForm } from 'vuetify/components'
 import { propertiesService, type Property, type PropertyCreate, type PropertyUpdate, type AddressData } from '@/shared/services/properties.service'
 import { usersService, type User } from '@/shared/services/users.service'
+import { formatCurrency, parseCurrency, formatPhone, parsePhone } from '@/shared/utils/masks'
 
 const route = useRoute()
 const router = useRouter()
@@ -594,10 +588,10 @@ const formData = ref<PropertyCreate & { assigned_agent_id?: string | null }>({
   floor: null,
   has_elevator: false,
   furnished: false,
-  price: null,
-  rent_price: null,
-  condo_fee: null,
-  iptu: null,
+  price: null as number | null,
+  rent_price: null as number | null,
+  condo_fee: null as number | null,
+  iptu: null as number | null,
   status: 'DRAFT',
   assigned_agent_id: null,
   owner_name: null,
@@ -647,6 +641,43 @@ const showRentPrice = computed(() => {
   return formData.value.business_type === 'RENT' || formData.value.business_type === 'BOTH'
 })
 
+// Currency formatted values (for display)
+const priceFormatted = computed({
+  get: () => formData.value.price ? formatCurrency(formData.value.price) : '',
+  set: (val: string) => {
+    formData.value.price = parseCurrency(val)
+  }
+})
+
+const rentPriceFormatted = computed({
+  get: () => formData.value.rent_price ? formatCurrency(formData.value.rent_price) : '',
+  set: (val: string) => {
+    formData.value.rent_price = parseCurrency(val)
+  }
+})
+
+const condoFeeFormatted = computed({
+  get: () => formData.value.condo_fee ? formatCurrency(formData.value.condo_fee) : '',
+  set: (val: string) => {
+    formData.value.condo_fee = parseCurrency(val)
+  }
+})
+
+const iptuFormatted = computed({
+  get: () => formData.value.iptu ? formatCurrency(formData.value.iptu) : '',
+  set: (val: string) => {
+    formData.value.iptu = parseCurrency(val)
+  }
+})
+
+// Phone formatted value
+const ownerContactFormatted = computed({
+  get: () => formData.value.owner_contact ? formatPhone(formData.value.owner_contact) : '',
+  set: (val: string) => {
+    formData.value.owner_contact = parsePhone(val) || null
+  }
+})
+
 // Validation rules
 const rules = {
   required: (value: any) => {
@@ -692,10 +723,10 @@ const loadProperty = async () => {
       floor: property.value.floor,
       has_elevator: property.value.has_elevator,
       furnished: property.value.furnished,
-      price: property.value.price,
-      rent_price: property.value.rent_price,
-      condo_fee: property.value.condo_fee,
-      iptu: property.value.iptu,
+      price: property.value.price ? parseFloat(property.value.price) : null,
+      rent_price: property.value.rent_price ? parseFloat(property.value.rent_price) : null,
+      condo_fee: property.value.condo_fee ? parseFloat(property.value.condo_fee) : null,
+      iptu: property.value.iptu ? parseFloat(property.value.iptu) : null,
       status: property.value.status,
       assigned_agent_id: property.value.assigned_agent_id,
       owner_name: property.value.owner_name,
@@ -721,13 +752,18 @@ const loadCorretores = async () => {
 }
 
 const handleSave = async () => {
-  const { valid } = await formRef.value?.validate() ?? { valid: false }
-  if (!valid) {
-    // Focus on first tab with errors
-    activeTab.value = 'general'
-    return
+  // Validate form
+  if (formRef.value) {
+    const { valid } = await formRef.value.validate()
+    if (!valid) {
+      console.log('Form validation failed')
+      // Focus on first tab with errors
+      activeTab.value = 'general'
+      return
+    }
   }
 
+  console.log('Saving property...', formData.value)
   isSaving.value = true
   try {
     // Convert form data to API format
@@ -772,11 +808,15 @@ const handleSave = async () => {
     }
 
     // Redirect to list
+    console.log('Property saved successfully')
     router.push({ name: 'properties' })
     // TODO: Show success notification
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error saving property:', error)
-    // TODO: Show error notification
+    console.error('Error details:', error.response?.data || error.message)
+    // Show error to user
+    const errorMessage = error.response?.data?.detail || error.message || 'Erro desconhecido ao salvar imóvel'
+    alert(`Erro ao salvar imóvel: ${errorMessage}`)
   } finally {
     isSaving.value = false
   }
