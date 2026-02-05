@@ -57,6 +57,23 @@ class UsersService {
   async updateUserRoles(userId: string, roleNames: string[]): Promise<User> {
     return apiClient.put<User>(`/users/${userId}/roles`, roleNames)
   }
+
+  /**
+   * Get users with corretor role (for agent assignment)
+   * Note: This requires manager role, but we'll filter on frontend
+   */
+  async getCorretores(): Promise<User[]> {
+    try {
+      const allUsers = await this.listUsers(0, 1000)
+      return allUsers.filter(user => 
+        user.roles.some(role => role.name === 'corretor')
+      )
+    } catch (error) {
+      // If user doesn't have manager role, return empty array
+      console.warn('Could not fetch corretores:', error)
+      return []
+    }
+  }
 }
 
 export const usersService = new UsersService()
