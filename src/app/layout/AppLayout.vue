@@ -149,6 +149,13 @@
           @click="drawer = false"
         ></v-list-item>
         <v-list-item
+          prepend-icon="mdi-phone"
+          title="Atendimentos"
+          value="attendances"
+          :to="{ name: 'attendances' }"
+          @click="drawer = false"
+        ></v-list-item>
+        <v-list-item
           v-if="authStore.hasRole('gestor')"
           prepend-icon="mdi-account-group"
           title="Usuários"

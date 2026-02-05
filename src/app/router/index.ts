@@ -94,6 +94,15 @@ const routes: RouteRecordRaw[] = [
       requiresAuth: true,
     },
   },
+  {
+    path: '/attendances',
+    name: 'attendances',
+    component: () => import('@/modules/attendances/pages/AttendanceListPage.vue'),
+    meta: {
+      layout: 'app',
+      requiresAuth: true,
+    },
+  },
 ]
 
 const router = createRouter({
