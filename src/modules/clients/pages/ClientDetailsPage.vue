@@ -457,8 +457,7 @@
       >
         Voltar para Lista
       </v-btn>
-      </v-card>
-    </div>
+    </v-card>
 
     <!-- Edit Client Dialog -->
     <ClientCreateDialog
