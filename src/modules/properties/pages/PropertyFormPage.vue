@@ -129,6 +129,37 @@
             <!-- Tab: Localização -->
             <v-window-item value="location">
               <v-row>
+                <v-col cols="12">
+                  <v-card variant="outlined" class="pa-4 mb-4" color="primary">
+                    <div class="d-flex align-center mb-2">
+                      <v-icon color="primary" class="mr-2">mdi-map-search</v-icon>
+                      <span class="text-subtitle-1 font-weight-medium">Buscar Endereço no Google Maps</span>
+                    </div>
+                    <v-text-field
+                      v-model="addressSearch"
+                      label="Digite o endereço completo (ex: Rua Exemplo, 123, São Paulo, SP)"
+                      variant="outlined"
+                      prepend-inner-icon="mdi-magnify"
+                      :loading="isGeocoding"
+                      :error="!!geocodeError"
+                      :error-messages="geocodeError ? [geocodeError] : []"
+                      hint="Digite um endereço e clique em buscar para preencher automaticamente os campos abaixo"
+                      persistent-hint
+                      @keyup.enter="handleGeocodeAddress"
+                    >
+                      <template #append>
+                        <v-btn
+                          color="primary"
+                          :loading="isGeocoding"
+                          :disabled="!addressSearch.trim()"
+                          @click="handleGeocodeAddress"
+                        >
+                          Buscar
+                        </v-btn>
+                      </template>
+                    </v-text-field>
+                  </v-card>
+                </v-col>
                 <v-col cols="12" md="8">
                   <v-text-field
                     v-model="formData.street"
@@ -525,7 +556,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { VForm } from 'vuetify/components'
-import { propertiesService, type Property, type PropertyCreate, type PropertyUpdate } from '@/shared/services/properties.service'
+import { propertiesService, type Property, type PropertyCreate, type PropertyUpdate, type AddressData } from '@/shared/services/properties.service'
 import { usersService, type User } from '@/shared/services/users.service'
 
 const route = useRoute()
@@ -537,6 +568,11 @@ const isFormValid = ref(false)
 const isSaving = ref(false)
 const property = ref<Property | null>(null)
 const corretores = ref<User[]>([])
+
+// Geocoding
+const addressSearch = ref('')
+const isGeocoding = ref(false)
+const geocodeError = ref<string | null>(null)
 
 const isEditMode = computed(() => !!route.params.id)
 
@@ -753,6 +789,56 @@ const handleSave = async () => {
 
 const goBack = () => {
   router.push({ name: 'properties' })
+}
+
+const handleGeocodeAddress = async () => {
+  if (!addressSearch.value.trim()) {
+    return
+  }
+
+  isGeocoding.value = true
+  geocodeError.value = null
+
+  try {
+    const addressData: AddressData = await propertiesService.geocodeAddress(addressSearch.value.trim())
+    
+    // Fill form fields with geocoded data
+    if (addressData.street) {
+      formData.value.street = addressData.street
+    }
+    if (addressData.number) {
+      formData.value.number = addressData.number
+    }
+    if (addressData.neighborhood) {
+      formData.value.neighborhood = addressData.neighborhood
+    }
+    if (addressData.city) {
+      formData.value.city = addressData.city
+    }
+    if (addressData.state) {
+      formData.value.state = addressData.state.toUpperCase()
+    }
+    if (addressData.zip_code) {
+      formData.value.zip_code = addressData.zip_code
+    }
+    if (addressData.latitude) {
+      formData.value.latitude = addressData.latitude
+    }
+    if (addressData.longitude) {
+      formData.value.longitude = addressData.longitude
+    }
+
+    // Clear search field after successful geocoding
+    addressSearch.value = ''
+    
+    // Show success message (you can add a snackbar here if needed)
+  } catch (error: any) {
+    console.error('Geocoding error:', error)
+    geocodeError.value = error.message || 'Erro ao buscar endereço. Verifique se o endereço está correto.'
+    // TODO: Show error notification
+  } finally {
+    isGeocoding.value = false
+  }
 }
 
 // Watch business_type to clear prices when not applicable

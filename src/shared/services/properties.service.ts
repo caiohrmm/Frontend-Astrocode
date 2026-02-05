@@ -128,6 +128,17 @@ export interface ListPropertiesParams {
   state?: string
 }
 
+export interface AddressData {
+  street: string | null
+  number: string | null
+  neighborhood: string | null
+  city: string | null
+  state: string | null
+  zip_code: string | null
+  latitude: string | null
+  longitude: string | null
+}
+
 class PropertiesService {
   /**
    * List properties with filters and pagination
@@ -175,6 +186,13 @@ class PropertiesService {
    */
   async deleteProperty(propertyId: string): Promise<void> {
     return apiClient.delete<void>(`/properties/${propertyId}`)
+  }
+
+  /**
+   * Geocode an address using Google Geocoding API
+   */
+  async geocodeAddress(address: string): Promise<AddressData> {
+    return apiClient.get<AddressData>(`/properties/geocode/address?address=${encodeURIComponent(address)}`)
   }
 }
 
