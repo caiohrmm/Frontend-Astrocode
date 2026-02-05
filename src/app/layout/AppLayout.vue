@@ -2,7 +2,7 @@
   <v-app>
     <v-app-bar color="primary" prominent>
       <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
-      <v-toolbar-title>Astrocode Backend</v-toolbar-title>
+      <v-toolbar-title>Desafio Astrocode Projeto Técnico</v-toolbar-title>
       <v-spacer></v-spacer>
       
       <v-menu
