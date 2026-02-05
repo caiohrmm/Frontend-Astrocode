@@ -163,54 +163,49 @@
                 <v-col cols="12" md="8">
                   <v-text-field
                     v-model="formData.street"
-                    label="Rua *"
+                    label="Rua"
                     variant="outlined"
-                    :rules="[rules.required]"
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12" md="4">
                   <v-text-field
                     v-model="formData.number"
-                    label="Número *"
+                    label="Número"
                     variant="outlined"
-                    :rules="[rules.required]"
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12" md="6">
                   <v-text-field
                     v-model="formData.neighborhood"
-                    label="Bairro *"
+                    label="Bairro"
                     variant="outlined"
-                    :rules="[rules.required]"
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12" md="6">
                   <v-text-field
                     v-model="formData.city"
-                    label="Cidade *"
+                    label="Cidade"
                     variant="outlined"
-                    :rules="[rules.required]"
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12" md="4">
                   <v-text-field
                     v-model="formData.state"
-                    label="Estado (UF) *"
+                    label="Estado (UF)"
                     variant="outlined"
-                    :rules="[rules.required, rules.state]"
+                    :rules="[rules.state]"
                     maxlength="2"
                     counter="2"
                     hint="Ex: SP, RJ, MG"
                     persistent-hint
-                    @input="formData.state = formData.state.toUpperCase()"
+                    @input="formData.state = formData.state ? formData.state.toUpperCase() : ''"
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12" md="4">
                   <v-text-field
                     v-model="formData.zip_code"
-                    label="CEP *"
+                    label="CEP"
                     variant="outlined"
-                    :rules="[rules.required]"
                     hint="Preparado para autocomplete futuro"
                     persistent-hint
                   ></v-text-field>
@@ -583,12 +578,12 @@ const formData = ref<PropertyCreate & { assigned_agent_id?: string | null }>({
   description: null,
   property_type: 'APARTMENT',
   business_type: 'SALE',
-  street: '',
-  number: '',
-  neighborhood: '',
-  city: '',
-  state: '',
-  zip_code: '',
+  street: null,
+  number: null,
+  neighborhood: null,
+  city: null,
+  state: null,
+  zip_code: null,
   latitude: null,
   longitude: null,
   area_total: null,
@@ -742,12 +737,12 @@ const handleSave = async () => {
       description: formData.value.description || null,
       property_type: formData.value.property_type,
       business_type: formData.value.business_type,
-      street: formData.value.street,
-      number: formData.value.number,
-      neighborhood: formData.value.neighborhood,
-      city: formData.value.city,
-      state: formData.value.state.toUpperCase(),
-      zip_code: formData.value.zip_code,
+      street: formData.value.street?.trim() || null,
+      number: formData.value.number?.trim() || null,
+      neighborhood: formData.value.neighborhood?.trim() || null,
+      city: formData.value.city?.trim() || null,
+      state: formData.value.state?.trim() ? formData.value.state.trim().toUpperCase() : null,
+      zip_code: formData.value.zip_code?.trim() || null,
       latitude: formData.value.latitude ? String(formData.value.latitude) : null,
       longitude: formData.value.longitude ? String(formData.value.longitude) : null,
       area_total: formData.value.area_total ? String(formData.value.area_total) : null,
