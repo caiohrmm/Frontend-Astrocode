@@ -332,9 +332,10 @@
                     label="Preço de Venda"
                     variant="outlined"
                     prefix="R$"
-                    hint="Valor em reais (ex: 1.234,56)"
+                    hint="Digite apenas números (será formatado automaticamente)"
                     persistent-hint
-                    @blur="priceFormatted = formatCurrency(formData.price)"
+                    @input="priceFormatted = formatCurrencyInput(priceFormatted)"
+                    @blur="formData.price = parseCurrency(priceFormatted) || null; priceFormatted = formData.price ? formatCurrency(formData.price) : ''"
                   ></v-text-field>
                 </v-col>
                 <v-col
@@ -347,9 +348,10 @@
                     label="Preço de Aluguel"
                     variant="outlined"
                     prefix="R$"
-                    hint="Valor mensal em reais (ex: 1.234,56)"
+                    hint="Digite apenas números (será formatado automaticamente)"
                     persistent-hint
-                    @blur="rentPriceFormatted = formatCurrency(formData.rent_price)"
+                    @input="rentPriceFormatted = formatCurrencyInput(rentPriceFormatted)"
+                    @blur="formData.rent_price = parseCurrency(rentPriceFormatted) || null; rentPriceFormatted = formData.rent_price ? formatCurrency(formData.rent_price) : ''"
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12" md="6">
@@ -358,9 +360,10 @@
                     label="Condomínio"
                     variant="outlined"
                     prefix="R$"
-                    hint="Valor mensal (ex: 1.234,56)"
+                    hint="Digite apenas números (será formatado automaticamente)"
                     persistent-hint
-                    @blur="condoFeeFormatted = formatCurrency(formData.condo_fee)"
+                    @input="condoFeeFormatted = formatCurrencyInput(condoFeeFormatted)"
+                    @blur="formData.condo_fee = parseCurrency(condoFeeFormatted) || null; condoFeeFormatted = formData.condo_fee ? formatCurrency(formData.condo_fee) : ''"
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12" md="6">
@@ -369,9 +372,10 @@
                     label="IPTU"
                     variant="outlined"
                     prefix="R$"
-                    hint="Valor anual (ex: 1.234,56)"
+                    hint="Digite apenas números (será formatado automaticamente)"
                     persistent-hint
-                    @blur="iptuFormatted = formatCurrency(formData.iptu)"
+                    @input="iptuFormatted = formatCurrencyInput(iptuFormatted)"
+                    @blur="formData.iptu = parseCurrency(iptuFormatted) || null; iptuFormatted = formData.iptu ? formatCurrency(formData.iptu) : ''"
                   ></v-text-field>
                 </v-col>
               </v-row>
@@ -546,7 +550,7 @@ import { useRoute, useRouter } from 'vue-router'
 import type { VForm } from 'vuetify/components'
 import { propertiesService, type Property, type PropertyCreate, type PropertyUpdate, type AddressData } from '@/shared/services/properties.service'
 import { usersService, type User } from '@/shared/services/users.service'
-import { formatCurrency, parseCurrency, formatPhone, parsePhone } from '@/shared/utils/masks'
+import { formatCurrency, parseCurrency, formatCurrencyInput, formatPhone, parsePhone } from '@/shared/utils/masks'
 
 const route = useRoute()
 const router = useRouter()
@@ -641,34 +645,44 @@ const showRentPrice = computed(() => {
   return formData.value.business_type === 'RENT' || formData.value.business_type === 'BOTH'
 })
 
-// Currency formatted values (for display)
-const priceFormatted = computed({
-  get: () => formData.value.price ? formatCurrency(formData.value.price) : '',
-  set: (val: string) => {
-    formData.value.price = parseCurrency(val)
-  }
-})
+// Currency formatted values - using raw string during typing, format on blur
+const priceFormatted = ref('')
+const rentPriceFormatted = ref('')
+const condoFeeFormatted = ref('')
+const iptuFormatted = ref('')
 
-const rentPriceFormatted = computed({
-  get: () => formData.value.rent_price ? formatCurrency(formData.value.rent_price) : '',
-  set: (val: string) => {
-    formData.value.rent_price = parseCurrency(val)
+// Watch formData to update formatted values when loading
+watch(() => formData.value.price, (newVal) => {
+  if (newVal !== null && newVal !== undefined) {
+    priceFormatted.value = formatCurrency(newVal)
+  } else {
+    priceFormatted.value = ''
   }
-})
+}, { immediate: true })
 
-const condoFeeFormatted = computed({
-  get: () => formData.value.condo_fee ? formatCurrency(formData.value.condo_fee) : '',
-  set: (val: string) => {
-    formData.value.condo_fee = parseCurrency(val)
+watch(() => formData.value.rent_price, (newVal) => {
+  if (newVal !== null && newVal !== undefined) {
+    rentPriceFormatted.value = formatCurrency(newVal)
+  } else {
+    rentPriceFormatted.value = ''
   }
-})
+}, { immediate: true })
 
-const iptuFormatted = computed({
-  get: () => formData.value.iptu ? formatCurrency(formData.value.iptu) : '',
-  set: (val: string) => {
-    formData.value.iptu = parseCurrency(val)
+watch(() => formData.value.condo_fee, (newVal) => {
+  if (newVal !== null && newVal !== undefined) {
+    condoFeeFormatted.value = formatCurrency(newVal)
+  } else {
+    condoFeeFormatted.value = ''
   }
-})
+}, { immediate: true })
+
+watch(() => formData.value.iptu, (newVal) => {
+  if (newVal !== null && newVal !== undefined) {
+    iptuFormatted.value = formatCurrency(newVal)
+  } else {
+    iptuFormatted.value = ''
+  }
+}, { immediate: true })
 
 // Phone formatted value
 const ownerContactFormatted = computed({

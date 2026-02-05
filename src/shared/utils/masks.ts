@@ -19,15 +19,27 @@ export function formatCurrency(value: number | string | null | undefined): strin
 
 /**
  * Parse currency string to number
- * @param value - Formatted currency string (e.g., "R$ 1.234,56")
+ * @param value - Formatted currency string (e.g., "R$ 1.234,56") or plain number string
  * @returns Number value or null
  */
 export function parseCurrency(value: string | null | undefined): number | null {
   if (!value) return null
-  // Remove currency symbols and spaces, replace comma with dot
+  // Remove currency symbols, spaces, and dots (thousand separators), replace comma with dot
   const cleaned = value.replace(/[R$\s.]/g, '').replace(',', '.')
   const parsed = parseFloat(cleaned)
   return isNaN(parsed) ? null : parsed
+}
+
+/**
+ * Format currency for input - allows natural typing
+ * Only removes non-digits, keeps the value as-is for natural typing
+ * @param value - String being typed
+ * @returns String with only digits (for natural typing experience)
+ */
+export function formatCurrencyInput(value: string): string {
+  if (!value) return ''
+  // Remove all non-digits - user types naturally, we just clean it
+  return value.replace(/\D/g, '')
 }
 
 /**
