@@ -261,26 +261,11 @@ const handleSave = async () => {
     // Ensure phone is parsed (remove formatting)
     const phone = parsePhone(phoneFormatted.value) || formData.value.phone
 
-    // Prepare email - if not provided, generate a valid temporary email
-    // Backend requires EmailStr, so we need a valid email format
-    let email = formData.value.email?.trim() || ''
-    if (!email) {
-      // Generate temporary email based on name and timestamp
-      const nameSlug = formData.value.name
-        .trim()
-        .toLowerCase()
-        .replace(/\s+/g, '.')
-        .replace(/[^a-z0-9.]/g, '')
-        .substring(0, 30) // Limit length
-      const timestamp = Date.now().toString().slice(-6)
-      email = `${nameSlug}.${timestamp}@temp.local`
-    }
-
-    // Prepare data
+    // Prepare data - email is optional, can be null
     const clientData: ClientCreate | ClientUpdate = {
       name: formData.value.name.trim(),
       phone: phone,
-      email: email,
+      email: formData.value.email?.trim() || null,
       lead_source: formData.value.lead_source,
     }
 

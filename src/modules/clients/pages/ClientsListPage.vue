@@ -110,7 +110,7 @@
             </v-avatar>
             <div>
               <div class="font-weight-medium">{{ item.name }}</div>
-              <div class="text-caption text-medium-emphasis">{{ item.email }}</div>
+              <div v-if="item.email" class="text-caption text-medium-emphasis">{{ item.email }}</div>
             </div>
           </div>
         </template>

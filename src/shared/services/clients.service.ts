@@ -33,7 +33,7 @@ export interface Client {
   id: string
   name: string
   phone: string
-  email: string
+  email: string | null
   lead_source: LeadSource
   current_status: ClientStatus | null
   current_lead_score: number | null
@@ -58,7 +58,7 @@ export interface Client {
 export interface ClientCreate {
   name: string
   phone: string
-  email: string
+  email: string | null
   lead_source: LeadSource
   current_status?: ClientStatus | null
   current_lead_score?: number | null
