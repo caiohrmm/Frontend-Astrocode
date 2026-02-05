@@ -589,7 +589,7 @@ const goBack = () => {
 }
 
 const goToEdit = () => {
-  router.push({ name: 'property-edit', params: { id: route.params.id } })
+  router.push({ name: 'properties-edit', params: { id: route.params.id } })
 }
 
 const formatCurrency = (value: string | number | null | undefined): string => {
