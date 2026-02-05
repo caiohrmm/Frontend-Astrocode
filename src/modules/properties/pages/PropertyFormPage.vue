@@ -31,11 +31,12 @@
     </v-card>
 
     <!-- Form with Tabs -->
-    <v-card elevation="2">
+    <v-card elevation="2" style="overflow: visible !important;">
       <v-tabs
         v-model="activeTab"
         bg-color="primary"
         slider-color="white"
+        style="overflow: visible !important;"
       >
         <v-tab value="general">
           <v-icon start>mdi-information</v-icon>
@@ -71,9 +72,9 @@
         </v-tab>
       </v-tabs>
 
-      <v-card-text class="pa-6">
-        <v-form ref="formRef" v-model="isFormValid">
-          <v-window v-model="activeTab">
+      <v-card-text class="pa-6" style="overflow: visible !important; padding-top: 32px !important;">
+        <v-form ref="formRef" v-model="isFormValid" style="overflow: visible !important;">
+          <v-window v-model="activeTab" style="overflow: visible !important;">
             <!-- Tab: Geral -->
             <v-window-item value="general">
               <v-row>
@@ -524,7 +525,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { VForm } from 'vuetify/components'
-import { propertiesService, type Property, type PropertyCreate, type PropertyUpdate, type PropertyType, type BusinessType, type PropertyStatus } from '@/shared/services/properties.service'
+import { propertiesService, type Property, type PropertyCreate, type PropertyUpdate } from '@/shared/services/properties.service'
 import { usersService, type User } from '@/shared/services/users.service'
 
 const route = useRoute()
@@ -774,5 +775,108 @@ onMounted(async () => {
 <style scoped>
 :deep(.v-window-item) {
   transition: none;
+}
+
+/* CRITICAL: Remove all overflow hidden from parent containers */
+:deep(.v-card),
+:deep(.v-card-text),
+:deep(.v-card-body),
+:deep(.v-window),
+:deep(.v-window-item),
+:deep(.v-row),
+:deep(.v-col),
+:deep(.v-form),
+:deep(.v-tabs),
+:deep(.v-tabs-window) {
+  overflow: visible !important;
+}
+
+/* Add significant padding to columns to accommodate floating labels */
+:deep(.v-col) {
+  padding-top: 28px !important;
+  padding-bottom: 28px !important;
+  overflow: visible !important;
+  min-height: 90px !important;
+}
+
+/* Ensure card text has extra space at top */
+:deep(.v-card-text) {
+  padding-top: 28px !important;
+  overflow: visible !important;
+}
+
+/* Fix label - ensure it's never clipped */
+:deep(.v-field--variant-outlined .v-label) {
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+  max-width: none !important;
+  pointer-events: none;
+}
+
+/* When label is floating - ensure background covers the border line */
+:deep(.v-field--focused.v-field--variant-outlined .v-label),
+:deep(.v-field--active.v-field--variant-outlined .v-label),
+:deep(.v-field--dirty.v-field--variant-outlined .v-label) {
+  transform: translateY(-12px) scale(0.75) !important;
+  background-color: rgb(var(--v-theme-surface)) !important;
+  padding: 0px 10px !important;
+  margin: 0px -10px !important;
+  max-width: none !important;
+  width: auto !important;
+  min-width: fit-content !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+  left: 0 !important;
+  right: auto !important;
+  z-index: 10 !important;
+  position: absolute !important;
+  top: 0 !important;
+}
+
+/* Ensure field container has space and doesn't clip */
+:deep(.v-field--variant-outlined) {
+  padding-top: 0 !important;
+  overflow: visible !important;
+  min-height: 56px;
+}
+
+:deep(.v-field--variant-outlined .v-field__overlay) {
+  padding-top: 0 !important;
+  overflow: visible !important;
+}
+
+/* Ensure field input area doesn't clip labels */
+:deep(.v-field__input) {
+  overflow: visible !important;
+}
+
+:deep(.v-field__input .v-field__input__control) {
+  overflow: visible !important;
+}
+
+/* Fix for select and autocomplete specifically */
+:deep(.v-select),
+:deep(.v-autocomplete),
+:deep(.v-text-field),
+:deep(.v-textarea) {
+  overflow: visible !important;
+}
+
+:deep(.v-select .v-field),
+:deep(.v-autocomplete .v-field),
+:deep(.v-text-field .v-field),
+:deep(.v-textarea .v-field) {
+  overflow: visible !important;
+}
+
+/* Ensure the field wrapper doesn't clip */
+:deep(.v-input) {
+  overflow: visible !important;
+}
+
+:deep(.v-input__details) {
+  overflow: visible !important;
 }
 </style>
