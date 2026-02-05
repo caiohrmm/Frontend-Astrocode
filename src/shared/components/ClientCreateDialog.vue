@@ -51,6 +51,7 @@
             <v-col cols="12" md="6">
               <v-text-field
                 v-model="phoneFormatted"
+                @input="handlePhoneInput"
                 @blur="formData.phone = parsePhone(phoneFormatted)"
                 label="Telefone *"
                 variant="outlined"
@@ -127,7 +128,7 @@ import {
   type ClientUpdate,
   type LeadSource,
 } from '@/shared/services/clients.service'
-import { formatPhone, parsePhone } from '@/shared/utils/masks'
+import { formatPhone, formatPhoneInput, parsePhone } from '@/shared/utils/masks'
 
 /**
  * Props
@@ -240,6 +241,13 @@ const loadClient = () => {
     lead_source: props.client.lead_source,
   }
   phoneFormatted.value = formatPhone(props.client.phone)
+}
+
+const handlePhoneInput = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const value = target.value
+  // Apply mask while typing
+  phoneFormatted.value = formatPhoneInput(value)
 }
 
 const handleClose = () => {

@@ -79,6 +79,32 @@ export function formatPhone(value: string | null | undefined): string {
 }
 
 /**
+ * Format phone number while typing (applies mask in real-time)
+ * @param value - Phone number string being typed
+ * @returns Formatted string with mask applied
+ */
+export function formatPhoneInput(value: string): string {
+  if (!value) return ''
+  
+  // Remove all non-digits
+  const digits = value.replace(/\D/g, '')
+  
+  // Apply mask based on length
+  if (digits.length <= 2) {
+    return digits
+  } else if (digits.length <= 6) {
+    // (11) 3456
+    return `(${digits.slice(0, 2)}) ${digits.slice(2)}`
+  } else if (digits.length <= 10) {
+    // (11) 3456-7890 (landline)
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`
+  } else {
+    // (11) 98765-4321 (mobile)
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`
+  }
+}
+
+/**
  * Parse phone number to digits only (or return original if it's not a phone)
  * @param value - Formatted phone string
  * @returns Digits only string or original if it's not a phone (e.g., email)
