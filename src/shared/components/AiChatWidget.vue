@@ -223,12 +223,17 @@
                     </v-icon>
                     <div class="message-content flex-grow-1">
                       <div
-                        class="text-body-2"
-                        :class="message.role === 'user' ? 'text-white' : 'text-grey-darken-1'"
+                        v-if="message.role === 'user'"
+                        class="text-body-2 text-white"
                         style="white-space: pre-wrap; word-wrap: break-word;"
                       >
                         {{ message.content }}
                       </div>
+                      <div
+                        v-else
+                        class="text-body-2 text-grey-darken-1 markdown-content"
+                        v-html="formatMarkdown(message.content)"
+                      ></div>
                       <div
                         v-if="message.timestamp"
                         class="text-caption mt-1"
@@ -431,6 +436,53 @@ const formatTime = (date: Date): string => {
     hour: '2-digit',
     minute: '2-digit',
   }).format(date)
+}
+
+const formatMarkdown = (text: string): string => {
+  if (!text) return ''
+  
+  // Simple markdown parser for common formatting
+  let html = text
+  
+  // Headers
+  html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>')
+  html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>')
+  html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>')
+  
+  // Bold
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+  html = html.replace(/__(.+?)__/g, '<strong>$1</strong>')
+  
+  // Italic
+  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>')
+  html = html.replace(/_(.+?)_/g, '<em>$1</em>')
+  
+  // Inline code
+  html = html.replace(/`([^`]+)`/g, '<code class="markdown-code">$1</code>')
+  
+  // Code blocks
+  html = html.replace(/```([\s\S]*?)```/g, '<pre class="markdown-pre"><code>$1</code></pre>')
+  
+  // Links
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+  
+  // Lists - unordered
+  html = html.replace(/^[\*\-] (.+)$/gim, '<li>$1</li>')
+  html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+  
+  // Lists - ordered
+  html = html.replace(/^\d+\. (.+)$/gim, '<li>$1</li>')
+  
+  // Line breaks
+  html = html.replace(/\n\n/g, '</p><p>')
+  html = html.replace(/\n/g, '<br>')
+  
+  // Wrap in paragraph if not already wrapped
+  if (!html.startsWith('<')) {
+    html = '<p>' + html + '</p>'
+  }
+  
+  return html
 }
 
 const scrollToBottom = () => {
@@ -681,6 +733,86 @@ onMounted(() => {
 
 .context-inactive {
   opacity: 0.7;
+}
+
+/* Markdown styling */
+.markdown-content {
+  line-height: 1.6;
+}
+
+.markdown-content :deep(h1) {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin: 1rem 0 0.5rem 0;
+  color: inherit;
+}
+
+.markdown-content :deep(h2) {
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin: 0.875rem 0 0.5rem 0;
+  color: inherit;
+}
+
+.markdown-content :deep(h3) {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0.75rem 0 0.5rem 0;
+  color: inherit;
+}
+
+.markdown-content :deep(p) {
+  margin: 0.5rem 0;
+}
+
+.markdown-content :deep(ul),
+.markdown-content :deep(ol) {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.markdown-content :deep(li) {
+  margin: 0.25rem 0;
+}
+
+.markdown-content :deep(strong) {
+  font-weight: 600;
+  color: inherit;
+}
+
+.markdown-content :deep(em) {
+  font-style: italic;
+}
+
+.markdown-content :deep(code) {
+  background-color: rgba(0, 0, 0, 0.1);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+.markdown-content :deep(pre) {
+  background-color: rgba(0, 0, 0, 0.1);
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 0.75rem 0;
+}
+
+.markdown-content :deep(pre code) {
+  background-color: transparent;
+  padding: 0;
+}
+
+.markdown-content :deep(a) {
+  color: inherit;
+  text-decoration: underline;
+  opacity: 0.9;
+}
+
+.markdown-content :deep(a:hover) {
+  opacity: 1;
 }
 </style>
 
