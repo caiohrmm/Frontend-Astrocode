@@ -37,9 +37,16 @@ export class ApiClient {
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`
     
+    // Check if body is FormData - if so, don't set Content-Type (browser will set it with boundary)
+    const isFormData = options.body instanceof FormData
+    
     const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-      ...options.headers,
+      ...(options.headers as HeadersInit),
+    }
+    
+    // Only set Content-Type for non-FormData requests
+    if (!isFormData && !headers['Content-Type']) {
+      headers['Content-Type'] = 'application/json'
     }
 
     // Add authorization header if token exists
@@ -68,7 +75,25 @@ export class ApiClient {
 
       if (!response.ok) {
         const error: ApiError = data
-        throw new Error(error.detail || `HTTP error! status: ${response.status}`)
+        // Create a more detailed error message
+        // FastAPI 422 errors may have a different structure
+        let errorMessage = error.detail || `HTTP error! status: ${response.status}`
+        
+        // Handle FastAPI validation errors (422)
+        if (response.status === 422 && Array.isArray(data.detail)) {
+          const validationErrors = data.detail.map((err: any) => {
+            return `${err.loc?.join('.')}: ${err.msg}`
+          }).join(', ')
+          errorMessage = `Erro de validação: ${validationErrors}`
+        }
+        
+        console.error('API Error:', {
+          status: response.status,
+          statusText: response.statusText,
+          detail: error.detail,
+          data: data
+        })
+        throw new Error(errorMessage)
       }
 
       return data as T
@@ -88,12 +113,20 @@ export class ApiClient {
     // Check if data is FormData - if so, don't stringify and don't set Content-Type
     const isFormData = data instanceof FormData
     
-    const headers: HeadersInit = {
-      ...(options?.headers as HeadersInit),
-    }
+    // Prepare headers - explicitly exclude Content-Type for FormData
+    const headers: HeadersInit = { ...(options?.headers as HeadersInit) }
     
     // Only set Content-Type for JSON, not for FormData
-    if (!isFormData && !headers['Content-Type']) {
+    // For FormData, browser will set Content-Type automatically with boundary
+    if (isFormData) {
+      // Remove Content-Type if it exists (browser will set it)
+      if ('Content-Type' in headers) {
+        delete (headers as any)['Content-Type']
+      }
+      if ('content-type' in headers) {
+        delete (headers as any)['content-type']
+      }
+    } else if (!headers['Content-Type']) {
       headers['Content-Type'] = 'application/json'
     }
     
