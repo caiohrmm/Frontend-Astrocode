@@ -59,7 +59,7 @@
             color="primary"
             prepend-icon="mdi-pencil"
             class="ml-4"
-            @click="showEditDialog = true"
+            @click="handleEditClick"
           >
             Editar
           </v-btn>
@@ -830,6 +830,15 @@ const getLeadScoreMessage = (score: number): string => {
   if (score >= 60) return 'Bom potencial de conversão. Cliente qualificado.'
   if (score >= 40) return 'Potencial moderado. Requer mais qualificação.'
   return 'Baixo potencial. Necessita mais informações e qualificação.'
+}
+
+const handleEditClick = () => {
+  if (!client.value) {
+    console.error('Client is null, cannot edit')
+    return
+  }
+  console.log('Opening edit dialog for client:', client.value.id)
+  showEditDialog.value = true
 }
 
 const handleClientSaved = async (updatedClient: Client) => {
