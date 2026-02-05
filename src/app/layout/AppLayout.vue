@@ -142,6 +142,13 @@
           @click="drawer = false"
         ></v-list-item>
         <v-list-item
+          prepend-icon="mdi-account-multiple"
+          title="Clientes"
+          value="clients"
+          :to="{ name: 'clients' }"
+          @click="drawer = false"
+        ></v-list-item>
+        <v-list-item
           v-if="authStore.hasRole('gestor')"
           prepend-icon="mdi-account-group"
           title="Usuários"
