@@ -17,11 +17,12 @@
     </v-btn>
 
     <!-- Chat Dialog - Fixed Position -->
-    <v-card
-      v-if="isOpen"
-      class="chat-dialog"
-      elevation="8"
-    >
+    <transition name="chat-slide">
+      <v-card
+        v-if="isOpen"
+        class="chat-dialog"
+        elevation="8"
+      >
         <!-- Header -->
         <v-card-title class="d-flex align-center justify-space-between bg-primary text-white">
           <div class="d-flex align-center">
@@ -303,7 +304,8 @@
         >
           {{ error }}
         </v-alert>
-    </v-card>
+      </v-card>
+    </transition>
   </div>
 </template>
 
@@ -646,6 +648,31 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+}
+
+/* Chat slide animation */
+.chat-slide-enter-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.chat-slide-leave-active {
+  transition: all 0.25s cubic-bezier(0.4, 0, 1, 1);
+}
+
+.chat-slide-enter-from {
+  opacity: 0;
+  transform: translateY(20px) scale(0.95);
+}
+
+.chat-slide-leave-to {
+  opacity: 0;
+  transform: translateY(20px) scale(0.95);
+}
+
+.chat-slide-enter-to,
+.chat-slide-leave-from {
+  opacity: 1;
+  transform: translateY(0) scale(1);
 }
 
 .context-active {
