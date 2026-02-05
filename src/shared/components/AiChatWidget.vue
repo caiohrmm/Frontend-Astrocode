@@ -16,14 +16,12 @@
       </v-tooltip>
     </v-btn>
 
-    <!-- Chat Dialog -->
-    <v-dialog
-      v-model="isOpen"
-      max-width="500"
-      persistent
-      scrollable
+    <!-- Chat Dialog - Fixed Position -->
+    <v-card
+      v-if="isOpen"
+      class="chat-dialog"
+      elevation="8"
     >
-      <v-card class="chat-dialog">
         <!-- Header -->
         <v-card-title class="d-flex align-center justify-space-between bg-primary text-white">
           <div class="d-flex align-center">
@@ -66,7 +64,7 @@
           v-if="availableContext && contextDescription && useContext"
           variant="tonal"
           color="info"
-          class="ma-3"
+          class="mx-3 mt-3 mb-2"
         >
           <v-card-text class="pa-3">
             <div class="d-flex align-center justify-space-between">
@@ -100,7 +98,7 @@
           v-else-if="availableContext && contextDescription && !useContext"
           variant="outlined"
           color="warning"
-          class="ma-3"
+          class="mx-3 mt-3 mb-2"
         >
           <v-card-text class="pa-3">
             <div class="d-flex align-center justify-space-between">
@@ -305,8 +303,7 @@
         >
           {{ error }}
         </v-alert>
-      </v-card>
-    </v-dialog>
+    </v-card>
   </div>
 </template>
 
@@ -546,15 +543,62 @@ onMounted(() => {
 }
 
 .chat-dialog {
-  height: 600px;
+  position: fixed !important;
+  bottom: 0px !important;
+  right: 24px !important;
+  width: 500px !important;
+  max-width: calc(100vw - 48px) !important;
+  height: calc(100vh - 150px) !important;
+  max-height: calc(100vh - 150px) !important;
   display: flex;
   flex-direction: column;
+  margin: 0 !important;
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+  z-index: 1001 !important;
+  overflow: hidden;
+}
+
+/* Ensure card sections don't get cut off */
+.chat-dialog :deep(.v-card-title) {
+  flex-shrink: 0;
+  min-height: 64px;
+}
+
+.chat-dialog :deep(.v-card-actions) {
+  flex-shrink: 0;
+}
+
+/* Ensure card sections don't get cut off */
+.chat-dialog :deep(.v-card-title) {
+  flex-shrink: 0;
+  min-height: 64px;
+}
+
+.chat-dialog :deep(.v-card-actions) {
+  flex-shrink: 0;
+}
+
+.chat-dialog :deep(.v-card-text.messages-container) {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  flex: 1 !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.chat-dialog :deep(.v-card-text) {
+  overflow: visible;
 }
 
 .messages-container {
   flex: 1;
   overflow-y: auto;
-  max-height: 400px;
+  overflow-x: hidden;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .messages-list {
