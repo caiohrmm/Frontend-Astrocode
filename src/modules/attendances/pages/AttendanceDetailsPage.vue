@@ -53,16 +53,37 @@
               {{ getChannelLabel(attendance.channel) }}
             </v-chip>
           </div>
-          <!-- Complete Button -->
-          <v-btn
-            v-if="attendance.status !== 'COMPLETED'"
-            color="success"
-            prepend-icon="mdi-check-circle"
-            @click="handleCompleteAttendance"
-            :loading="isCompleting"
-          >
-            Marcar como Concluído
-          </v-btn>
+          <!-- Action Buttons -->
+          <div class="d-flex ga-2">
+            <!-- Complete Button -->
+            <v-btn
+              v-if="attendance.status !== 'COMPLETED'"
+              color="success"
+              prepend-icon="mdi-check-circle"
+              @click="handleCompleteAttendance"
+              :loading="isCompleting"
+            >
+              Marcar como Concluído
+            </v-btn>
+            <!-- Edit Button -->
+            <v-btn
+              color="primary"
+              prepend-icon="mdi-pencil"
+              @click="handleEdit"
+              :loading="isDeleting"
+            >
+              Editar
+            </v-btn>
+            <!-- Delete Button -->
+            <v-btn
+              color="error"
+              prepend-icon="mdi-delete"
+              @click="handleDelete"
+              :loading="isDeleting"
+            >
+              Excluir
+            </v-btn>
+          </div>
         </v-card-title>
 
         <!-- Duration -->
@@ -574,6 +595,7 @@ const router = useRouter()
 const isLoading = ref(true)
 const isLoadingAISummary = ref(false)
 const isCompleting = ref(false)
+const isDeleting = ref(false)
 const error = ref<string | null>(null)
 const attendance = ref<Attendance | null>(null)
 const client = ref<Client | null>(null)
@@ -1008,6 +1030,40 @@ const formatCurrency = (value: number): string => {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value)
+}
+
+// Edit attendance
+const handleEdit = () => {
+  if (attendance.value) {
+    router.push({ name: 'attendances-edit', params: { id: attendance.value.id } })
+  }
+}
+
+// Delete attendance
+const handleDelete = async () => {
+  if (!attendance.value) return
+
+  // Confirm deletion
+  const confirmed = confirm(
+    'Tem certeza que deseja excluir este atendimento?\n\n' +
+    'Todos os resumos e análises da IA relacionados serão excluídos permanentemente.\n\n' +
+    'Esta ação não pode ser desfeita.'
+  )
+
+  if (!confirmed) return
+
+  isDeleting.value = true
+  try {
+    await attendancesService.deleteAttendance(attendance.value.id)
+    // Navigate back to list
+    router.push({ name: 'attendances' })
+  } catch (err: any) {
+    console.error('Error deleting attendance:', err)
+    error.value = err.response?.data?.detail || err.message || 'Erro ao excluir atendimento'
+    alert(error.value)
+  } finally {
+    isDeleting.value = false
+  }
 }
 
 onMounted(() => {

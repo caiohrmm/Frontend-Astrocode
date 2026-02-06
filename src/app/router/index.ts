@@ -121,6 +121,15 @@ const routes: RouteRecordRaw[] = [
       requiresAuth: true,
     },
   },
+  {
+    path: '/attendances/:id/edit',
+    name: 'attendances-edit',
+    component: () => import('@/modules/attendances/pages/AttendanceCreatePage.vue'),
+    meta: {
+      layout: 'app',
+      requiresAuth: true,
+    },
+  },
 ]
 
 const router = createRouter({

@@ -9,7 +9,7 @@
         <v-icon class="mr-3" color="primary" size="32">
           mdi-phone-plus
         </v-icon>
-        <span class="text-h5">Novo Atendimento</span>
+        <span class="text-h5">{{ isEditMode ? 'Editar Atendimento' : 'Novo Atendimento' }}</span>
         <v-spacer></v-spacer>
         <v-btn color="primary" :loading="isSaving" :disabled="isSaving || !isFormValid" prepend-icon="mdi-content-save"
           @click="handleSave">
@@ -109,7 +109,8 @@
             <v-col cols="12" md="6">
               <v-text-field v-model="formData.ended_at" label="Data/Hora de Término (Opcional)" type="datetime-local"
                 variant="outlined" prepend-inner-icon="mdi-calendar-check"
-                hint="Quando o atendimento terminou (deixe em branco se ainda está em andamento)"
+                :rules="[rules.dateValidation]"
+                hint="Quando o atendimento terminou (deve ser posterior à data de início)"
                 persistent-hint></v-text-field>
             </v-col>
 
@@ -143,11 +144,12 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import type { VForm } from 'vuetify/components'
 import {
   attendancesService,
   type AttendanceCreate,
+  type AttendanceUpdate,
   type AttendanceChannel,
   type AttendanceStatus,
 } from '@/shared/services/attendances.service'
@@ -157,6 +159,7 @@ import { propertiesService, type Property } from '@/shared/services/properties.s
 import { formatPhone } from '@/shared/utils/masks'
 
 const router = useRouter()
+const route = useRoute()
 
 // State
 const formRef = ref<VForm | null>(null)
@@ -165,10 +168,26 @@ const isSaving = ref(false)
 const isLoadingClients = ref(false)
 const isLoadingAgents = ref(false)
 const isLoadingProperties = ref(false)
+const isLoadingAttendance = ref(false)
 
 const clients = ref<Client[]>([])
 const agents = ref<User[]>([])
 const properties = ref<Property[]>([])
+
+// Check if in edit mode
+const isEditMode = computed(() => !!route.params.id)
+
+// Helper to convert ISO datetime to local datetime-local format
+const convertISOToLocalDateTime = (isoString: string | null): string | null => {
+  if (!isoString) return null
+  const date = new Date(isoString)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  return `${year}-${month}-${day}T${hours}:${minutes}`
+}
 
 const formData = ref<AttendanceCreate>({
   client_id: '',
@@ -280,6 +299,13 @@ const rules = {
     if (!value) return 'Campo obrigatório'
     return value.trim().length >= 10 || 'Conteúdo deve ter pelo menos 10 caracteres'
   },
+  dateValidation: (value: string) => {
+    if (!value) return true // Optional field
+    if (!formData.value.started_at) return true // Can't validate if started_at is not set
+    const started = new Date(formData.value.started_at)
+    const ended = new Date(value)
+    return ended >= started || 'Data de término deve ser posterior à data de início'
+  },
 }
 
 // Methods
@@ -349,6 +375,37 @@ const searchProperties = async (search: string) => {
   // For now, just load all properties
 }
 
+// Load attendance for editing
+const loadAttendance = async () => {
+  if (!isEditMode.value || !route.params.id) return
+
+  isLoadingAttendance.value = true
+  try {
+    const attendance = await attendancesService.getAttendanceById(route.params.id as string)
+    
+    // Populate form with attendance data
+    formData.value = {
+      client_id: attendance.client_id,
+      agent_id: attendance.agent_id,
+      property_id: attendance.property_id || null,
+      channel: attendance.channel,
+      started_at: convertISOToLocalDateTime(attendance.started_at) || '',
+      ended_at: convertISOToLocalDateTime(attendance.ended_at),
+      raw_content: attendance.raw_content,
+      status: attendance.status,
+      scheduled_visit_at: convertISOToLocalDateTime(attendance.scheduled_visit_at),
+    }
+  } catch (error: any) {
+    console.error('Error loading attendance:', error)
+    const errorMessage =
+      error?.response?.data?.detail || error?.message || 'Erro ao carregar atendimento'
+    alert(`Erro ao carregar atendimento: ${errorMessage}`)
+    router.push({ name: 'attendances' })
+  } finally {
+    isLoadingAttendance.value = false
+  }
+}
+
 const handleSave = async () => {
   if (!formRef.value) return
 
@@ -360,27 +417,51 @@ const handleSave = async () => {
   isSaving.value = true
 
   try {
-    // Convert datetime-local format to ISO string
-    const attendanceData: AttendanceCreate = {
-      client_id: formData.value.client_id,
-      agent_id: formData.value.agent_id,
-      property_id: formData.value.property_id || null,
-      channel: formData.value.channel,
-      started_at: convertLocalDateTimeToISO(formData.value.started_at),
-      ended_at: formData.value.ended_at
-        ? convertLocalDateTimeToISO(formData.value.ended_at)
-        : null,
-      raw_content: formData.value.raw_content.trim(),
-      status: formData.value.status,
-      scheduled_visit_at: formData.value.scheduled_visit_at
-        ? convertLocalDateTimeToISO(formData.value.scheduled_visit_at)
-        : null,
+    if (isEditMode.value && route.params.id) {
+      // Update existing attendance
+      const updateData: AttendanceUpdate = {
+        client_id: formData.value.client_id,
+        agent_id: formData.value.agent_id,
+        property_id: formData.value.property_id || null,
+        channel: formData.value.channel,
+        started_at: convertLocalDateTimeToISO(formData.value.started_at),
+        ended_at: formData.value.ended_at
+          ? convertLocalDateTimeToISO(formData.value.ended_at)
+          : null,
+        raw_content: formData.value.raw_content.trim(),
+        status: formData.value.status,
+        scheduled_visit_at: formData.value.scheduled_visit_at
+          ? convertLocalDateTimeToISO(formData.value.scheduled_visit_at)
+          : null,
+      }
+
+      await attendancesService.updateAttendance(route.params.id as string, updateData)
+      
+      // Redirect to details page
+      router.push({ name: 'attendances-details', params: { id: route.params.id } })
+    } else {
+      // Create new attendance
+      const attendanceData: AttendanceCreate = {
+        client_id: formData.value.client_id,
+        agent_id: formData.value.agent_id,
+        property_id: formData.value.property_id || null,
+        channel: formData.value.channel,
+        started_at: convertLocalDateTimeToISO(formData.value.started_at),
+        ended_at: formData.value.ended_at
+          ? convertLocalDateTimeToISO(formData.value.ended_at)
+          : null,
+        raw_content: formData.value.raw_content.trim(),
+        status: formData.value.status,
+        scheduled_visit_at: formData.value.scheduled_visit_at
+          ? convertLocalDateTimeToISO(formData.value.scheduled_visit_at)
+          : null,
+      }
+
+      const created = await attendancesService.createAttendance(attendanceData)
+      
+      // Redirect to details page
+      router.push({ name: 'attendances-details', params: { id: created.id } })
     }
-
-    await attendancesService.createAttendance(attendanceData)
-
-    // Redirect to list
-    router.push({ name: 'attendances' })
     // TODO: Show success notification
   } catch (error: any) {
     console.error('Error saving attendance:', error)
@@ -416,10 +497,17 @@ const goBack = () => {
   router.push({ name: 'attendances' })
 }
 
-onMounted(() => {
-  loadClients()
-  loadAgents()
-  loadProperties()
+onMounted(async () => {
+  await Promise.all([
+    loadClients(),
+    loadAgents(),
+    loadProperties(),
+  ])
+  
+  // Load attendance if in edit mode
+  if (isEditMode.value) {
+    await loadAttendance()
+  }
 })
 </script>
 

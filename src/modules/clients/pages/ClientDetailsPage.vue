@@ -260,105 +260,397 @@
 
             <!-- Tab 3: Insights da IA -->
             <v-window-item value="insights">
-              <v-row>
-                <!-- Resumo do Cliente -->
-                <v-col cols="12">
-                  <v-card variant="outlined" class="mb-4">
-                    <v-card-title class="d-flex align-center">
-                      <v-icon class="mr-2" color="primary">mdi-account-circle</v-icon>
-                      Resumo do Cliente
-                    </v-card-title>
-                    <v-card-text>
-                      <div v-if="client.summary_notes" class="text-body-1" v-html="formatMarkdown(client.summary_notes)"></div>
-                      <v-alert v-else type="info" variant="tonal">
-                        Nenhum resumo disponível. O resumo será gerado automaticamente pela IA com base nos atendimentos.
-                      </v-alert>
-                    </v-card-text>
-                  </v-card>
-                </v-col>
+              <!-- Loading State -->
+              <div v-if="isLoadingAIInsights" class="d-flex justify-center pa-8">
+                <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
+              </div>
 
-                <!-- Perfil de Interesse -->
-                <v-col cols="12" md="6">
-                  <v-card variant="outlined">
-                    <v-card-title class="d-flex align-center">
-                      <v-icon class="mr-2" color="primary">mdi-heart</v-icon>
-                      Perfil de Interesse
-                    </v-card-title>
-                    <v-card-text>
-                      <div v-if="hasInterestProfile" class="d-flex flex-column ga-2">
-                        <div v-if="client.current_interest_type">
-                          <strong>Tipo:</strong> {{ getInterestTypeLabel(client.current_interest_type) }}
-                        </div>
-                        <div v-if="client.current_property_type">
-                          <strong>Imóvel:</strong> {{ getPropertyTypeLabel(client.current_property_type) }}
-                        </div>
-                        <div v-if="client.current_city_interest">
-                          <strong>Cidade:</strong> {{ client.current_city_interest }}
-                        </div>
-                        <div v-if="client.current_budget_min || client.current_budget_max">
-                          <strong>Orçamento:</strong>
-                          {{ formatBudgetRange() }}
-                        </div>
-                      </div>
-                      <v-alert v-else type="info" variant="tonal">
-                        Perfil de interesse ainda não definido.
-                      </v-alert>
-                    </v-card-text>
-                  </v-card>
-                </v-col>
+              <!-- Content -->
+              <div v-else>
+                <v-row>
+                  <!-- Resumo do Cliente -->
+                  <v-col cols="12">
+                    <v-card variant="outlined" class="mb-4">
+                      <v-card-title class="d-flex align-center">
+                        <v-icon class="mr-2" color="primary">mdi-account-circle</v-icon>
+                        Resumo do Cliente
+                        <v-spacer></v-spacer>
+                        <v-chip
+                          v-if="aiSummaries.length > 0"
+                          color="primary"
+                          variant="flat"
+                          size="small"
+                        >
+                          {{ aiSummaries.length }} atendimento(s) analisado(s)
+                        </v-chip>
+                      </v-card-title>
+                      <v-card-text>
+                        <div v-if="aggregatedInsights.clientSummary" class="text-body-1 mb-4" v-html="formatMarkdown(aggregatedInsights.clientSummary)"></div>
+                        <div v-else-if="client.summary_notes" class="text-body-1" v-html="formatMarkdown(client.summary_notes)"></div>
+                        <v-alert v-else type="info" variant="tonal">
+                          Nenhum resumo disponível. O resumo será gerado automaticamente pela IA com base nos atendimentos.
+                        </v-alert>
+                      </v-card-text>
+                    </v-card>
+                  </v-col>
 
-                <!-- Potencial de Conversão -->
-                <v-col cols="12" md="6">
-                  <v-card variant="outlined">
-                    <v-card-title class="d-flex align-center">
-                      <v-icon class="mr-2" color="primary">mdi-chart-line</v-icon>
-                      Potencial de Conversão
-                    </v-card-title>
-                    <v-card-text>
-                      <div v-if="client.current_lead_score !== null" class="d-flex flex-column ga-3">
-                        <div>
-                          <div class="text-caption text-medium-emphasis mb-2">Lead Score</div>
-                          <v-progress-linear
-                            :model-value="client.current_lead_score"
-                            :color="getLeadScoreColor(client.current_lead_score)"
-                            height="32"
-                            rounded
-                          ></v-progress-linear>
-                          <div class="text-center mt-2">
-                            <span class="text-h6 font-weight-bold">
-                              {{ client.current_lead_score }}/100
-                            </span>
+                  <!-- Análise de Sentimento -->
+                  <v-col cols="12" md="6">
+                    <v-card variant="outlined" class="mb-4">
+                      <v-card-title class="d-flex align-center">
+                        <v-icon class="mr-2" color="primary">mdi-emoticon</v-icon>
+                        Análise de Sentimento
+                      </v-card-title>
+                      <v-card-text>
+                        <div v-if="aggregatedInsights.sentimentAnalysis" class="d-flex flex-column ga-3">
+                          <div class="text-center">
+                            <v-icon
+                              :color="getSentimentColor(aggregatedInsights.sentimentAnalysis.dominant)"
+                              size="64"
+                              class="mb-2"
+                            >
+                              {{ getSentimentIcon(aggregatedInsights.sentimentAnalysis.dominant) }}
+                            </v-icon>
+                            <div class="text-h6 font-weight-bold mb-1">
+                              {{ getSentimentLabel(aggregatedInsights.sentimentAnalysis.dominant) }}
+                            </div>
+                            <div class="text-caption text-medium-emphasis">
+                              Sentimento predominante
+                            </div>
+                          </div>
+                          <v-divider></v-divider>
+                          <div class="d-flex flex-column ga-2">
+                            <div
+                              v-for="(count, sentiment) in aggregatedInsights.sentimentAnalysis.distribution"
+                              :key="sentiment"
+                              class="d-flex align-center justify-space-between"
+                            >
+                              <div class="d-flex align-center ga-2">
+                                <v-icon
+                                  :color="getSentimentColor(sentiment)"
+                                  size="20"
+                                >
+                                  {{ getSentimentIcon(sentiment) }}
+                                </v-icon>
+                                <span class="text-body-2">{{ getSentimentLabel(sentiment) }}</span>
+                              </div>
+                              <v-chip size="small" variant="flat">
+                                {{ count }}
+                              </v-chip>
+                            </div>
                           </div>
                         </div>
-                        <v-alert
-                          :type="getLeadScoreAlertType(client.current_lead_score)"
-                          variant="tonal"
-                        >
-                          {{ getLeadScoreMessage(client.current_lead_score) }}
+                        <v-alert v-else type="info" variant="tonal">
+                          Análise de sentimento será gerada após os primeiros atendimentos serem processados.
                         </v-alert>
-                      </div>
-                      <v-alert v-else type="info" variant="tonal">
-                        Lead score ainda não calculado.
-                      </v-alert>
-                    </v-card-text>
-                  </v-card>
-                </v-col>
+                      </v-card-text>
+                    </v-card>
+                  </v-col>
 
-                <!-- Sugestão de Próximos Passos -->
-                <v-col cols="12">
-                  <v-card variant="outlined">
-                    <v-card-title class="d-flex align-center">
-                      <v-icon class="mr-2" color="primary">mdi-lightbulb-on</v-icon>
-                      Sugestão de Próximos Passos
-                    </v-card-title>
-                    <v-card-text>
-                      <v-alert type="info" variant="tonal">
-                        As sugestões de próximos passos serão geradas automaticamente pela IA com base no histórico de atendimentos e perfil do cliente.
-                      </v-alert>
-                    </v-card-text>
-                  </v-card>
-                </v-col>
-              </v-row>
+                  <!-- Intenções Detectadas -->
+                  <v-col cols="12" md="6">
+                    <v-card variant="outlined" class="mb-4">
+                      <v-card-title class="d-flex align-center">
+                        <v-icon class="mr-2" color="primary">mdi-lightbulb-on</v-icon>
+                        Intenções Detectadas
+                      </v-card-title>
+                      <v-card-text>
+                        <div v-if="aggregatedInsights.intents && aggregatedInsights.intents.length > 0" class="d-flex flex-column ga-2">
+                          <v-chip
+                            v-for="intent in aggregatedInsights.intents"
+                            :key="intent.intent"
+                            :color="getIntentColor(intent.intent)"
+                            variant="flat"
+                            class="mb-1"
+                          >
+                            <v-icon start size="16">{{ getIntentIcon(intent.intent) }}</v-icon>
+                            {{ getIntentLabel(intent.intent) }}
+                            <v-chip
+                              size="x-small"
+                              variant="text"
+                              class="ml-2"
+                            >
+                              {{ intent.count }}x
+                            </v-chip>
+                          </v-chip>
+                        </div>
+                        <v-alert v-else type="info" variant="tonal">
+                          Intenções serão detectadas após os atendimentos serem processados pela IA.
+                        </v-alert>
+                      </v-card-text>
+                    </v-card>
+                  </v-col>
+
+                  <!-- Perfil de Interesse -->
+                  <v-col cols="12" md="6">
+                    <v-card variant="outlined" class="mb-4">
+                      <v-card-title class="d-flex align-center">
+                        <v-icon class="mr-2" color="primary">mdi-heart</v-icon>
+                        Perfil de Interesse
+                      </v-card-title>
+                      <v-card-text>
+                        <div v-if="hasInterestProfile" class="d-flex flex-column ga-3">
+                          <div v-if="client.current_interest_type" class="d-flex align-center ga-2">
+                            <v-icon color="primary">mdi-handshake</v-icon>
+                            <div>
+                              <div class="text-caption text-medium-emphasis">Tipo de Interesse</div>
+                              <div class="text-body-1 font-weight-medium">
+                                {{ getInterestTypeLabel(client.current_interest_type) }}
+                              </div>
+                            </div>
+                          </div>
+                          <div v-if="client.current_property_type" class="d-flex align-center ga-2">
+                            <v-icon color="primary">mdi-home-variant</v-icon>
+                            <div>
+                              <div class="text-caption text-medium-emphasis">Tipo de Imóvel</div>
+                              <div class="text-body-1 font-weight-medium">
+                                {{ getPropertyTypeLabel(client.current_property_type) }}
+                              </div>
+                            </div>
+                          </div>
+                          <div v-if="client.current_city_interest" class="d-flex align-center ga-2">
+                            <v-icon color="primary">mdi-map-marker</v-icon>
+                            <div>
+                              <div class="text-caption text-medium-emphasis">Cidade de Interesse</div>
+                              <div class="text-body-1 font-weight-medium">
+                                {{ client.current_city_interest }}
+                              </div>
+                            </div>
+                          </div>
+                          <div v-if="client.current_budget_min || client.current_budget_max" class="d-flex align-center ga-2">
+                            <v-icon color="primary">mdi-currency-usd</v-icon>
+                            <div>
+                              <div class="text-caption text-medium-emphasis">Orçamento</div>
+                              <div class="text-body-1 font-weight-medium">
+                                {{ formatBudgetRange() }}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <v-alert v-else type="info" variant="tonal">
+                          Perfil de interesse ainda não definido.
+                        </v-alert>
+                      </v-card-text>
+                    </v-card>
+                  </v-col>
+
+                  <!-- Potencial de Conversão -->
+                  <v-col cols="12" md="6">
+                    <v-card variant="outlined" class="mb-4">
+                      <v-card-title class="d-flex align-center">
+                        <v-icon class="mr-2" color="primary">mdi-chart-line</v-icon>
+                        Potencial de Conversão
+                      </v-card-title>
+                      <v-card-text>
+                        <div v-if="client.current_lead_score !== null" class="d-flex flex-column ga-3">
+                          <div>
+                            <div class="text-caption text-medium-emphasis mb-2">Lead Score</div>
+                            <v-progress-linear
+                              :model-value="client.current_lead_score"
+                              :color="getLeadScoreColor(client.current_lead_score)"
+                              height="32"
+                              rounded
+                            ></v-progress-linear>
+                            <div class="text-center mt-2">
+                              <span class="text-h6 font-weight-bold">
+                                {{ client.current_lead_score }}/100
+                              </span>
+                            </div>
+                          </div>
+                          <v-alert
+                            :type="getLeadScoreAlertType(client.current_lead_score)"
+                            variant="tonal"
+                          >
+                            {{ getLeadScoreMessage(client.current_lead_score) }}
+                          </v-alert>
+                          <div v-if="aggregatedInsights.averageLeadScore !== null" class="text-caption text-medium-emphasis">
+                            Score médio sugerido pela IA: {{ aggregatedInsights.averageLeadScore }}/100
+                          </div>
+                        </div>
+                        <v-alert v-else type="info" variant="tonal">
+                          Lead score ainda não calculado.
+                        </v-alert>
+                      </v-card-text>
+                    </v-card>
+                  </v-col>
+
+                  <!-- Propriedades Recomendadas -->
+                  <v-col cols="12" v-if="recommendedProperties.length > 0">
+                    <v-card variant="outlined" class="mb-4">
+                      <v-card-title class="d-flex align-center">
+                        <v-icon class="mr-2" color="success">mdi-home-heart</v-icon>
+                        Propriedades Recomendadas pela IA
+                        <v-spacer></v-spacer>
+                        <v-chip color="success" variant="flat" size="small">
+                          {{ recommendedProperties.length }} recomendada(s)
+                        </v-chip>
+                      </v-card-title>
+                      <v-card-text>
+                        <v-row dense>
+                          <v-col
+                            v-for="property in recommendedProperties"
+                            :key="property.id"
+                            cols="12"
+                            sm="6"
+                            md="4"
+                          >
+                            <v-card
+                              variant="outlined"
+                              class="h-100"
+                              @click="goToProperty(property.id)"
+                              style="cursor: pointer"
+                            >
+                              <v-card-text class="pa-3">
+                                <div class="d-flex align-center mb-2">
+                                  <v-avatar
+                                    v-if="property.main_image_url"
+                                    size="56"
+                                    class="mr-3"
+                                    rounded="lg"
+                                  >
+                                    <v-img
+                                      :src="property.main_image_url"
+                                      cover
+                                    ></v-img>
+                                  </v-avatar>
+                                  <v-avatar
+                                    v-else
+                                    color="primary"
+                                    size="56"
+                                    class="mr-3"
+                                    rounded="lg"
+                                  >
+                                    <v-icon color="white">mdi-home</v-icon>
+                                  </v-avatar>
+                                  <div class="flex-grow-1">
+                                    <div class="text-body-2 font-weight-medium mb-1">
+                                      {{ property.title }}
+                                    </div>
+                                    <div class="text-caption text-medium-emphasis">
+                                      {{ property.code }}
+                                    </div>
+                                  </div>
+                                </div>
+                                <v-chip
+                                  :color="getPropertyStatusColor(property.status)"
+                                  variant="flat"
+                                  size="x-small"
+                                  class="mb-2"
+                                >
+                                  {{ getPropertyStatusLabel(property.status) }}
+                                </v-chip>
+                                <div class="text-caption text-medium-emphasis">
+                                  <v-icon size="14" class="mr-1">mdi-map-marker</v-icon>
+                                  {{ property.city }}, {{ property.state }}
+                                </div>
+                              </v-card-text>
+                            </v-card>
+                          </v-col>
+                        </v-row>
+                      </v-card-text>
+                    </v-card>
+                  </v-col>
+
+                  <!-- Histórico de Insights -->
+                  <v-col cols="12" v-if="aiSummaries.length > 0">
+                    <v-card variant="outlined" class="mb-4">
+                      <v-card-title class="d-flex align-center">
+                        <v-icon class="mr-2" color="primary">mdi-history</v-icon>
+                        Histórico de Insights
+                      </v-card-title>
+                      <v-card-text>
+                        <v-timeline density="compact" side="end">
+                          <v-timeline-item
+                            v-for="summary in aiSummaries"
+                            :key="summary.id"
+                            :dot-color="getAIStatusColor(summary.status)"
+                            size="small"
+                          >
+                            <template #icon>
+                              <v-icon :color="getAIStatusColor(summary.status)">
+                                {{ getAIStatusIcon(summary.status) }}
+                              </v-icon>
+                            </template>
+                            <v-card variant="outlined" class="mb-2">
+                              <v-card-text class="pa-3">
+                                <div class="d-flex align-center justify-space-between mb-2">
+                                  <div class="text-caption text-medium-emphasis">
+                                    {{ formatDateTime(summary.created_at) }}
+                                  </div>
+                                  <v-chip
+                                    :color="getAIStatusColor(summary.status)"
+                                    variant="flat"
+                                    size="x-small"
+                                  >
+                                    {{ getAIStatusLabel(summary.status) }}
+                                  </v-chip>
+                                </div>
+                                <div class="text-body-2 mb-2" style="white-space: pre-wrap; word-wrap: break-word;">
+                                  {{ summary.summary_text.substring(0, 200) }}{{ summary.summary_text.length > 200 ? '...' : '' }}
+                                </div>
+                                <div class="d-flex flex-wrap ga-1">
+                                  <v-chip
+                                    v-if="summary.sentiment"
+                                    size="x-small"
+                                    variant="outlined"
+                                  >
+                                    <v-icon start size="12">{{ getSentimentIcon(summary.sentiment) }}</v-icon>
+                                    {{ getSentimentLabel(summary.sentiment) }}
+                                  </v-chip>
+                                  <v-chip
+                                    v-if="summary.detected_intent"
+                                    size="x-small"
+                                    variant="outlined"
+                                  >
+                                    {{ getIntentLabel(summary.detected_intent) }}
+                                  </v-chip>
+                                  <v-chip
+                                    v-if="summary.urgency_level_detected"
+                                    size="x-small"
+                                    variant="outlined"
+                                  >
+                                    Urgência: {{ getUrgencyLabel(summary.urgency_level_detected) }}
+                                  </v-chip>
+                                </div>
+                              </v-card-text>
+                            </v-card>
+                          </v-timeline-item>
+                        </v-timeline>
+                      </v-card-text>
+                    </v-card>
+                  </v-col>
+
+                  <!-- Sugestão de Próximos Passos -->
+                  <v-col cols="12">
+                    <v-card variant="outlined">
+                      <v-card-title class="d-flex align-center">
+                        <v-icon class="mr-2" color="primary">mdi-arrow-right-circle</v-icon>
+                        Sugestão de Próximos Passos
+                      </v-card-title>
+                      <v-card-text>
+                        <div v-if="aggregatedInsights.nextSteps && aggregatedInsights.nextSteps.length > 0">
+                          <v-list density="comfortable">
+                            <v-list-item
+                              v-for="(step, index) in aggregatedInsights.nextSteps"
+                              :key="index"
+                            >
+                              <template #prepend>
+                                <v-avatar color="primary" size="32">
+                                  <span class="text-white">{{ index + 1 }}</span>
+                                </v-avatar>
+                              </template>
+                              <v-list-item-title>{{ step }}</v-list-item-title>
+                            </v-list-item>
+                          </v-list>
+                        </div>
+                        <v-alert v-else type="info" variant="tonal">
+                          As sugestões de próximos passos serão geradas automaticamente pela IA com base no histórico de atendimentos e perfil do cliente.
+                        </v-alert>
+                      </v-card-text>
+                    </v-card>
+                  </v-col>
+                </v-row>
+              </div>
             </v-window-item>
 
             <!-- Tab 4: Follow-up -->
@@ -482,6 +774,8 @@ import {
   type ClientUpdate,
 } from '@/shared/services/clients.service'
 import { usersService, type User } from '@/shared/services/users.service'
+import { aiSummariesService, type AISummary, type Sentiment, type DetectedIntent } from '@/shared/services/aiSummaries.service'
+import { propertiesService, type Property } from '@/shared/services/properties.service'
 import { formatPhone, formatCurrency, parseCurrency } from '@/shared/utils/masks'
 import ClientCreateDialog from '@/shared/components/ClientCreateDialog.vue'
 // Markdown formatting (using simple parser, not marked library)
@@ -492,10 +786,13 @@ const router = useRouter()
 // State
 const client = ref<Client | null>(null)
 const isLoading = ref(true)
+const isLoadingAIInsights = ref(false)
 const activeTab = ref('overview')
 const agents = ref<User[]>([])
 const showScheduleDialog = ref(false)
 const showEditDialog = ref(false)
+const aiSummaries = ref<AISummary[]>([])
+const recommendedProperties = ref<Property[]>([])
 
 // Editable fields (for inline editing)
 const editableFields = ref<Partial<ClientUpdate>>({})
@@ -556,6 +853,91 @@ const hasInterestProfile = computed(() => {
   )
 })
 
+// Aggregated AI Insights
+const aggregatedInsights = computed(() => {
+  const completedSummaries = aiSummaries.value.filter(s => s.status === 'COMPLETED')
+  
+  if (completedSummaries.length === 0) {
+    return {
+      clientSummary: null,
+      sentimentAnalysis: null,
+      intents: [],
+      averageLeadScore: null,
+      nextSteps: [],
+    }
+  }
+
+  // Sentiment Analysis
+  const sentimentCounts: Record<Sentiment, number> = {
+    POSITIVE: 0,
+    NEUTRAL: 0,
+    NEGATIVE: 0,
+    MIXED: 0,
+  }
+  
+  completedSummaries.forEach(summary => {
+    if (summary.sentiment) {
+      sentimentCounts[summary.sentiment]++
+    }
+  })
+
+  const dominantSentiment = Object.entries(sentimentCounts).reduce((a, b) => 
+    sentimentCounts[a[0] as Sentiment] > sentimentCounts[b[0] as Sentiment] ? a : b
+  )[0] as Sentiment
+
+  // Intent Analysis
+  const intentCounts: Record<string, number> = {}
+  completedSummaries.forEach(summary => {
+    if (summary.detected_intent) {
+      intentCounts[summary.detected_intent] = (intentCounts[summary.detected_intent] || 0) + 1
+    }
+  })
+
+  const intents = Object.entries(intentCounts)
+    .map(([intent, count]) => ({ intent: intent as DetectedIntent, count }))
+    .sort((a, b) => b.count - a.count)
+
+  // Average Lead Score
+  const leadScores = completedSummaries
+    .map(s => s.lead_score_suggested)
+    .filter((score): score is number => score !== null)
+  
+  const averageLeadScore = leadScores.length > 0
+    ? Math.round(leadScores.reduce((a, b) => a + b, 0) / leadScores.length)
+    : null
+
+  // Client Summary (from most recent summary)
+  const mostRecentSummary = completedSummaries.sort((a, b) => 
+    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  )[0]
+
+  // Next Steps (aggregate from all summaries)
+  const allNextSteps: string[] = []
+  completedSummaries.forEach(summary => {
+    // Extract next steps from summary text (simple heuristic)
+    const lines = summary.summary_text.split('\n')
+    lines.forEach(line => {
+      if (line.trim().match(/^(?:-|\*|\d+\.)\s*(.+)/i)) {
+        const step = line.trim().replace(/^(?:-|\*|\d+\.)\s*/, '')
+        if (step && !allNextSteps.includes(step)) {
+          allNextSteps.push(step)
+        }
+      }
+    })
+  })
+
+  return {
+    clientSummary: mostRecentSummary?.summary_text || null,
+    sentimentAnalysis: {
+      dominant: dominantSentiment,
+      distribution: sentimentCounts,
+    },
+    intents,
+    averageLeadScore,
+    nextSteps: allNextSteps.slice(0, 5), // Top 5 next steps
+  }
+})
+
 // Methods
 const loadClient = async () => {
   isLoading.value = true
@@ -597,6 +979,50 @@ const loadAgents = async () => {
     console.error('Error loading agents:', error)
   }
 }
+
+// Load AI Insights
+const loadAIInsights = async () => {
+  if (!client.value) return
+
+  isLoadingAIInsights.value = true
+  try {
+    // Load all AI summaries for this client
+    aiSummaries.value = await aiSummariesService.getSummariesByClientId(client.value.id)
+
+    // Collect all recommended property IDs
+    const propertyIds = new Set<string>()
+    aiSummaries.value.forEach(summary => {
+      if (summary.recommended_properties) {
+        summary.recommended_properties.forEach(id => propertyIds.add(id))
+      }
+    })
+
+    // Load recommended properties
+    if (propertyIds.size > 0) {
+      const propertiesPromises = Array.from(propertyIds).map(id =>
+        propertiesService.getPropertyById(id).catch(() => null)
+      )
+      const propertiesResults = await Promise.allSettled(propertiesPromises)
+      
+      recommendedProperties.value = propertiesResults
+        .filter((result): result is PromiseFulfilledResult<Property> =>
+          result.status === 'fulfilled' && result.value !== null
+        )
+        .map(result => result.value)
+    }
+  } catch (error) {
+    console.error('Error loading AI insights:', error)
+  } finally {
+    isLoadingAIInsights.value = false
+  }
+}
+
+// Watch active tab to load AI insights when needed
+watch(activeTab, (newTab) => {
+  if (newTab === 'insights' && client.value && aiSummaries.value.length === 0) {
+    loadAIInsights()
+  }
+})
 
 const handleFieldUpdate = async (field: keyof ClientUpdate, value: any) => {
   if (!client.value) return
@@ -854,6 +1280,141 @@ const handleClientError = (error: string) => {
 
 const goBack = () => {
   router.push({ name: 'clients' })
+}
+
+const goToProperty = (propertyId: string) => {
+  router.push({ name: 'properties-details', params: { id: propertyId } })
+}
+
+// AI Summary helpers
+const getAIStatusColor = (status: string): string => {
+  const colors: Record<string, string> = {
+    PENDING: 'warning',
+    PROCESSING: 'info',
+    COMPLETED: 'success',
+    FAILED: 'error',
+    REPROCESSING: 'info',
+  }
+  return colors[status] || 'grey'
+}
+
+const getAIStatusIcon = (status: string): string => {
+  const icons: Record<string, string> = {
+    PENDING: 'mdi-clock-outline',
+    PROCESSING: 'mdi-loading',
+    COMPLETED: 'mdi-check-circle',
+    FAILED: 'mdi-alert-circle',
+    REPROCESSING: 'mdi-refresh',
+  }
+  return icons[status] || 'mdi-help-circle'
+}
+
+const getAIStatusLabel = (status: string): string => {
+  const labels: Record<string, string> = {
+    PENDING: 'Pendente',
+    PROCESSING: 'Processando',
+    COMPLETED: 'Completo',
+    FAILED: 'Falhou',
+    REPROCESSING: 'Reprocessando',
+  }
+  return labels[status] || status
+}
+
+// Sentiment helpers
+const getSentimentColor = (sentiment: Sentiment): string => {
+  const colors: Record<Sentiment, string> = {
+    POSITIVE: 'success',
+    NEUTRAL: 'grey',
+    NEGATIVE: 'error',
+    MIXED: 'warning',
+  }
+  return colors[sentiment] || 'grey'
+}
+
+const getSentimentIcon = (sentiment: Sentiment): string => {
+  const icons: Record<Sentiment, string> = {
+    POSITIVE: 'mdi-emoticon-happy',
+    NEUTRAL: 'mdi-emoticon-neutral',
+    NEGATIVE: 'mdi-emoticon-sad',
+    MIXED: 'mdi-emoticon-confused',
+  }
+  return icons[sentiment] || 'mdi-help-circle'
+}
+
+const getSentimentLabel = (sentiment: Sentiment): string => {
+  const labels: Record<Sentiment, string> = {
+    POSITIVE: 'Positivo',
+    NEUTRAL: 'Neutro',
+    NEGATIVE: 'Negativo',
+    MIXED: 'Misto',
+  }
+  return labels[sentiment] || sentiment
+}
+
+// Intent helpers
+const getIntentColor = (intent: DetectedIntent): string => {
+  const colors: Record<DetectedIntent, string> = {
+    INFORMATION_REQUEST: 'info',
+    PROPERTY_SEARCH: 'primary',
+    SCHEDULE_VISIT: 'success',
+    PRICE_NEGOTIATION: 'warning',
+    DOCUMENTATION_REQUEST: 'purple',
+    GENERAL_INQUIRY: 'cyan',
+    COMPLAINT: 'error',
+    FOLLOW_UP: 'orange',
+  }
+  return colors[intent] || 'grey'
+}
+
+const getIntentIcon = (intent: DetectedIntent): string => {
+  const icons: Record<DetectedIntent, string> = {
+    INFORMATION_REQUEST: 'mdi-information',
+    PROPERTY_SEARCH: 'mdi-magnify',
+    SCHEDULE_VISIT: 'mdi-calendar-clock',
+    PRICE_NEGOTIATION: 'mdi-handshake',
+    DOCUMENTATION_REQUEST: 'mdi-file-document',
+    GENERAL_INQUIRY: 'mdi-help-circle',
+    COMPLAINT: 'mdi-alert',
+    FOLLOW_UP: 'mdi-phone',
+  }
+  return icons[intent] || 'mdi-help-circle'
+}
+
+const getIntentLabel = (intent: DetectedIntent): string => {
+  const labels: Record<DetectedIntent, string> = {
+    INFORMATION_REQUEST: 'Solicitação de Informação',
+    PROPERTY_SEARCH: 'Busca de Propriedade',
+    SCHEDULE_VISIT: 'Agendar Visita',
+    PRICE_NEGOTIATION: 'Negociação de Preço',
+    DOCUMENTATION_REQUEST: 'Solicitação de Documentação',
+    GENERAL_INQUIRY: 'Consulta Geral',
+    COMPLAINT: 'Reclamação',
+    FOLLOW_UP: 'Follow-up',
+  }
+  return labels[intent] || intent
+}
+
+// Property status helpers
+const getPropertyStatusColor = (status: string): string => {
+  const colors: Record<string, string> = {
+    DRAFT: 'grey',
+    PUBLISHED: 'success',
+    SOLD: 'primary',
+    RENTED: 'info',
+    UNAVAILABLE: 'error',
+  }
+  return colors[status] || 'grey'
+}
+
+const getPropertyStatusLabel = (status: string): string => {
+  const labels: Record<string, string> = {
+    DRAFT: 'Rascunho',
+    PUBLISHED: 'Publicado',
+    SOLD: 'Vendido',
+    RENTED: 'Alugado',
+    UNAVAILABLE: 'Indisponível',
+  }
+  return labels[status] || status
 }
 
 onMounted(() => {

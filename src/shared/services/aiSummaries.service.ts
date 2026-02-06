@@ -89,7 +89,15 @@ class AISummariesService {
     const queryString = queryParams.toString()
     const endpoint = `/ai/summaries/client/${clientId}${queryString ? `?${queryString}` : ''}`
 
-    return apiClient.get<AISummary[]>(endpoint)
+    try {
+      return await apiClient.get<AISummary[]>(endpoint)
+    } catch (error: any) {
+      // Return empty array if not found (404) instead of throwing
+      if (error.response?.status === 404) {
+        return []
+      }
+      throw error
+    }
   }
 }
 
