@@ -53,6 +53,16 @@
               {{ getChannelLabel(attendance.channel) }}
             </v-chip>
           </div>
+          <!-- Complete Button -->
+          <v-btn
+            v-if="attendance.status !== 'COMPLETED'"
+            color="success"
+            prepend-icon="mdi-check-circle"
+            @click="handleCompleteAttendance"
+            :loading="isCompleting"
+          >
+            Marcar como Concluído
+          </v-btn>
         </v-card-title>
 
         <!-- Duration -->
@@ -86,38 +96,319 @@
             </v-card-text>
           </v-card>
 
-          <!-- AI Summary -->
-          <v-card v-if="attendance.ai_summary" elevation="2" class="mb-4" rounded="lg">
-            <v-card-title class="pa-4">
+          <!-- AI Insights Section -->
+          <v-card elevation="2" class="mb-4" rounded="lg">
+            <v-card-title class="pa-4 d-flex align-center">
               <v-icon class="mr-2" color="primary">mdi-robot</v-icon>
-              Resumo da IA
+              <span>Insights da IA</span>
+              <v-spacer></v-spacer>
+              <!-- Processing Status Badge -->
+              <v-chip
+                v-if="aiSummary"
+                :color="getAIStatusColor(aiSummary.status)"
+                variant="flat"
+                size="small"
+              >
+                <v-icon start size="16">{{ getAIStatusIcon(aiSummary.status) }}</v-icon>
+                {{ getAIStatusLabel(aiSummary.status) }}
+              </v-chip>
             </v-card-title>
-            <v-card-text class="pa-4">
-              <div class="text-body-1" style="white-space: pre-wrap; word-wrap: break-word;">
-                {{ attendance.ai_summary }}
+
+            <!-- Loading AI Summary -->
+            <v-card-text v-if="isLoadingAISummary" class="pa-4">
+              <v-skeleton-loader type="paragraph"></v-skeleton-loader>
+            </v-card-text>
+
+            <!-- AI Summary Content -->
+            <div v-else-if="aiSummary && aiSummary.status === 'COMPLETED'">
+              <!-- AI Summary Text -->
+              <v-card-text v-if="aiSummary.summary_text" class="pa-4 pt-0">
+                <div class="text-body-1 mb-4" style="white-space: pre-wrap; word-wrap: break-word;">
+                  {{ aiSummary.summary_text }}
+                </div>
+              </v-card-text>
+
+              <!-- AI Analysis Cards -->
+              <v-card-text class="pa-4 pt-0">
+                <v-row dense>
+                  <!-- Sentiment -->
+                  <v-col cols="12" sm="6" md="3" v-if="aiSummary.sentiment">
+                    <v-card variant="outlined" class="text-center pa-3">
+                      <v-icon
+                        :color="getSentimentColor(aiSummary.sentiment)"
+                        size="32"
+                        class="mb-2"
+                      >
+                        {{ getSentimentIcon(aiSummary.sentiment) }}
+                      </v-icon>
+                      <div class="text-caption text-medium-emphasis mb-1">Sentimento</div>
+                      <div class="text-body-2 font-weight-medium">
+                        {{ getSentimentLabel(aiSummary.sentiment) }}
+                      </div>
+                    </v-card>
+                  </v-col>
+
+                  <!-- Detected Intent -->
+                  <v-col cols="12" sm="6" md="3" v-if="aiSummary.detected_intent">
+                    <v-card variant="outlined" class="text-center pa-3">
+                      <v-icon color="info" size="32" class="mb-2">mdi-lightbulb-on</v-icon>
+                      <div class="text-caption text-medium-emphasis mb-1">Intenção</div>
+                      <div class="text-body-2 font-weight-medium">
+                        {{ getIntentLabel(aiSummary.detected_intent) }}
+                      </div>
+                    </v-card>
+                  </v-col>
+
+                  <!-- Urgency Level -->
+                  <v-col cols="12" sm="6" md="3" v-if="aiSummary.urgency_level_detected">
+                    <v-card variant="outlined" class="text-center pa-3">
+                      <v-icon
+                        :color="getUrgencyColor(aiSummary.urgency_level_detected)"
+                        size="32"
+                        class="mb-2"
+                      >
+                        mdi-alert-circle
+                      </v-icon>
+                      <div class="text-caption text-medium-emphasis mb-1">Urgência</div>
+                      <div class="text-body-2 font-weight-medium">
+                        {{ getUrgencyLabel(aiSummary.urgency_level_detected) }}
+                      </div>
+                    </v-card>
+                  </v-col>
+
+                  <!-- Lead Score -->
+                  <v-col cols="12" sm="6" md="3" v-if="aiSummary.lead_score_suggested !== null">
+                    <v-card variant="outlined" class="text-center pa-3">
+                      <v-icon color="primary" size="32" class="mb-2">mdi-star</v-icon>
+                      <div class="text-caption text-medium-emphasis mb-1">Lead Score</div>
+                      <div class="text-body-2 font-weight-medium">
+                        {{ aiSummary.lead_score_suggested }}/100
+                      </div>
+                    </v-card>
+                  </v-col>
+                </v-row>
+              </v-card-text>
+
+              <!-- Detected Preferences -->
+              <v-card-text
+                v-if="aiSummary.interest_type_detected || aiSummary.budget_min_detected || aiSummary.budget_max_detected"
+                class="pa-4 pt-0"
+              >
+                <v-expansion-panels variant="accordion" class="mb-2">
+                  <v-expansion-panel>
+                    <v-expansion-panel-title>
+                      <v-icon class="mr-2">mdi-information</v-icon>
+                      Preferências Detectadas
+                    </v-expansion-panel-title>
+                    <v-expansion-panel-text>
+                      <v-list density="compact">
+                        <v-list-item v-if="aiSummary.interest_type_detected">
+                          <template #prepend>
+                            <v-icon>mdi-hand-pointing-right</v-icon>
+                          </template>
+                          <v-list-item-title>Tipo de Interesse</v-list-item-title>
+                          <v-list-item-subtitle>
+                            {{ getInterestTypeLabel(aiSummary.interest_type_detected) }}
+                          </v-list-item-subtitle>
+                        </v-list-item>
+                        <v-list-item
+                          v-if="aiSummary.budget_min_detected || aiSummary.budget_max_detected"
+                        >
+                          <template #prepend>
+                            <v-icon>mdi-currency-usd</v-icon>
+                          </template>
+                          <v-list-item-title>Orçamento</v-list-item-title>
+                          <v-list-item-subtitle>
+                            {{
+                              formatBudgetRange(
+                                aiSummary.budget_min_detected,
+                                aiSummary.budget_max_detected
+                              )
+                            }}
+                          </v-list-item-subtitle>
+                        </v-list-item>
+                        <v-list-item
+                          v-if="aiSummary.key_points?.city"
+                        >
+                          <template #prepend>
+                            <v-icon>mdi-map-marker</v-icon>
+                          </template>
+                          <v-list-item-title>Cidade de Interesse</v-list-item-title>
+                          <v-list-item-subtitle>{{ aiSummary.key_points.city }}</v-list-item-subtitle>
+                        </v-list-item>
+                        <v-list-item
+                          v-if="aiSummary.key_points?.property_type"
+                        >
+                          <template #prepend>
+                            <v-icon>mdi-home</v-icon>
+                          </template>
+                          <v-list-item-title>Tipo de Propriedade</v-list-item-title>
+                          <v-list-item-subtitle>
+                            {{ getPropertyTypeLabel(aiSummary.key_points.property_type) }}
+                          </v-list-item-subtitle>
+                        </v-list-item>
+                      </v-list>
+                    </v-expansion-panel-text>
+                  </v-expansion-panel>
+                </v-expansion-panels>
+              </v-card-text>
+
+              <!-- Recommended Properties -->
+              <v-card-text
+                v-if="aiSummary.recommended_properties && aiSummary.recommended_properties.length > 0"
+                class="pa-4 pt-0"
+              >
+                <div class="text-subtitle-1 font-weight-medium mb-3">
+                  <v-icon class="mr-2" color="success">mdi-home-heart</v-icon>
+                  Propriedades Recomendadas ({{ aiSummary.recommended_properties.length }})
+                </div>
+                <v-row dense>
+                  <v-col
+                    v-for="propertyId in aiSummary.recommended_properties"
+                    :key="propertyId"
+                    cols="12"
+                    sm="6"
+                  >
+                    <v-card
+                      v-if="recommendedPropertiesMap[propertyId]"
+                      variant="outlined"
+                      class="h-100"
+                      @click="goToRecommendedProperty(propertyId)"
+                      style="cursor: pointer"
+                    >
+                      <v-card-text class="pa-3">
+                        <div class="d-flex align-center">
+                          <v-avatar
+                            v-if="recommendedPropertiesMap[propertyId].main_image_url"
+                            size="56"
+                            class="mr-3"
+                            rounded="lg"
+                          >
+                            <v-img
+                              :src="recommendedPropertiesMap[propertyId].main_image_url"
+                              cover
+                            ></v-img>
+                          </v-avatar>
+                          <v-avatar
+                            v-else
+                            color="primary"
+                            size="56"
+                            class="mr-3"
+                            rounded="lg"
+                          >
+                            <v-icon color="white">mdi-home</v-icon>
+                          </v-avatar>
+                          <div class="flex-grow-1">
+                            <div class="text-body-2 font-weight-medium mb-1">
+                              {{ recommendedPropertiesMap[propertyId].title }}
+                            </div>
+                            <div class="text-caption text-medium-emphasis mb-1">
+                              {{ recommendedPropertiesMap[propertyId].code }}
+                            </div>
+                            <v-chip
+                              :color="getPropertyStatusColor(recommendedPropertiesMap[propertyId].status)"
+                              variant="flat"
+                              size="x-small"
+                            >
+                              {{ getPropertyStatusLabel(recommendedPropertiesMap[propertyId].status) }}
+                            </v-chip>
+                          </div>
+                          <v-icon color="primary">mdi-chevron-right</v-icon>
+                        </div>
+                      </v-card-text>
+                    </v-card>
+                    <v-skeleton-loader
+                      v-else
+                      type="card"
+                      class="h-100"
+                    ></v-skeleton-loader>
+                  </v-col>
+                </v-row>
+              </v-card-text>
+
+              <!-- AI Next Steps -->
+              <v-card-text v-if="attendance.ai_next_steps" class="pa-4 pt-0">
+                <v-alert
+                  type="info"
+                  variant="tonal"
+                  density="comfortable"
+                  class="mb-0"
+                >
+                  <template #prepend>
+                    <v-icon>mdi-arrow-right-circle</v-icon>
+                  </template>
+                  <div class="text-subtitle-2 font-weight-medium mb-2">Próximos Passos Sugeridos</div>
+                  <div class="text-body-2" style="white-space: pre-wrap; word-wrap: break-word;">
+                    {{ attendance.ai_next_steps }}
+                  </div>
+                </v-alert>
+              </v-card-text>
+            </div>
+
+            <!-- Processing State -->
+            <v-card-text
+              v-else-if="aiSummary && aiSummary.status === 'PROCESSING'"
+              class="text-center pa-8"
+            >
+              <v-progress-circular indeterminate color="primary" size="64" class="mb-4"></v-progress-circular>
+              <div class="text-body-1 font-weight-medium mb-2">Processando análise da IA...</div>
+              <div class="text-caption text-medium-emphasis">
+                Isso pode levar alguns segundos
               </div>
             </v-card-text>
-          </v-card>
 
-          <!-- AI Next Steps -->
-          <v-card v-if="attendance.ai_next_steps" elevation="2" class="mb-4" rounded="lg">
-            <v-card-title class="pa-4">
-              <v-icon class="mr-2" color="success">mdi-arrow-right-circle</v-icon>
-              Próximos Passos (IA)
-            </v-card-title>
-            <v-card-text class="pa-4">
-              <div class="text-body-1" style="white-space: pre-wrap; word-wrap: break-word;">
-                {{ attendance.ai_next_steps }}
+            <!-- Pending State -->
+            <v-card-text
+              v-else-if="aiSummary && aiSummary.status === 'PENDING'"
+              class="text-center pa-8"
+            >
+              <v-icon color="warning" size="64" class="mb-4">mdi-clock-outline</v-icon>
+              <div class="text-body-1 font-weight-medium mb-2">Aguardando processamento</div>
+              <div class="text-caption text-medium-emphasis">
+                O resumo da IA será gerado em breve
               </div>
             </v-card-text>
-          </v-card>
 
-          <!-- Empty State for AI Content -->
-          <v-card v-if="!attendance.ai_summary && !attendance.ai_next_steps" elevation="2" class="mb-4" rounded="lg">
-            <v-card-text class="text-center pa-8">
+            <!-- Failed State -->
+            <v-card-text
+              v-else-if="aiSummary && aiSummary.status === 'FAILED'"
+              class="text-center pa-8"
+            >
+              <v-icon color="error" size="64" class="mb-4">mdi-alert-circle</v-icon>
+              <div class="text-body-1 font-weight-medium mb-2">Erro ao processar</div>
+              <div class="text-caption text-medium-emphasis mb-4">
+                {{ aiSummary.error_message || 'Erro desconhecido ao gerar resumo da IA' }}
+              </div>
+              <v-btn color="primary" size="small" @click="loadAISummary">
+                Tentar novamente
+              </v-btn>
+            </v-card-text>
+
+            <!-- Empty State -->
+            <v-card-text
+              v-else-if="!aiSummary && attendance.status === 'COMPLETED'"
+              class="text-center pa-8"
+            >
               <v-icon color="grey" size="64" class="mb-4">mdi-robot-outline</v-icon>
+              <div class="text-body-1 text-medium-emphasis mb-2">
+                Resumo da IA ainda não foi gerado
+              </div>
+              <div class="text-caption text-medium-emphasis mb-4">
+                O processamento será iniciado automaticamente
+              </div>
+              <v-btn color="primary" size="small" @click="loadAISummary">
+                Verificar novamente
+              </v-btn>
+            </v-card-text>
+
+            <!-- Not Completed State -->
+            <v-card-text
+              v-else-if="attendance.status !== 'COMPLETED'"
+              class="text-center pa-8"
+            >
+              <v-icon color="info" size="64" class="mb-4">mdi-information</v-icon>
               <div class="text-body-1 text-medium-emphasis">
-                Resumo da IA ainda não foi gerado para este atendimento.
+                Complete o atendimento para gerar o resumo da IA
               </div>
             </v-card-text>
           </v-card>
@@ -268,11 +559,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { attendancesService, type Attendance, type AttendanceChannel, type AttendanceStatus } from '@/shared/services/attendances.service'
 import { clientsService, type Client } from '@/shared/services/clients.service'
 import { propertiesService, type Property } from '@/shared/services/properties.service'
+import { aiSummariesService, type AISummary, type Sentiment, type DetectedIntent } from '@/shared/services/aiSummaries.service'
 import { formatPhone } from '@/shared/utils/masks'
 
 const route = useRoute()
@@ -280,10 +572,14 @@ const router = useRouter()
 
 // State
 const isLoading = ref(true)
+const isLoadingAISummary = ref(false)
+const isCompleting = ref(false)
 const error = ref<string | null>(null)
 const attendance = ref<Attendance | null>(null)
 const client = ref<Client | null>(null)
 const property = ref<Property | null>(null)
+const aiSummary = ref<AISummary | null>(null)
+const recommendedProperties = ref<Property[]>([])
 
 // Load data
 const loadAttendance = async () => {
@@ -316,6 +612,11 @@ const loadAttendance = async () => {
     if (propertyData.status === 'fulfilled' && propertyData.value) {
       property.value = propertyData.value
     }
+
+    // Load AI summary if attendance is completed
+    if (attendance.value.status === 'COMPLETED') {
+      await loadAISummary()
+    }
   } catch (err: any) {
     console.error('Error loading attendance:', err)
     error.value = err.response?.data?.detail || err.message || 'Erro ao carregar atendimento'
@@ -323,6 +624,53 @@ const loadAttendance = async () => {
     isLoading.value = false
   }
 }
+
+// Load AI Summary
+const loadAISummary = async () => {
+  if (!attendance.value) return
+
+  isLoadingAISummary.value = true
+  try {
+    aiSummary.value = await aiSummariesService.getSummaryByAttendanceId(attendance.value.id)
+
+    // Load recommended properties if available
+    if (aiSummary.value?.recommended_properties && aiSummary.value.recommended_properties.length > 0) {
+      await loadRecommendedProperties(aiSummary.value.recommended_properties)
+    }
+  } catch (err: any) {
+    console.error('Error loading AI summary:', err)
+    // Don't show error, just log it
+  } finally {
+    isLoadingAISummary.value = false
+  }
+}
+
+// Load recommended properties
+const loadRecommendedProperties = async (propertyIds: string[]) => {
+  try {
+    const propertiesPromises = propertyIds.map(id => 
+      propertiesService.getPropertyById(id).catch(() => null)
+    )
+    const propertiesResults = await Promise.allSettled(propertiesPromises)
+    
+    recommendedProperties.value = propertiesResults
+      .filter((result): result is PromiseFulfilledResult<Property> => 
+        result.status === 'fulfilled' && result.value !== null
+      )
+      .map(result => result.value)
+  } catch (err) {
+    console.error('Error loading recommended properties:', err)
+  }
+}
+
+// Computed map for recommended properties
+const recommendedPropertiesMap = computed(() => {
+  const map: Record<string, Property> = {}
+  recommendedProperties.value.forEach(prop => {
+    map[prop.id] = prop
+  })
+  return map
+})
 
 // Navigation
 const goBack = () => {
@@ -339,6 +687,58 @@ const goToProperty = () => {
   if (attendance.value?.property_id) {
     router.push({ name: 'properties-details', params: { id: attendance.value.property_id } })
   }
+}
+
+const goToRecommendedProperty = (propertyId: string) => {
+  router.push({ name: 'properties-details', params: { id: propertyId } })
+}
+
+// Complete attendance
+const handleCompleteAttendance = async () => {
+  if (!attendance.value) return
+
+  isCompleting.value = true
+  try {
+    // Update attendance status to COMPLETED
+    // This will trigger AI processing on the backend
+    const updatedAttendance = await attendancesService.updateAttendance(attendance.value.id, {
+      status: 'COMPLETED',
+      ended_at: attendance.value.ended_at || new Date().toISOString(),
+    })
+
+    attendance.value = updatedAttendance
+
+    // Wait a bit and then load AI summary
+    setTimeout(async () => {
+      await loadAISummary()
+      // Poll for AI summary if still processing
+      if (aiSummary.value?.status === 'PROCESSING' || aiSummary.value?.status === 'PENDING') {
+        pollAISummary()
+      }
+    }, 2000)
+  } catch (err: any) {
+    console.error('Error completing attendance:', err)
+    error.value = err.response?.data?.detail || err.message || 'Erro ao completar atendimento'
+  } finally {
+    isCompleting.value = false
+  }
+}
+
+// Poll AI summary until completed
+const pollAISummary = async (maxAttempts = 10) => {
+  let attempts = 0
+  const pollInterval = setInterval(async () => {
+    attempts++
+    await loadAISummary()
+
+    if (
+      aiSummary.value?.status === 'COMPLETED' ||
+      aiSummary.value?.status === 'FAILED' ||
+      attempts >= maxAttempts
+    ) {
+      clearInterval(pollInterval)
+    }
+  }, 3000) // Poll every 3 seconds
 }
 
 // Formatting
@@ -463,6 +863,151 @@ const getPropertyStatusLabel = (status: string): string => {
     UNAVAILABLE: 'Indisponível',
   }
   return labels[status] || status
+}
+
+// AI Summary helpers
+const getAIStatusColor = (status: string): string => {
+  const colors: Record<string, string> = {
+    PENDING: 'warning',
+    PROCESSING: 'info',
+    COMPLETED: 'success',
+    FAILED: 'error',
+    REPROCESSING: 'info',
+  }
+  return colors[status] || 'grey'
+}
+
+const getAIStatusIcon = (status: string): string => {
+  const icons: Record<string, string> = {
+    PENDING: 'mdi-clock-outline',
+    PROCESSING: 'mdi-loading',
+    COMPLETED: 'mdi-check-circle',
+    FAILED: 'mdi-alert-circle',
+    REPROCESSING: 'mdi-refresh',
+  }
+  return icons[status] || 'mdi-help-circle'
+}
+
+const getAIStatusLabel = (status: string): string => {
+  const labels: Record<string, string> = {
+    PENDING: 'Pendente',
+    PROCESSING: 'Processando',
+    COMPLETED: 'Completo',
+    FAILED: 'Falhou',
+    REPROCESSING: 'Reprocessando',
+  }
+  return labels[status] || status
+}
+
+// Sentiment helpers
+const getSentimentColor = (sentiment: Sentiment): string => {
+  const colors: Record<Sentiment, string> = {
+    POSITIVE: 'success',
+    NEUTRAL: 'grey',
+    NEGATIVE: 'error',
+    MIXED: 'warning',
+  }
+  return colors[sentiment] || 'grey'
+}
+
+const getSentimentIcon = (sentiment: Sentiment): string => {
+  const icons: Record<Sentiment, string> = {
+    POSITIVE: 'mdi-emoticon-happy',
+    NEUTRAL: 'mdi-emoticon-neutral',
+    NEGATIVE: 'mdi-emoticon-sad',
+    MIXED: 'mdi-emoticon-confused',
+  }
+  return icons[sentiment] || 'mdi-help-circle'
+}
+
+const getSentimentLabel = (sentiment: Sentiment): string => {
+  const labels: Record<Sentiment, string> = {
+    POSITIVE: 'Positivo',
+    NEUTRAL: 'Neutro',
+    NEGATIVE: 'Negativo',
+    MIXED: 'Misto',
+  }
+  return labels[sentiment] || sentiment
+}
+
+// Intent helpers
+const getIntentLabel = (intent: DetectedIntent): string => {
+  const labels: Record<DetectedIntent, string> = {
+    INFORMATION_REQUEST: 'Solicitação de Informação',
+    PROPERTY_SEARCH: 'Busca de Propriedade',
+    SCHEDULE_VISIT: 'Agendar Visita',
+    PRICE_NEGOTIATION: 'Negociação de Preço',
+    DOCUMENTATION_REQUEST: 'Solicitação de Documentação',
+    GENERAL_INQUIRY: 'Consulta Geral',
+    COMPLAINT: 'Reclamação',
+    FOLLOW_UP: 'Follow-up',
+  }
+  return labels[intent] || intent
+}
+
+// Urgency helpers
+const getUrgencyColor = (urgency: string): string => {
+  const colors: Record<string, string> = {
+    LOW: 'success',
+    MEDIUM: 'warning',
+    HIGH: 'error',
+    IMMEDIATE: 'error',
+  }
+  return colors[urgency] || 'grey'
+}
+
+const getUrgencyLabel = (urgency: string): string => {
+  const labels: Record<string, string> = {
+    LOW: 'Baixa',
+    MEDIUM: 'Média',
+    HIGH: 'Alta',
+    IMMEDIATE: 'Imediata',
+  }
+  return labels[urgency] || urgency
+}
+
+// Interest type helpers
+const getInterestTypeLabel = (interestType: string): string => {
+  const labels: Record<string, string> = {
+    BUY: 'Comprar',
+    RENT: 'Alugar',
+    SELL: 'Vender',
+    INVEST: 'Investir',
+  }
+  return labels[interestType] || interestType
+}
+
+// Property type helpers
+const getPropertyTypeLabel = (propertyType: string): string => {
+  const labels: Record<string, string> = {
+    HOUSE: 'Casa',
+    APARTMENT: 'Apartamento',
+    LAND: 'Terreno',
+    COMMERCIAL: 'Comercial',
+    RURAL: 'Rural',
+  }
+  return labels[propertyType] || propertyType
+}
+
+// Budget formatting
+const formatBudgetRange = (min: number | null, max: number | null): string => {
+  if (min && max) {
+    return `R$ ${formatCurrency(min)} - R$ ${formatCurrency(max)}`
+  }
+  if (min) {
+    return `A partir de R$ ${formatCurrency(min)}`
+  }
+  if (max) {
+    return `Até R$ ${formatCurrency(max)}`
+  }
+  return 'Não especificado'
+}
+
+const formatCurrency = (value: number): string => {
+  return new Intl.NumberFormat('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value)
 }
 
 onMounted(() => {
