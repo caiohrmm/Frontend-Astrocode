@@ -292,10 +292,15 @@ const filteredAttendances = computed(() => {
 const loadAttendances = async () => {
   isLoading.value = true
   try {
-    attendances.value = await attendancesService.getAttendances({ limit: 1000 }) // Get all for frontend filtering
-  } catch (error) {
+    const data = await attendancesService.getAttendances({ limit: 1000 }) // Get all for frontend filtering
+    console.log('Loaded attendances:', data?.length || 0, 'items')
+    attendances.value = data || []
+  } catch (error: any) {
     console.error('Error loading attendances:', error)
-    // TODO: Show error notification
+    console.error('Error details:', error?.response?.data || error?.message)
+    attendances.value = []
+    // Show error to user
+    alert(`Erro ao carregar atendimentos: ${error?.response?.data?.detail || error?.message || 'Erro desconhecido'}`)
   } finally {
     isLoading.value = false
   }
