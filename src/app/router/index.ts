@@ -104,6 +104,15 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/attendances/:id',
+    name: 'attendances-details',
+    component: () => import('@/modules/attendances/pages/AttendanceDetailsPage.vue'),
+    meta: {
+      layout: 'app',
+      requiresAuth: true,
+    },
+  },
+  {
     path: '/attendances/create',
     name: 'attendances-create',
     component: () => import('@/modules/attendances/pages/AttendanceCreatePage.vue'),
