@@ -172,6 +172,15 @@
         </v-form>
       </v-card-text>
     </v-card>
+
+    <!-- AI Suggestions Dialog -->
+    <ClientUpdateSuggestionsDialog
+      v-model="showSuggestionsDialog"
+      :client="suggestionsClient"
+      :ai-summary="suggestionsAISummary"
+      @applied="handleSuggestionsApplied"
+      @skipped="handleSuggestionsSkipped"
+    />
   </div>
 </template>
 
@@ -184,11 +193,13 @@ import {
   type AttendanceCreate,
   type AttendanceUpdate,
 } from '@/shared/services/attendances.service'
-import { clientsService } from '@/shared/services/clients.service'
+import { clientsService, type Client } from '@/shared/services/clients.service'
 import { usersService, type User } from '@/shared/services/users.service'
 import { propertiesService } from '@/shared/services/properties.service'
+import { aiSummariesService, type AISummary } from '@/shared/services/aiSummaries.service'
 import { formatPhone } from '@/shared/utils/masks'
 import SearchSelectDialog from '@/shared/components/SearchSelectDialog.vue'
+import ClientUpdateSuggestionsDialog from '@/shared/components/ClientUpdateSuggestionsDialog.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -203,6 +214,12 @@ const isLoadingProperties = ref(false)
 const isLoadingAttendance = ref(false)
 
 const agents = ref<User[]>([])
+
+// AI Suggestions Dialog state
+const showSuggestionsDialog = ref(false)
+const suggestionsClient = ref<Client | null>(null)
+const suggestionsAISummary = ref<AISummary | null>(null)
+const savedAttendanceId = ref<string | null>(null)
 
 // Search state for clients
 const clientSearchItems = ref<any[]>([])
@@ -483,8 +500,13 @@ const handleSave = async () => {
 
       await attendancesService.updateAttendance(route.params.id as string, updateData)
       
-      // Redirect to details page
-      router.push({ name: 'attendances-details', params: { id: route.params.id } })
+      // If attendance is completed, check for AI suggestions
+      if (updateData.status === 'COMPLETED') {
+        await checkForAISuggestions(route.params.id as string, formData.value.client_id)
+      } else {
+        // Redirect to details page
+        router.push({ name: 'attendances-details', params: { id: route.params.id } })
+      }
     } else {
       // Create new attendance
       const attendanceData: AttendanceCreate = {
@@ -505,10 +527,14 @@ const handleSave = async () => {
 
       const created = await attendancesService.createAttendance(attendanceData)
       
-      // Redirect to details page
-      router.push({ name: 'attendances-details', params: { id: created.id } })
+      // If attendance is completed, check for AI suggestions
+      if (created.status === 'COMPLETED') {
+        await checkForAISuggestions(created.id, created.client_id)
+      } else {
+        // Redirect to details page
+        router.push({ name: 'attendances-details', params: { id: created.id } })
+      }
     }
-    // TODO: Show success notification
   } catch (error: any) {
     console.error('Error saving attendance:', error)
     const errorMessage =
@@ -516,6 +542,73 @@ const handleSave = async () => {
     alert(`Erro ao salvar atendimento: ${errorMessage}`)
   } finally {
     isSaving.value = false
+  }
+}
+
+// Check for AI suggestions after saving completed attendance
+const checkForAISuggestions = async (attendanceId: string, clientId: string) => {
+  try {
+    // Load client data
+    const client = await clientsService.getClientById(clientId)
+    
+    // Load AI summary for this attendance
+    const summaries = await aiSummariesService.getSummariesByClientId(clientId)
+    
+    // Find the most recent summary (should be the one just created)
+    const latestSummary = summaries
+      .filter(s => s.status === 'COMPLETED')
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
+    
+    if (latestSummary) {
+      // Check if there are any suggestions to make
+      const hasSuggestions = checkIfHasSuggestions(client, latestSummary)
+      
+      if (hasSuggestions) {
+        // Show suggestions dialog
+        suggestionsClient.value = client
+        suggestionsAISummary.value = latestSummary
+        savedAttendanceId.value = attendanceId
+        showSuggestionsDialog.value = true
+        return // Don't redirect yet, wait for dialog
+      }
+    }
+    
+    // No suggestions, redirect directly
+    router.push({ name: 'attendances-details', params: { id: attendanceId } })
+  } catch (error) {
+    console.error('Error checking for AI suggestions:', error)
+    // If error, just redirect
+    router.push({ name: 'attendances-details', params: { id: attendanceId } })
+  }
+}
+
+// Check if AI summary has suggestions that differ from client data
+const checkIfHasSuggestions = (client: Client, summary: AISummary): boolean => {
+  // Extract city and property_type from key_points if available
+  const city = summary.key_points?.city || null
+  const propertyType = summary.key_points?.property_type || null
+  
+  // Check if any field is different
+  if (city && city !== client.current_city_interest) return true
+  if (propertyType && propertyType !== client.current_property_type) return true
+  if (summary.interest_type_detected && summary.interest_type_detected !== client.current_interest_type) return true
+  if (summary.urgency_level_detected && summary.urgency_level_detected !== client.current_urgency_level) return true
+  if (summary.budget_min_detected && (!client.current_budget_min || parseFloat(client.current_budget_min) !== summary.budget_min_detected)) return true
+  if (summary.budget_max_detected && (!client.current_budget_max || parseFloat(client.current_budget_max) !== summary.budget_max_detected)) return true
+  
+  return false
+}
+
+// Handle suggestions dialog events
+const handleSuggestionsApplied = () => {
+  if (savedAttendanceId.value) {
+    router.push({ name: 'attendances-details', params: { id: savedAttendanceId.value } })
+  }
+}
+
+const handleSuggestionsSkipped = () => {
+  if (savedAttendanceId.value) {
+    router.push({ name: 'attendances-details', params: { id: savedAttendanceId.value } })
   }
 }
 
