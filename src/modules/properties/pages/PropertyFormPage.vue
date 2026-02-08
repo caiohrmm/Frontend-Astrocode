@@ -147,21 +147,57 @@
             <!-- Tab: Localização -->
             <v-window-item value="location">
               <v-row>
-                <v-col cols="12">
+                <!-- Busca por CEP (ViaCEP) -->
+                <v-col cols="12" md="6">
+                  <v-card variant="outlined" class="pa-4 mb-4" color="success">
+                    <div class="d-flex align-center mb-2">
+                      <v-icon color="success" class="mr-2">mdi-mailbox</v-icon>
+                      <span class="text-subtitle-1 font-weight-medium">Buscar por CEP</span>
+                    </div>
+                    <v-text-field
+                      v-model="cepSearch"
+                      label="Digite o CEP"
+                      variant="outlined"
+                      prepend-inner-icon="mdi-magnify"
+                      :loading="isSearchingCep"
+                      :error="!!cepError"
+                      :error-messages="cepError ? [cepError] : []"
+                      hint="Digite o CEP para preencher endereço automaticamente (ex: 01310-100)"
+                      persistent-hint
+                      maxlength="9"
+                      @input="formatCepInput"
+                      @keyup.enter="handleSearchCep"
+                    >
+                      <template #append>
+                        <v-btn
+                          color="success"
+                          :loading="isSearchingCep"
+                          :disabled="!cepSearch.trim() || cepSearch.replace(/\D/g, '').length < 8"
+                          @click="handleSearchCep"
+                        >
+                          Buscar
+                        </v-btn>
+                      </template>
+                    </v-text-field>
+                  </v-card>
+                </v-col>
+
+                <!-- Busca por Endereço (Google Maps) -->
+                <v-col cols="12" md="6">
                   <v-card variant="outlined" class="pa-4 mb-4" color="primary">
                     <div class="d-flex align-center mb-2">
                       <v-icon color="primary" class="mr-2">mdi-map-search</v-icon>
-                      <span class="text-subtitle-1 font-weight-medium">Buscar Endereço no Google Maps</span>
+                      <span class="text-subtitle-1 font-weight-medium">Buscar no Google Maps</span>
                     </div>
                     <v-text-field
                       v-model="addressSearch"
-                      label="Digite o endereço completo (ex: Rua Exemplo, 123, São Paulo, SP)"
+                      label="Digite o endereço completo"
                       variant="outlined"
                       prepend-inner-icon="mdi-magnify"
                       :loading="isGeocoding"
                       :error="!!geocodeError"
                       :error-messages="geocodeError ? [geocodeError] : []"
-                      hint="Digite um endereço e clique em buscar para preencher automaticamente os campos abaixo"
+                      hint="Busca endereço e coordenadas geográficas"
                       persistent-hint
                       @keyup.enter="handleGeocodeAddress"
                     >
@@ -178,6 +214,8 @@
                     </v-text-field>
                   </v-card>
                 </v-col>
+
+                <!-- Rua e Número -->
                 <v-col cols="12" md="8">
                   <v-text-field
                     v-model="formData.street"
@@ -198,6 +236,8 @@
                     persistent-hint
                   ></v-text-field>
                 </v-col>
+
+                <!-- Bairro -->
                 <v-col cols="12" md="6">
                   <v-text-field
                     v-model="formData.neighborhood"
@@ -208,40 +248,72 @@
                     persistent-hint
                   ></v-text-field>
                 </v-col>
+
+                <!-- CEP -->
                 <v-col cols="12" md="6">
-                  <v-text-field
-                    v-model="formData.city"
-                    label="Cidade"
-                    variant="outlined"
-                    prepend-inner-icon="mdi-city"
-                    hint="Cidade do imóvel"
-                    persistent-hint
-                  ></v-text-field>
-                </v-col>
-                <v-col cols="12" md="4">
-                  <v-text-field
-                    v-model="formData.state"
-                    label="Estado (UF)"
-                    variant="outlined"
-                    prepend-inner-icon="mdi-map"
-                    :rules="[rules.state]"
-                    maxlength="2"
-                    counter="2"
-                    hint="Ex: SP, RJ, MG"
-                    persistent-hint
-                    @input="formData.state = formData.state ? formData.state.toUpperCase() : ''"
-                  ></v-text-field>
-                </v-col>
-                <v-col cols="12" md="4">
                   <v-text-field
                     v-model="formData.zip_code"
                     label="CEP"
                     variant="outlined"
                     prepend-inner-icon="mdi-mailbox"
-                    hint="Código postal"
+                    hint="Código postal (8 dígitos)"
                     persistent-hint
+                    maxlength="9"
+                    @input="formatZipCodeField"
                   ></v-text-field>
                 </v-col>
+
+                <!-- Estado (Select) -->
+                <v-col cols="12" md="4">
+                  <v-select
+                    v-model="formData.state"
+                    :items="brazilianStates"
+                    label="Estado (UF)"
+                    variant="outlined"
+                    prepend-inner-icon="mdi-map"
+                    item-title="name"
+                    item-value="uf"
+                    hint="Selecione o estado"
+                    persistent-hint
+                    clearable
+                    @update:model-value="handleStateChange"
+                  >
+                    <template #item="{ props, item }">
+                      <v-list-item v-bind="props">
+                        <template #prepend>
+                          <v-chip size="x-small" color="primary" variant="flat" class="mr-2">
+                            {{ item.raw.uf }}
+                          </v-chip>
+                        </template>
+                      </v-list-item>
+                    </template>
+                    <template #selection="{ item }">
+                      <v-chip size="small" color="primary" variant="flat" class="mr-2">
+                        {{ item.raw.uf }}
+                      </v-chip>
+                      {{ item.raw.name }}
+                    </template>
+                  </v-select>
+                </v-col>
+
+                <!-- Cidade (Autocomplete baseado no Estado) -->
+                <v-col cols="12" md="8">
+                  <v-autocomplete
+                    v-model="formData.city"
+                    :items="availableCities"
+                    label="Cidade"
+                    variant="outlined"
+                    prepend-inner-icon="mdi-city"
+                    :loading="isLoadingCities"
+                    :disabled="!formData.state"
+                    :hint="formData.state ? `Cidades de ${getStateName(formData.state)}` : 'Selecione um estado primeiro'"
+                    persistent-hint
+                    clearable
+                    no-data-text="Nenhuma cidade encontrada"
+                  ></v-autocomplete>
+                </v-col>
+
+                <!-- Coordenadas -->
                 <v-col cols="12" md="6">
                   <v-text-field
                     v-model="formData.latitude"
@@ -718,6 +790,46 @@ const addressSearch = ref('')
 const isGeocoding = ref(false)
 const geocodeError = ref<string | null>(null)
 
+// CEP Search (ViaCEP)
+const cepSearch = ref('')
+const isSearchingCep = ref(false)
+const cepError = ref<string | null>(null)
+
+// Cities (IBGE API)
+const isLoadingCities = ref(false)
+const availableCities = ref<string[]>([])
+
+// Brazilian States
+const brazilianStates = [
+  { uf: 'AC', name: 'Acre' },
+  { uf: 'AL', name: 'Alagoas' },
+  { uf: 'AP', name: 'Amapá' },
+  { uf: 'AM', name: 'Amazonas' },
+  { uf: 'BA', name: 'Bahia' },
+  { uf: 'CE', name: 'Ceará' },
+  { uf: 'DF', name: 'Distrito Federal' },
+  { uf: 'ES', name: 'Espírito Santo' },
+  { uf: 'GO', name: 'Goiás' },
+  { uf: 'MA', name: 'Maranhão' },
+  { uf: 'MT', name: 'Mato Grosso' },
+  { uf: 'MS', name: 'Mato Grosso do Sul' },
+  { uf: 'MG', name: 'Minas Gerais' },
+  { uf: 'PA', name: 'Pará' },
+  { uf: 'PB', name: 'Paraíba' },
+  { uf: 'PR', name: 'Paraná' },
+  { uf: 'PE', name: 'Pernambuco' },
+  { uf: 'PI', name: 'Piauí' },
+  { uf: 'RJ', name: 'Rio de Janeiro' },
+  { uf: 'RN', name: 'Rio Grande do Norte' },
+  { uf: 'RS', name: 'Rio Grande do Sul' },
+  { uf: 'RO', name: 'Rondônia' },
+  { uf: 'RR', name: 'Roraima' },
+  { uf: 'SC', name: 'Santa Catarina' },
+  { uf: 'SP', name: 'São Paulo' },
+  { uf: 'SE', name: 'Sergipe' },
+  { uf: 'TO', name: 'Tocantins' },
+]
+
 // AI & Matching
 const isGeneratingProfile = ref(false)
 const isLoadingMatchingClients = ref(false)
@@ -839,6 +951,15 @@ watch(() => formData.value.iptu, (newVal) => {
     iptuFormatted.value = ''
   }
 }, { immediate: true })
+
+// Watch state to load cities when editing
+watch(() => formData.value.state, async (newVal, oldVal) => {
+  // Only auto-load cities when state is set (e.g., from loading property data)
+  // Don't clear city if this is initial load with existing city
+  if (newVal && newVal !== oldVal && availableCities.value.length === 0) {
+    await loadCitiesForState(newVal)
+  }
+}, { immediate: false })
 
 // Phone formatted value
 const ownerContactFormatted = computed({
@@ -1073,6 +1194,149 @@ const findMatchingClients = async () => {
   } finally {
     isLoadingMatchingClients.value = false
   }
+}
+
+// CEP Functions
+const formatCepInput = () => {
+  // Format CEP as 00000-000
+  let value = cepSearch.value.replace(/\D/g, '')
+  if (value.length > 5) {
+    value = value.substring(0, 5) + '-' + value.substring(5, 8)
+  }
+  cepSearch.value = value
+}
+
+const formatZipCodeField = () => {
+  // Format zip_code field as 00000-000
+  if (!formData.value.zip_code) return
+  let value = formData.value.zip_code.replace(/\D/g, '')
+  if (value.length > 5) {
+    value = value.substring(0, 5) + '-' + value.substring(5, 8)
+  }
+  formData.value.zip_code = value
+}
+
+const handleSearchCep = async () => {
+  const cep = cepSearch.value.replace(/\D/g, '')
+  if (cep.length !== 8) {
+    cepError.value = 'CEP deve ter 8 dígitos'
+    return
+  }
+  
+  isSearchingCep.value = true
+  cepError.value = null
+  
+  try {
+    // Use ViaCEP API
+    const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+    })
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    
+    const data = await response.json()
+    
+    if (data.erro) {
+      cepError.value = 'CEP não encontrado'
+      return
+    }
+    
+    // Fill form fields with ViaCEP data
+    formData.value.street = data.logradouro || formData.value.street || ''
+    formData.value.neighborhood = data.bairro || formData.value.neighborhood || ''
+    formData.value.city = data.localidade || formData.value.city || ''
+    formData.value.state = data.uf || formData.value.state || ''
+    formData.value.zip_code = cepSearch.value
+    
+    // Load cities for the state if changed
+    if (data.uf) {
+      await loadCitiesForState(data.uf)
+    }
+    
+    // Try to get coordinates using Nominatim (OpenStreetMap) - free geocoding
+    if (data.logradouro && data.localidade && data.uf) {
+      try {
+        const fullAddress = `${data.logradouro}, ${data.bairro || ''}, ${data.localidade}, ${data.uf}, Brasil`
+        const nominatimResponse = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}&limit=1`,
+          {
+            headers: {
+              'Accept': 'application/json',
+              'User-Agent': 'RealEstateApp/1.0',
+            },
+          }
+        )
+        
+        if (nominatimResponse.ok) {
+          const nominatimData = await nominatimResponse.json()
+          if (nominatimData.length > 0) {
+            formData.value.latitude = parseFloat(nominatimData[0].lat)
+            formData.value.longitude = parseFloat(nominatimData[0].lon)
+            console.log('Coordinates found via Nominatim:', nominatimData[0].lat, nominatimData[0].lon)
+          }
+        }
+      } catch (geoError) {
+        console.warn('Could not get coordinates (optional):', geoError)
+        // Don't fail - coordinates are optional
+      }
+    }
+    
+  } catch (error: any) {
+    console.error('Error searching CEP:', error)
+    console.error('Error name:', error?.name)
+    console.error('Error message:', error?.message)
+    
+    if (error.name === 'TypeError' && error.message?.includes('Failed to fetch')) {
+      cepError.value = 'Erro de conexão. Verifique sua internet.'
+    } else if (error.message?.includes('NetworkError')) {
+      cepError.value = 'Erro de rede. Verifique sua conexão.'
+    } else {
+      cepError.value = `Erro ao buscar CEP: ${error?.message || 'Tente novamente.'}`
+    }
+  } finally {
+    isSearchingCep.value = false
+  }
+}
+
+// Cities Functions (IBGE API)
+const loadCitiesForState = async (uf: string) => {
+  if (!uf) {
+    availableCities.value = []
+    return
+  }
+  
+  isLoadingCities.value = true
+  
+  try {
+    const response = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios?orderBy=nome`)
+    const data = await response.json()
+    
+    availableCities.value = data.map((city: { nome: string }) => city.nome)
+  } catch (error) {
+    console.error('Error loading cities:', error)
+    availableCities.value = []
+  } finally {
+    isLoadingCities.value = false
+  }
+}
+
+const handleStateChange = async (uf: string | null) => {
+  formData.value.city = '' // Clear city when state changes
+  if (uf) {
+    await loadCitiesForState(uf)
+  } else {
+    availableCities.value = []
+  }
+}
+
+const getStateName = (uf: string): string => {
+  const state = brazilianStates.find(s => s.uf === uf)
+  return state ? state.name : uf
 }
 
 // Methods
