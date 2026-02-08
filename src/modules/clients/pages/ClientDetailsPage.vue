@@ -249,12 +249,130 @@
 
             <!-- Tab 2: Atendimentos -->
             <v-window-item value="attendances">
-              <div class="text-center pa-8">
+              <!-- Loading State -->
+              <div v-if="isLoadingAttendances" class="d-flex justify-center pa-8">
+                <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
+              </div>
+
+              <!-- Empty State -->
+              <div v-else-if="clientAttendances.length === 0" class="text-center pa-8">
                 <v-icon size="64" color="grey-lighten-1" class="mb-4">mdi-phone-off</v-icon>
                 <div class="text-h6 text-medium-emphasis mb-2">Nenhum atendimento registrado</div>
-                <div class="text-body-2 text-medium-emphasis">
+                <div class="text-body-2 text-medium-emphasis mb-4">
                   Os atendimentos deste cliente aparecerão aqui quando forem criados.
                 </div>
+                <v-btn
+                  color="primary"
+                  prepend-icon="mdi-phone-plus"
+                  @click="goToCreateAttendance"
+                >
+                  Criar Atendimento
+                </v-btn>
+              </div>
+
+              <!-- Attendances List -->
+              <div v-else>
+                <div class="d-flex justify-space-between align-center mb-4">
+                  <div class="text-h6">
+                    {{ clientAttendances.length }} atendimento(s)
+                  </div>
+                  <v-btn
+                    color="primary"
+                    prepend-icon="mdi-phone-plus"
+                    @click="goToCreateAttendance"
+                  >
+                    Novo Atendimento
+                  </v-btn>
+                </div>
+
+                <v-row>
+                  <v-col
+                    v-for="attendance in clientAttendances"
+                    :key="attendance.id"
+                    cols="12"
+                  >
+                    <v-card
+                      variant="outlined"
+                      class="attendance-card"
+                      @click="goToAttendance(attendance.id)"
+                    >
+                      <v-card-text class="pa-4">
+                        <div class="d-flex align-start">
+                          <!-- Channel Icon -->
+                          <v-avatar
+                            :color="getChannelColor(attendance.channel)"
+                            size="48"
+                            class="mr-4"
+                          >
+                            <v-icon color="white">{{ getChannelIcon(attendance.channel) }}</v-icon>
+                          </v-avatar>
+
+                          <!-- Content -->
+                          <div class="flex-grow-1">
+                            <div class="d-flex align-center justify-space-between mb-2">
+                              <div class="d-flex align-center ga-2">
+                                <v-chip
+                                  :color="getAttendanceStatusColor(attendance.status)"
+                                  variant="flat"
+                                  size="small"
+                                >
+                                  {{ getAttendanceStatusLabel(attendance.status) }}
+                                </v-chip>
+                                <v-chip
+                                  variant="outlined"
+                                  size="small"
+                                >
+                                  {{ getChannelLabel(attendance.channel) }}
+                                </v-chip>
+                              </div>
+                              <div class="text-caption text-medium-emphasis">
+                                {{ formatDateTime(attendance.started_at) }}
+                              </div>
+                            </div>
+
+                            <!-- AI Summary Preview -->
+                            <div v-if="attendance.ai_summary" class="mb-3">
+                              <div class="text-subtitle-2 font-weight-medium mb-1">
+                                <v-icon size="16" color="primary" class="mr-1">mdi-robot</v-icon>
+                                Resumo da IA
+                              </div>
+                              <div 
+                                class="text-body-2 ai-summary-preview"
+                                v-html="formatMarkdown(truncateText(attendance.ai_summary, 200))"
+                              ></div>
+                            </div>
+
+                            <!-- Next Steps Preview -->
+                            <div v-if="attendance.ai_next_steps" class="mb-2">
+                              <div class="text-subtitle-2 font-weight-medium mb-1">
+                                <v-icon size="16" color="success" class="mr-1">mdi-arrow-right-circle</v-icon>
+                                Próximos Passos
+                              </div>
+                              <div 
+                                class="text-body-2 ai-next-steps-preview"
+                                v-html="formatMarkdown(truncateText(attendance.ai_next_steps, 150))"
+                              ></div>
+                            </div>
+
+                            <!-- Raw Content Preview (if no AI summary) -->
+                            <div v-if="!attendance.ai_summary" class="text-body-2 text-medium-emphasis raw-content-preview">
+                              {{ truncateText(attendance.raw_content, 200) }}
+                            </div>
+
+                            <!-- Duration -->
+                            <div v-if="attendance.duration" class="text-caption text-medium-emphasis mt-2">
+                              <v-icon size="14" class="mr-1">mdi-clock-outline</v-icon>
+                              Duração: {{ formatDuration(attendance.duration) }}
+                            </div>
+                          </div>
+
+                          <!-- Arrow -->
+                          <v-icon color="grey" class="ml-2">mdi-chevron-right</v-icon>
+                        </div>
+                      </v-card-text>
+                    </v-card>
+                  </v-col>
+                </v-row>
               </div>
             </v-window-item>
 
@@ -474,7 +592,7 @@
                     </v-card>
                   </v-col>
 
-                  <!-- Propriedades Recomendadas -->
+                  <!-- Propriedades Recomendadas pela IA -->
                   <v-col cols="12" v-if="recommendedProperties.length > 0">
                     <v-card variant="outlined" class="mb-4">
                       <v-card-title class="d-flex align-center">
@@ -496,9 +614,8 @@
                           >
                             <v-card
                               variant="outlined"
-                              class="h-100"
+                              class="h-100 property-card"
                               @click="goToProperty(property.id)"
-                              style="cursor: pointer"
                             >
                               <v-card-text class="pa-3">
                                 <div class="d-flex align-center mb-2">
@@ -551,71 +668,268 @@
                     </v-card>
                   </v-col>
 
+                  <!-- Propriedades Baseadas no Perfil (quando não há recomendações da IA) -->
+                  <v-col cols="12" v-else-if="profileBasedProperties.length > 0">
+                    <v-card variant="outlined" class="mb-4">
+                      <v-card-title class="d-flex align-center">
+                        <v-icon class="mr-2" color="info">mdi-home-search</v-icon>
+                        Propriedades que podem interessar
+                        <v-spacer></v-spacer>
+                        <v-chip color="info" variant="tonal" size="small">
+                          Baseado no perfil
+                        </v-chip>
+                      </v-card-title>
+                      <v-card-text>
+                        <v-alert type="info" variant="tonal" class="mb-4" density="compact">
+                          <v-icon start size="16">mdi-lightbulb</v-icon>
+                          Estas propriedades foram selecionadas com base no perfil de interesse do cliente.
+                          Conforme atendimentos forem processados, a IA fará recomendações mais precisas.
+                        </v-alert>
+                        <v-row dense>
+                          <v-col
+                            v-for="property in profileBasedProperties"
+                            :key="property.id"
+                            cols="12"
+                            sm="6"
+                            md="4"
+                          >
+                            <v-card
+                              variant="outlined"
+                              class="h-100 property-card"
+                              @click="goToProperty(property.id)"
+                            >
+                              <v-card-text class="pa-3">
+                                <div class="d-flex align-center mb-2">
+                                  <v-avatar
+                                    v-if="property.main_image_url"
+                                    size="56"
+                                    class="mr-3"
+                                    rounded="lg"
+                                  >
+                                    <v-img
+                                      :src="property.main_image_url"
+                                      cover
+                                    ></v-img>
+                                  </v-avatar>
+                                  <v-avatar
+                                    v-else
+                                    color="info"
+                                    size="56"
+                                    class="mr-3"
+                                    rounded="lg"
+                                  >
+                                    <v-icon color="white">mdi-home</v-icon>
+                                  </v-avatar>
+                                  <div class="flex-grow-1">
+                                    <div class="text-body-2 font-weight-medium mb-1">
+                                      {{ property.title }}
+                                    </div>
+                                    <div class="text-caption text-medium-emphasis">
+                                      {{ property.code }}
+                                    </div>
+                                  </div>
+                                </div>
+                                <v-chip
+                                  :color="getPropertyStatusColor(property.status)"
+                                  variant="flat"
+                                  size="x-small"
+                                  class="mb-2"
+                                >
+                                  {{ getPropertyStatusLabel(property.status) }}
+                                </v-chip>
+                                <div class="text-caption text-medium-emphasis">
+                                  <v-icon size="14" class="mr-1">mdi-map-marker</v-icon>
+                                  {{ property.city }}, {{ property.state }}
+                                </div>
+                              </v-card-text>
+                            </v-card>
+                          </v-col>
+                        </v-row>
+                      </v-card-text>
+                    </v-card>
+                  </v-col>
+
+                  <!-- Mensagem quando não há propriedades -->
+                  <v-col cols="12" v-else-if="hasInterestProfile">
+                    <v-card variant="outlined" class="mb-4">
+                      <v-card-title class="d-flex align-center">
+                        <v-icon class="mr-2" color="grey">mdi-home-search</v-icon>
+                        Propriedades Recomendadas
+                      </v-card-title>
+                      <v-card-text>
+                        <v-alert type="info" variant="tonal">
+                          <v-icon start>mdi-information</v-icon>
+                          Nenhuma propriedade encontrada que corresponda ao perfil de interesse do cliente.
+                          Cadastre mais propriedades ou ajuste o perfil de interesse.
+                        </v-alert>
+                      </v-card-text>
+                    </v-card>
+                  </v-col>
+
                   <!-- Histórico de Insights -->
                   <v-col cols="12" v-if="aiSummaries.length > 0">
                     <v-card variant="outlined" class="mb-4">
                       <v-card-title class="d-flex align-center">
                         <v-icon class="mr-2" color="primary">mdi-history</v-icon>
                         Histórico de Insights
+                        <v-spacer></v-spacer>
+                        <v-chip color="primary" variant="flat" size="small">
+                          {{ aiSummaries.length }} análise(s)
+                        </v-chip>
                       </v-card-title>
                       <v-card-text>
-                        <v-timeline density="compact" side="end">
-                          <v-timeline-item
+                        <v-expansion-panels variant="accordion">
+                          <v-expansion-panel
                             v-for="summary in aiSummaries"
                             :key="summary.id"
-                            :dot-color="getAIStatusColor(summary.status)"
-                            size="small"
                           >
-                            <template #icon>
-                              <v-icon :color="getAIStatusColor(summary.status)">
-                                {{ getAIStatusIcon(summary.status) }}
-                              </v-icon>
-                            </template>
-                            <v-card variant="outlined" class="mb-2">
-                              <v-card-text class="pa-3">
-                                <div class="d-flex align-center justify-space-between mb-2">
-                                  <div class="text-caption text-medium-emphasis">
-                                    {{ formatDateTime(summary.created_at) }}
+                            <v-expansion-panel-title>
+                              <div class="d-flex align-center w-100 pr-4">
+                                <v-icon
+                                  :color="getAIStatusColor(summary.status)"
+                                  class="mr-3"
+                                  size="24"
+                                >
+                                  {{ getAIStatusIcon(summary.status) }}
+                                </v-icon>
+                                <div class="flex-grow-1">
+                                  <div class="d-flex align-center justify-space-between">
+                                    <div class="text-body-2 font-weight-medium">
+                                      {{ formatDateTime(summary.created_at) }}
+                                    </div>
+                                    <div class="d-flex align-center ga-1">
+                                      <v-chip
+                                        v-if="summary.sentiment"
+                                        :color="getSentimentColor(summary.sentiment)"
+                                        size="x-small"
+                                        variant="flat"
+                                      >
+                                        <v-icon start size="12">{{ getSentimentIcon(summary.sentiment) }}</v-icon>
+                                        {{ getSentimentLabel(summary.sentiment) }}
+                                      </v-chip>
+                                      <v-chip
+                                        v-if="summary.lead_score_suggested"
+                                        :color="getLeadScoreColor(summary.lead_score_suggested)"
+                                        size="x-small"
+                                        variant="flat"
+                                      >
+                                        Score: {{ summary.lead_score_suggested }}
+                                      </v-chip>
+                                    </div>
                                   </div>
-                                  <v-chip
-                                    :color="getAIStatusColor(summary.status)"
-                                    variant="flat"
-                                    size="x-small"
-                                  >
-                                    {{ getAIStatusLabel(summary.status) }}
-                                  </v-chip>
+                                  <div class="text-caption text-medium-emphasis mt-1">
+                                    {{ truncateText(summary.summary_text.replace(/[#*_\-]/g, ''), 80) }}
+                                  </div>
                                 </div>
-                                <div class="text-body-2 mb-2" style="white-space: pre-wrap; word-wrap: break-word;">
-                                  {{ summary.summary_text.substring(0, 200) }}{{ summary.summary_text.length > 200 ? '...' : '' }}
+                              </div>
+                            </v-expansion-panel-title>
+                            <v-expansion-panel-text>
+                              <!-- Summary Text with Markdown -->
+                              <div class="mb-4">
+                                <div class="text-subtitle-2 font-weight-medium mb-2 d-flex align-center">
+                                  <v-icon size="16" color="primary" class="mr-1">mdi-text-box</v-icon>
+                                  Resumo
                                 </div>
-                                <div class="d-flex flex-wrap ga-1">
-                                  <v-chip
-                                    v-if="summary.sentiment"
-                                    size="x-small"
-                                    variant="outlined"
-                                  >
-                                    <v-icon start size="12">{{ getSentimentIcon(summary.sentiment) }}</v-icon>
-                                    {{ getSentimentLabel(summary.sentiment) }}
-                                  </v-chip>
-                                  <v-chip
-                                    v-if="summary.detected_intent"
-                                    size="x-small"
-                                    variant="outlined"
-                                  >
-                                    {{ getIntentLabel(summary.detected_intent) }}
-                                  </v-chip>
-                                  <v-chip
-                                    v-if="summary.urgency_level_detected"
-                                    size="x-small"
-                                    variant="outlined"
-                                  >
-                                    Urgência: {{ getUrgencyLabel(summary.urgency_level_detected) }}
-                                  </v-chip>
+                                <div 
+                                  class="markdown-content ai-summary-content"
+                                  v-html="formatMarkdown(summary.summary_text)"
+                                ></div>
+                              </div>
+
+                              <!-- Key Points -->
+                              <div v-if="summary.key_points && Object.keys(summary.key_points).length > 0" class="mb-4">
+                                <div class="text-subtitle-2 font-weight-medium mb-2 d-flex align-center">
+                                  <v-icon size="16" color="success" class="mr-1">mdi-format-list-bulleted</v-icon>
+                                  Pontos-chave
                                 </div>
-                              </v-card-text>
-                            </v-card>
-                          </v-timeline-item>
-                        </v-timeline>
+                                <div class="d-flex flex-wrap ga-2">
+                                  <template v-if="summary.key_points.topics">
+                                    <v-chip
+                                      v-for="topic in summary.key_points.topics"
+                                      :key="topic"
+                                      size="small"
+                                      variant="tonal"
+                                      color="primary"
+                                    >
+                                      {{ topic }}
+                                    </v-chip>
+                                  </template>
+                                  <template v-if="summary.key_points.requirements">
+                                    <v-chip
+                                      v-for="req in summary.key_points.requirements"
+                                      :key="req"
+                                      size="small"
+                                      variant="tonal"
+                                      color="info"
+                                    >
+                                      {{ req }}
+                                    </v-chip>
+                                  </template>
+                                </div>
+                              </div>
+
+                              <!-- AI Analysis -->
+                              <div class="d-flex flex-wrap ga-2">
+                                <v-chip
+                                  v-if="summary.detected_intent"
+                                  :color="getIntentColor(summary.detected_intent)"
+                                  variant="flat"
+                                  size="small"
+                                >
+                                  <v-icon start size="14">{{ getIntentIcon(summary.detected_intent) }}</v-icon>
+                                  {{ getIntentLabel(summary.detected_intent) }}
+                                </v-chip>
+                                <v-chip
+                                  v-if="summary.interest_type_detected"
+                                  color="teal"
+                                  variant="flat"
+                                  size="small"
+                                >
+                                  <v-icon start size="14">mdi-handshake</v-icon>
+                                  {{ getInterestTypeLabel(summary.interest_type_detected as InterestType) }}
+                                </v-chip>
+                                <v-chip
+                                  v-if="summary.urgency_level_detected"
+                                  :color="getUrgencyColor(summary.urgency_level_detected as UrgencyLevel)"
+                                  variant="flat"
+                                  size="small"
+                                >
+                                  <v-icon start size="14">mdi-alert-circle</v-icon>
+                                  Urgência: {{ getUrgencyLabel(summary.urgency_level_detected as UrgencyLevel) }}
+                                </v-chip>
+                                <v-chip
+                                  v-if="summary.budget_min_detected || summary.budget_max_detected"
+                                  color="amber"
+                                  variant="flat"
+                                  size="small"
+                                >
+                                  <v-icon start size="14">mdi-currency-usd</v-icon>
+                                  {{ formatBudgetDetected(summary.budget_min_detected, summary.budget_max_detected) }}
+                                </v-chip>
+                              </div>
+
+                              <!-- Recommended Properties -->
+                              <div v-if="summary.recommended_properties && summary.recommended_properties.length > 0" class="mt-4">
+                                <div class="text-subtitle-2 font-weight-medium mb-2 d-flex align-center">
+                                  <v-icon size="16" color="info" class="mr-1">mdi-home-search</v-icon>
+                                  Propriedades Recomendadas
+                                </div>
+                                <div class="text-caption text-medium-emphasis">
+                                  {{ summary.recommended_properties.length }} propriedade(s) sugerida(s)
+                                </div>
+                              </div>
+
+                              <!-- Model Info -->
+                              <div v-if="summary.model_used" class="mt-4 text-caption text-medium-emphasis">
+                                <v-icon size="12" class="mr-1">mdi-robot</v-icon>
+                                Modelo: {{ summary.model_used }} (v{{ summary.prompt_version }})
+                                <span v-if="summary.confidence_score">
+                                  • Confiança: {{ Math.round(summary.confidence_score * 100) }}%
+                                </span>
+                              </div>
+                            </v-expansion-panel-text>
+                          </v-expansion-panel>
+                        </v-expansion-panels>
                       </v-card-text>
                     </v-card>
                   </v-col>
@@ -776,6 +1090,7 @@ import {
 import { usersService, type User } from '@/shared/services/users.service'
 import { aiSummariesService, type AISummary, type Sentiment, type DetectedIntent } from '@/shared/services/aiSummaries.service'
 import { propertiesService, type Property } from '@/shared/services/properties.service'
+import { attendancesService, type Attendance } from '@/shared/services/attendances.service'
 import { formatPhone, formatCurrency, parseCurrency } from '@/shared/utils/masks'
 import ClientCreateDialog from '@/shared/components/ClientCreateDialog.vue'
 // Markdown formatting (using simple parser, not marked library)
@@ -787,12 +1102,15 @@ const router = useRouter()
 const client = ref<Client | null>(null)
 const isLoading = ref(true)
 const isLoadingAIInsights = ref(false)
+const isLoadingAttendances = ref(false)
 const activeTab = ref('overview')
 const agents = ref<User[]>([])
 const showScheduleDialog = ref(false)
 const showEditDialog = ref(false)
 const aiSummaries = ref<AISummary[]>([])
 const recommendedProperties = ref<Property[]>([])
+const profileBasedProperties = ref<Property[]>([])
+const clientAttendances = ref<Attendance[]>([])
 
 // Editable fields (for inline editing)
 const editableFields = ref<Partial<ClientUpdate>>({})
@@ -980,6 +1298,85 @@ const loadAgents = async () => {
   }
 }
 
+// Load client attendances
+const loadClientAttendances = async () => {
+  if (!client.value) return
+
+  isLoadingAttendances.value = true
+  try {
+    clientAttendances.value = await attendancesService.getAttendances({
+      client_id: client.value.id,
+      limit: 100,
+    })
+  } catch (error) {
+    console.error('Error loading client attendances:', error)
+  } finally {
+    isLoadingAttendances.value = false
+  }
+}
+
+// Load profile-based property recommendations when no AI recommendations exist
+const loadProfileBasedProperties = async () => {
+  if (!client.value) return
+  
+  // Only load if no AI recommendations and client has interest profile
+  if (recommendedProperties.value.length > 0) return
+  if (!hasInterestProfile.value) return
+  
+  try {
+    // Get all properties and filter based on client profile
+    const allProperties = await propertiesService.listProperties({ limit: 100 })
+    
+    // Filter properties based on client preferences
+    const filtered = allProperties.filter(property => {
+      // Only published properties
+      if (property.status !== 'PUBLISHED') return false
+      
+      // Match interest type
+      if (client.value?.current_interest_type === 'BUY' && 
+          property.business_type !== 'SALE' && property.business_type !== 'BOTH') return false
+      if (client.value?.current_interest_type === 'RENT' && 
+          property.business_type !== 'RENT' && property.business_type !== 'BOTH') return false
+      
+      // Match property type
+      if (client.value?.current_property_type && 
+          property.property_type !== client.value.current_property_type) return false
+      
+      // Match city
+      if (client.value?.current_city_interest && property.city) {
+        const cityMatch = property.city.toLowerCase().includes(
+          client.value.current_city_interest.toLowerCase()
+        )
+        if (!cityMatch) return false
+      }
+      
+      // Match budget
+      const minBudget = client.value?.current_budget_min ? parseFloat(client.value.current_budget_min) : null
+      const maxBudget = client.value?.current_budget_max ? parseFloat(client.value.current_budget_max) : null
+      
+      if (minBudget || maxBudget) {
+        const priceValue = client.value?.current_interest_type === 'RENT' 
+          ? property.rent_price 
+          : property.price
+        
+        const price = typeof priceValue === 'string' ? parseFloat(priceValue) : priceValue
+        
+        if (price) {
+          if (minBudget && price < minBudget) return false
+          if (maxBudget && price > maxBudget) return false
+        }
+      }
+      
+      return true
+    })
+    
+    // Take top 6 properties
+    profileBasedProperties.value = filtered.slice(0, 6)
+  } catch (error) {
+    console.error('Error loading profile-based properties:', error)
+  }
+}
+
 // Load AI Insights
 const loadAIInsights = async () => {
   if (!client.value) return
@@ -997,7 +1394,7 @@ const loadAIInsights = async () => {
       }
     })
 
-    // Load recommended properties
+    // Load recommended properties from AI
     if (propertyIds.size > 0) {
       const propertiesPromises = Array.from(propertyIds).map(id =>
         propertiesService.getPropertyById(id).catch(() => null)
@@ -1010,6 +1407,11 @@ const loadAIInsights = async () => {
         )
         .map(result => result.value)
     }
+    
+    // If no AI recommendations, try to find based on profile
+    if (recommendedProperties.value.length === 0) {
+      await loadProfileBasedProperties()
+    }
   } catch (error) {
     console.error('Error loading AI insights:', error)
   } finally {
@@ -1017,10 +1419,13 @@ const loadAIInsights = async () => {
   }
 }
 
-// Watch active tab to load AI insights when needed
+// Watch active tab to load data when needed
 watch(activeTab, (newTab) => {
   if (newTab === 'insights' && client.value && aiSummaries.value.length === 0) {
     loadAIInsights()
+  }
+  if (newTab === 'attendances' && client.value && clientAttendances.value.length === 0) {
+    loadClientAttendances()
   }
 })
 
@@ -1071,30 +1476,91 @@ const formatBudgetRange = (): string => {
 const formatMarkdown = (text: string): string => {
   if (!text) return ''
   
-  // Simple markdown parser for common formatting
+  // Split by lines to process lists properly
+  const lines = text.split('\n')
+  const processedLines: string[] = []
+  let inList = false
+  let listType: 'ul' | 'ol' | null = null
+  
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i]
+    
+    // Check for unordered list items
+    const ulMatch = line.match(/^(\s*)[-*]\s+(.+)/)
+    // Check for ordered list items
+    const olMatch = line.match(/^(\s*)\d+\.\s+(.+)/)
+    
+    if (ulMatch) {
+      if (!inList || listType !== 'ul') {
+        if (inList) processedLines.push(listType === 'ol' ? '</ol>' : '</ul>')
+        processedLines.push('<ul class="markdown-list">')
+        inList = true
+        listType = 'ul'
+      }
+      const content = formatInlineMarkdown(ulMatch[2])
+      processedLines.push(`<li>${content}</li>`)
+    } else if (olMatch) {
+      if (!inList || listType !== 'ol') {
+        if (inList) processedLines.push(listType === 'ol' ? '</ol>' : '</ul>')
+        processedLines.push('<ol class="markdown-list">')
+        inList = true
+        listType = 'ol'
+      }
+      const content = formatInlineMarkdown(olMatch[2])
+      processedLines.push(`<li>${content}</li>`)
+    } else {
+      // Close list if we were in one
+      if (inList && line.trim() !== '') {
+        processedLines.push(listType === 'ol' ? '</ol>' : '</ul>')
+        inList = false
+        listType = null
+      }
+      
+      // Process headers
+      if (line.match(/^### /)) {
+        line = `<h4 class="markdown-h4">${formatInlineMarkdown(line.replace(/^### /, ''))}</h4>`
+      } else if (line.match(/^## /)) {
+        line = `<h3 class="markdown-h3">${formatInlineMarkdown(line.replace(/^## /, ''))}</h3>`
+      } else if (line.match(/^# /)) {
+        line = `<h2 class="markdown-h2">${formatInlineMarkdown(line.replace(/^# /, ''))}</h2>`
+      } else if (line.trim() !== '') {
+        // Regular paragraph with inline formatting
+        line = `<p class="markdown-p">${formatInlineMarkdown(line)}</p>`
+      } else if (!inList) {
+        // Empty line - add spacing only if not in list
+        line = '<div class="markdown-spacer"></div>'
+      }
+      
+      processedLines.push(line)
+    }
+  }
+  
+  // Close any open list
+  if (inList) {
+    processedLines.push(listType === 'ol' ? '</ol>' : '</ul>')
+  }
+  
+  return processedLines.join('')
+}
+
+const formatInlineMarkdown = (text: string): string => {
+  if (!text) return ''
+  
   let html = text
   
-  // Headers
-  html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>')
-  html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>')
-  html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>')
-  
-  // Bold
-  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-  html = html.replace(/__(.*?)__/g, '<strong>$1</strong>')
+  // Bold (process first to avoid conflicts with italic)
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+  html = html.replace(/__(.+?)__/g, '<strong>$1</strong>')
   
   // Italic
-  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>')
-  html = html.replace(/_(.*?)_/g, '<em>$1</em>')
+  html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>')
+  html = html.replace(/_([^_]+)_/g, '<em>$1</em>')
+  
+  // Code
+  html = html.replace(/`([^`]+)`/g, '<code class="markdown-code">$1</code>')
   
   // Links
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>')
-  
-  // Line breaks
-  html = html.replace(/\n/g, '<br>')
-  
-  // Code blocks
-  html = html.replace(/`([^`]+)`/g, '<code class="markdown-code">$1</code>')
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" class="markdown-link">$1</a>')
   
   return html
 }
@@ -1138,6 +1604,94 @@ const getFollowUpStatus = (dateString: string): string => {
   if (diffDays === 1) return 'Amanhã'
   if (diffDays <= 7) return `Em ${diffDays} dias`
   return `Em ${diffDays} dias`
+}
+
+// Attendance helpers
+const getChannelLabel = (channel: string): string => {
+  const labels: Record<string, string> = {
+    WHATSAPP: 'WhatsApp',
+    SITE: 'Site',
+    PHONE: 'Telefone',
+    EMAIL: 'E-mail',
+    IN_PERSON: 'Presencial',
+  }
+  return labels[channel] || channel
+}
+
+const getChannelIcon = (channel: string): string => {
+  const icons: Record<string, string> = {
+    WHATSAPP: 'mdi-whatsapp',
+    SITE: 'mdi-web',
+    PHONE: 'mdi-phone',
+    EMAIL: 'mdi-email',
+    IN_PERSON: 'mdi-account',
+  }
+  return icons[channel] || 'mdi-phone'
+}
+
+const getChannelColor = (channel: string): string => {
+  const colors: Record<string, string> = {
+    WHATSAPP: 'success',
+    SITE: 'primary',
+    PHONE: 'info',
+    EMAIL: 'warning',
+    IN_PERSON: 'purple',
+  }
+  return colors[channel] || 'grey'
+}
+
+const getAttendanceStatusLabel = (status: string): string => {
+  const labels: Record<string, string> = {
+    IN_PROGRESS: 'Em Andamento',
+    COMPLETED: 'Concluído',
+    CANCELLED: 'Cancelado',
+    PAUSED: 'Pausado',
+  }
+  return labels[status] || status
+}
+
+const getAttendanceStatusColor = (status: string): string => {
+  const colors: Record<string, string> = {
+    IN_PROGRESS: 'info',
+    COMPLETED: 'success',
+    CANCELLED: 'error',
+    PAUSED: 'warning',
+  }
+  return colors[status] || 'grey'
+}
+
+const truncateText = (text: string, maxLength: number): string => {
+  if (!text) return ''
+  if (text.length <= maxLength) return text
+  return text.substring(0, maxLength) + '...'
+}
+
+const formatDuration = (seconds: number): string => {
+  if (seconds < 60) return `${seconds}s`
+  if (seconds < 3600) {
+    const minutes = Math.floor(seconds / 60)
+    return `${minutes}min`
+  }
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  return `${hours}h ${minutes}min`
+}
+
+const formatBudgetDetected = (min: number | null, max: number | null): string => {
+  const formatValue = (value: number) => formatCurrency(value)
+  
+  if (min && max) return `${formatValue(min)} - ${formatValue(max)}`
+  if (min) return `A partir de ${formatValue(min)}`
+  if (max) return `Até ${formatValue(max)}`
+  return 'Não definido'
+}
+
+const goToAttendance = (attendanceId: string) => {
+  router.push({ name: 'attendances-details', params: { id: attendanceId } })
+}
+
+const goToCreateAttendance = () => {
+  router.push({ name: 'attendances-create', query: { client_id: client.value?.id } })
 }
 
 const getInitials = (name: string): string => {
@@ -1244,7 +1798,7 @@ const getLeadScoreColor = (score: number): string => {
   return 'error'
 }
 
-const getLeadScoreAlertType = (score: number): string => {
+const getLeadScoreAlertType = (score: number): 'success' | 'info' | 'warning' | 'error' => {
   if (score >= 80) return 'success'
   if (score >= 60) return 'info'
   if (score >= 40) return 'warning'
@@ -1267,7 +1821,7 @@ const handleEditClick = () => {
   showEditDialog.value = true
 }
 
-const handleClientSaved = async (updatedClient: Client) => {
+const handleClientSaved = async () => {
   // Reload client to show updated data
   await loadClient()
   showEditDialog.value = false
@@ -1307,17 +1861,6 @@ const getAIStatusIcon = (status: string): string => {
     REPROCESSING: 'mdi-refresh',
   }
   return icons[status] || 'mdi-help-circle'
-}
-
-const getAIStatusLabel = (status: string): string => {
-  const labels: Record<string, string> = {
-    PENDING: 'Pendente',
-    PROCESSING: 'Processando',
-    COMPLETED: 'Completo',
-    FAILED: 'Falhou',
-    REPROCESSING: 'Reprocessando',
-  }
-  return labels[status] || status
 }
 
 // Sentiment helpers
@@ -1424,34 +1967,122 @@ onMounted(() => {
 </script>
 
 <style scoped>
-:deep(.v-card) {
-  transition: box-shadow 0.2s ease;
+/* Card hover effects */
+.property-card,
+.attendance-card {
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-:deep(.v-card:hover) {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12) !important;
+.property-card:hover,
+.attendance-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  transform: translateY(-2px);
 }
 
-/* Markdown styles */
-:deep(.v-card-text) {
-  line-height: 1.6;
+/* Markdown content styles */
+:deep(.markdown-content) {
+  line-height: 1.7;
 }
 
-:deep(.v-card-text h1),
-:deep(.v-card-text h2),
-:deep(.v-card-text h3) {
-  margin-top: 1em;
-  margin-bottom: 0.5em;
+:deep(.markdown-h2) {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  color: rgb(var(--v-theme-on-surface));
 }
 
-:deep(.v-card-text ul),
-:deep(.v-card-text ol) {
-  margin-left: 1.5em;
-  margin-bottom: 1em;
+:deep(.markdown-h3) {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-top: 0.75rem;
+  margin-bottom: 0.5rem;
+  color: rgb(var(--v-theme-on-surface));
 }
 
-:deep(.v-card-text p) {
-  margin-bottom: 1em;
+:deep(.markdown-h4) {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+  margin-bottom: 0.25rem;
+  color: rgb(var(--v-theme-on-surface));
+}
+
+:deep(.markdown-p) {
+  margin-bottom: 0.75rem;
+}
+
+:deep(.markdown-p:last-child) {
+  margin-bottom: 0;
+}
+
+:deep(.markdown-list) {
+  margin: 0.5rem 0 0.75rem 1.5rem;
+  padding: 0;
+}
+
+:deep(.markdown-list li) {
+  margin-bottom: 0.25rem;
+  padding-left: 0.25rem;
+}
+
+:deep(.markdown-list li:last-child) {
+  margin-bottom: 0;
+}
+
+:deep(.markdown-code) {
+  background-color: rgba(var(--v-theme-on-surface), 0.08);
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.875em;
+}
+
+:deep(.markdown-link) {
+  color: rgb(var(--v-theme-primary));
+  text-decoration: none;
+}
+
+:deep(.markdown-link:hover) {
+  text-decoration: underline;
+}
+
+:deep(.markdown-spacer) {
+  height: 0.5rem;
+}
+
+/* AI Summary preview styles */
+.ai-summary-preview,
+.ai-next-steps-preview {
+  background-color: rgba(var(--v-theme-surface-variant), 0.5);
+  padding: 0.75rem;
+  border-radius: 8px;
+  border-left: 3px solid rgb(var(--v-theme-primary));
+}
+
+.ai-next-steps-preview {
+  border-left-color: rgb(var(--v-theme-success));
+}
+
+.raw-content-preview {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* AI Summary content in expansion panels */
+:deep(.ai-summary-content) {
+  background-color: rgba(var(--v-theme-surface-variant), 0.3);
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+:deep(.ai-summary-content .markdown-p) {
+  margin-bottom: 0.5rem;
+}
+
+:deep(.ai-summary-content .markdown-list) {
+  margin-left: 1.25rem;
 }
 </style>
 
