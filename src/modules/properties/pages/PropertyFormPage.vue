@@ -89,7 +89,8 @@
                     label="Código *"
                     variant="outlined"
                     :rules="[rules.required]"
-                    hint="Código único do imóvel"
+                    prepend-inner-icon="mdi-identifier"
+                    hint="Código único do imóvel (ex: IMV-001)"
                     persistent-hint
                   ></v-text-field>
                 </v-col>
@@ -100,6 +101,9 @@
                     label="Tipo de Imóvel *"
                     variant="outlined"
                     :rules="[rules.required]"
+                    prepend-inner-icon="mdi-home-variant"
+                    hint="Tipo do imóvel"
+                    persistent-hint
                   ></v-select>
                 </v-col>
                 <v-col cols="12">
@@ -108,6 +112,9 @@
                     label="Título *"
                     variant="outlined"
                     :rules="[rules.required]"
+                    prepend-inner-icon="mdi-text-short"
+                    hint="Título atrativo para o imóvel"
+                    persistent-hint
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12">
@@ -117,6 +124,9 @@
                     variant="outlined"
                     rows="4"
                     auto-grow
+                    prepend-inner-icon="mdi-text"
+                    hint="Descrição detalhada do imóvel"
+                    persistent-hint
                   ></v-textarea>
                 </v-col>
                 <v-col cols="12" md="6">
@@ -126,6 +136,9 @@
                     label="Tipo de Negócio *"
                     variant="outlined"
                     :rules="[rules.required]"
+                    prepend-inner-icon="mdi-handshake"
+                    hint="Venda, Aluguel ou Ambos"
+                    persistent-hint
                   ></v-select>
                 </v-col>
               </v-row>
@@ -170,6 +183,9 @@
                     v-model="formData.street"
                     label="Rua"
                     variant="outlined"
+                    prepend-inner-icon="mdi-road"
+                    hint="Nome da rua ou avenida"
+                    persistent-hint
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12" md="4">
@@ -177,6 +193,9 @@
                     v-model="formData.number"
                     label="Número"
                     variant="outlined"
+                    prepend-inner-icon="mdi-numeric"
+                    hint="Número do imóvel"
+                    persistent-hint
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12" md="6">
@@ -184,6 +203,9 @@
                     v-model="formData.neighborhood"
                     label="Bairro"
                     variant="outlined"
+                    prepend-inner-icon="mdi-home-group"
+                    hint="Bairro do imóvel"
+                    persistent-hint
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12" md="6">
@@ -191,6 +213,9 @@
                     v-model="formData.city"
                     label="Cidade"
                     variant="outlined"
+                    prepend-inner-icon="mdi-city"
+                    hint="Cidade do imóvel"
+                    persistent-hint
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12" md="4">
@@ -198,6 +223,7 @@
                     v-model="formData.state"
                     label="Estado (UF)"
                     variant="outlined"
+                    prepend-inner-icon="mdi-map"
                     :rules="[rules.state]"
                     maxlength="2"
                     counter="2"
@@ -211,7 +237,8 @@
                     v-model="formData.zip_code"
                     label="CEP"
                     variant="outlined"
-                    hint="Preparado para autocomplete futuro"
+                    prepend-inner-icon="mdi-mailbox"
+                    hint="Código postal"
                     persistent-hint
                   ></v-text-field>
                 </v-col>
@@ -220,9 +247,10 @@
                     v-model="formData.latitude"
                     label="Latitude"
                     variant="outlined"
+                    prepend-inner-icon="mdi-latitude"
                     type="number"
                     step="any"
-                    hint="Será preenchido automaticamente no futuro"
+                    hint="Coordenada de latitude"
                     persistent-hint
                   ></v-text-field>
                 </v-col>
@@ -231,9 +259,10 @@
                     v-model="formData.longitude"
                     label="Longitude"
                     variant="outlined"
+                    prepend-inner-icon="mdi-longitude"
                     type="number"
                     step="any"
-                    hint="Será preenchido automaticamente no futuro"
+                    hint="Coordenada de longitude"
                     persistent-hint
                   ></v-text-field>
                 </v-col>
@@ -248,8 +277,11 @@
                     v-model.number="formData.area_total"
                     label="Área Total (m²)"
                     variant="outlined"
+                    prepend-inner-icon="mdi-ruler-square"
                     type="number"
                     min="0"
+                    hint="Área total do terreno/imóvel"
+                    persistent-hint
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12" md="6">
@@ -257,8 +289,11 @@
                     v-model.number="formData.area_built"
                     label="Área Construída (m²)"
                     variant="outlined"
+                    prepend-inner-icon="mdi-floor-plan"
                     type="number"
                     min="0"
+                    hint="Área construída do imóvel"
+                    persistent-hint
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12" md="4">
@@ -266,8 +301,11 @@
                     v-model.number="formData.bedrooms"
                     label="Quartos"
                     variant="outlined"
+                    prepend-inner-icon="mdi-bed"
                     type="number"
                     min="0"
+                    hint="Número de quartos"
+                    persistent-hint
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12" md="4">
@@ -275,8 +313,11 @@
                     v-model.number="formData.bathrooms"
                     label="Banheiros"
                     variant="outlined"
+                    prepend-inner-icon="mdi-shower"
                     type="number"
                     min="0"
+                    hint="Número de banheiros"
+                    persistent-hint
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12" md="4">
@@ -284,34 +325,38 @@
                     v-model.number="formData.parking_spaces"
                     label="Vagas de Garagem"
                     variant="outlined"
+                    prepend-inner-icon="mdi-car"
                     type="number"
                     min="0"
+                    hint="Vagas de estacionamento"
+                    persistent-hint
                   ></v-text-field>
                 </v-col>
-                <v-col cols="12" md="6">
+                <v-col cols="12" md="4">
                   <v-text-field
                     v-model.number="formData.floor"
                     label="Andar"
                     variant="outlined"
+                    prepend-inner-icon="mdi-stairs"
                     type="number"
                     hint="Para apartamentos"
                     persistent-hint
                   ></v-text-field>
                 </v-col>
-                <v-col cols="12" md="6">
+                <v-col cols="12" md="4">
                   <v-switch
                     v-model="formData.has_elevator"
                     label="Possui Elevador"
                     color="primary"
-                    hide-details
+                    prepend-icon="mdi-elevator"
                   ></v-switch>
                 </v-col>
-                <v-col cols="12">
+                <v-col cols="12" md="4">
                   <v-switch
                     v-model="formData.furnished"
                     label="Mobiliado"
                     color="primary"
-                    hide-details
+                    prepend-icon="mdi-sofa"
                   ></v-switch>
                 </v-col>
               </v-row>
@@ -324,7 +369,10 @@
                 variant="tonal"
                 class="mb-4"
               >
-                Os campos exibidos dependem do tipo de negócio selecionado.
+                <div class="d-flex align-center">
+                  <v-icon class="mr-2">mdi-information</v-icon>
+                  Os campos exibidos dependem do tipo de negócio selecionado na aba Geral.
+                </div>
               </v-alert>
               <v-row>
                 <v-col
@@ -336,8 +384,9 @@
                     v-model="priceFormatted"
                     label="Preço de Venda"
                     variant="outlined"
+                    prepend-inner-icon="mdi-currency-brl"
                     prefix="R$"
-                    hint="Digite apenas números (será formatado automaticamente)"
+                    hint="Valor de venda do imóvel"
                     persistent-hint
                     @input="priceFormatted = formatCurrencyInput(priceFormatted)"
                     @blur="formData.price = parseCurrency(priceFormatted) || null; priceFormatted = formData.price ? formatCurrency(formData.price) : ''"
@@ -352,8 +401,9 @@
                     v-model="rentPriceFormatted"
                     label="Preço de Aluguel"
                     variant="outlined"
+                    prepend-inner-icon="mdi-cash-clock"
                     prefix="R$"
-                    hint="Digite apenas números (será formatado automaticamente)"
+                    hint="Valor mensal do aluguel"
                     persistent-hint
                     @input="rentPriceFormatted = formatCurrencyInput(rentPriceFormatted)"
                     @blur="formData.rent_price = parseCurrency(rentPriceFormatted) || null; rentPriceFormatted = formData.rent_price ? formatCurrency(formData.rent_price) : ''"
@@ -364,8 +414,9 @@
                     v-model="condoFeeFormatted"
                     label="Condomínio"
                     variant="outlined"
+                    prepend-inner-icon="mdi-home-city"
                     prefix="R$"
-                    hint="Digite apenas números (será formatado automaticamente)"
+                    hint="Taxa de condomínio mensal"
                     persistent-hint
                     @input="condoFeeFormatted = formatCurrencyInput(condoFeeFormatted)"
                     @blur="formData.condo_fee = parseCurrency(condoFeeFormatted) || null; condoFeeFormatted = formData.condo_fee ? formatCurrency(formData.condo_fee) : ''"
@@ -376,8 +427,9 @@
                     v-model="iptuFormatted"
                     label="IPTU"
                     variant="outlined"
+                    prepend-inner-icon="mdi-file-document"
                     prefix="R$"
-                    hint="Digite apenas números (será formatado automaticamente)"
+                    hint="Imposto predial anual"
                     persistent-hint
                     @input="iptuFormatted = formatCurrencyInput(iptuFormatted)"
                     @blur="formData.iptu = parseCurrency(iptuFormatted) || null; iptuFormatted = formData.iptu ? formatCurrency(formData.iptu) : ''"
@@ -395,7 +447,10 @@
                     :items="statusOptions"
                     label="Status *"
                     variant="outlined"
+                    prepend-inner-icon="mdi-flag"
                     :rules="[rules.required]"
+                    hint="Status de publicação do imóvel"
+                    persistent-hint
                   ></v-select>
                 </v-col>
                 <v-col cols="12" md="6">
@@ -404,11 +459,12 @@
                     :items="corretoresOptions"
                     label="Corretor Responsável"
                     variant="outlined"
+                    prepend-inner-icon="mdi-account-tie"
                     item-title="full_name"
                     item-value="id"
                     return-object
                     clearable
-                    hint="Apenas usuários com role 'corretor'"
+                    hint="Corretor responsável pelo imóvel"
                     persistent-hint
                   >
                     <template #item="{ props, item }">
@@ -435,6 +491,9 @@
                     v-model="formData.owner_name"
                     label="Nome do Proprietário"
                     variant="outlined"
+                    prepend-inner-icon="mdi-account"
+                    hint="Nome completo do proprietário"
+                    persistent-hint
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12" md="6">
@@ -442,6 +501,7 @@
                     v-model="ownerContactFormatted"
                     label="Contato do Proprietário"
                     variant="outlined"
+                    prepend-inner-icon="mdi-phone"
                     hint="Telefone (ex: (11) 98765-4321) ou email"
                     persistent-hint
                     @blur="ownerContactFormatted = formatPhone(formData.owner_contact || '')"
@@ -453,46 +513,148 @@
             <!-- Tab: IA & Matching -->
             <v-window-item value="ai">
               <v-row>
-                <v-col cols="12">
-                  <v-alert
-                    type="info"
-                    variant="tonal"
-                    class="mb-4"
-                  >
-                    O score de visibilidade é calculado automaticamente pelo sistema.
-                  </v-alert>
-                </v-col>
+                <!-- Score de Visibilidade -->
                 <v-col cols="12" md="6">
-                  <v-text-field
-                    :model-value="property?.visibility_score ?? '-'"
-                    label="Score de Visibilidade"
-                    variant="outlined"
-                    readonly
-                    hint="Calculado automaticamente (0-100)"
-                    persistent-hint
-                  >
-                    <template #append>
-                      <v-progress-linear
-                        v-if="property?.visibility_score !== null && property?.visibility_score !== undefined"
-                        :model-value="property.visibility_score"
-                        color="primary"
-                        height="20"
-                        width="100"
-                        rounded
-                      ></v-progress-linear>
-                    </template>
-                  </v-text-field>
+                  <v-card variant="outlined" class="pa-4">
+                    <div class="d-flex align-center mb-3">
+                      <v-icon color="primary" class="mr-2">mdi-chart-line</v-icon>
+                      <span class="text-subtitle-1 font-weight-medium">Score de Visibilidade</span>
+                    </div>
+                    <div class="text-center mb-3">
+                      <div class="text-h3 font-weight-bold" :class="getScoreColor(calculatedScore)">
+                        {{ calculatedScore }}
+                      </div>
+                      <div class="text-caption text-medium-emphasis">de 100 pontos</div>
+                    </div>
+                    <v-progress-linear
+                      :model-value="calculatedScore"
+                      :color="getScoreColorName(calculatedScore)"
+                      height="12"
+                      rounded
+                      class="mb-3"
+                    ></v-progress-linear>
+                    <v-alert
+                      :type="getScoreAlertType(calculatedScore)"
+                      variant="tonal"
+                      density="compact"
+                    >
+                      {{ getScoreMessage(calculatedScore) }}
+                    </v-alert>
+                  </v-card>
                 </v-col>
+
+                <!-- Completude do Cadastro -->
+                <v-col cols="12" md="6">
+                  <v-card variant="outlined" class="pa-4">
+                    <div class="d-flex align-center mb-3">
+                      <v-icon color="success" class="mr-2">mdi-check-circle</v-icon>
+                      <span class="text-subtitle-1 font-weight-medium">Completude do Cadastro</span>
+                    </div>
+                    <v-list density="compact">
+                      <v-list-item v-for="item in completenessItems" :key="item.label">
+                        <template #prepend>
+                          <v-icon :color="item.complete ? 'success' : 'grey'" size="20">
+                            {{ item.complete ? 'mdi-check-circle' : 'mdi-circle-outline' }}
+                          </v-icon>
+                        </template>
+                        <v-list-item-title :class="{ 'text-medium-emphasis': !item.complete }">
+                          {{ item.label }}
+                        </v-list-item-title>
+                      </v-list-item>
+                    </v-list>
+                    <div class="text-center mt-2">
+                      <v-chip
+                        :color="completenessPercentage >= 80 ? 'success' : completenessPercentage >= 50 ? 'warning' : 'error'"
+                        variant="flat"
+                        size="small"
+                      >
+                        {{ completenessPercentage }}% completo
+                      </v-chip>
+                    </div>
+                  </v-card>
+                </v-col>
+
+                <!-- Perfil do Cliente Ideal -->
                 <v-col cols="12">
-                  <v-textarea
-                    v-model="formData.ideal_client_profile"
-                    label="Perfil do Cliente Ideal"
-                    variant="outlined"
-                    rows="4"
-                    auto-grow
-                    hint="Descrição do perfil de cliente ideal para este imóvel"
-                    persistent-hint
-                  ></v-textarea>
+                  <v-card variant="outlined" class="pa-4">
+                    <div class="d-flex align-center justify-space-between mb-3">
+                      <div class="d-flex align-center">
+                        <v-icon color="primary" class="mr-2">mdi-account-search</v-icon>
+                        <span class="text-subtitle-1 font-weight-medium">Perfil do Cliente Ideal</span>
+                      </div>
+                      <v-btn
+                        color="primary"
+                        variant="tonal"
+                        size="small"
+                        prepend-icon="mdi-robot"
+                        @click="generateIdealClientProfile"
+                        :loading="isGeneratingProfile"
+                      >
+                        Gerar com IA
+                      </v-btn>
+                    </div>
+                    <v-textarea
+                      v-model="formData.ideal_client_profile"
+                      label="Perfil do Cliente Ideal"
+                      variant="outlined"
+                      rows="4"
+                      auto-grow
+                      prepend-inner-icon="mdi-account-heart"
+                      hint="Descreva o perfil ideal de cliente para este imóvel. Clique em 'Gerar com IA' para sugestão automática."
+                      persistent-hint
+                    ></v-textarea>
+                  </v-card>
+                </v-col>
+
+                <!-- Clientes Compatíveis -->
+                <v-col cols="12">
+                  <v-card variant="outlined" class="pa-4">
+                    <div class="d-flex align-center justify-space-between mb-3">
+                      <div class="d-flex align-center">
+                        <v-icon color="success" class="mr-2">mdi-account-group</v-icon>
+                        <span class="text-subtitle-1 font-weight-medium">Clientes Compatíveis</span>
+                      </div>
+                      <v-btn
+                        v-if="isEditMode"
+                        color="primary"
+                        variant="tonal"
+                        size="small"
+                        prepend-icon="mdi-magnify"
+                        @click="findMatchingClients"
+                        :loading="isLoadingMatchingClients"
+                      >
+                        Buscar Clientes
+                      </v-btn>
+                    </div>
+                    <div v-if="matchingClients.length > 0">
+                      <v-list density="compact">
+                        <v-list-item
+                          v-for="client in matchingClients"
+                          :key="client.id"
+                          :to="{ name: 'clients-details', params: { id: client.id } }"
+                        >
+                          <template #prepend>
+                            <v-avatar color="primary" size="36">
+                              <span class="text-caption text-white">{{ getInitials(client.name) }}</span>
+                            </v-avatar>
+                          </template>
+                          <v-list-item-title>{{ client.name }}</v-list-item-title>
+                          <v-list-item-subtitle>
+                            <span v-if="client.current_city_interest">{{ client.current_city_interest }}</span>
+                            <span v-if="client.current_budget_max"> • Até R$ {{ Number(client.current_budget_max).toLocaleString('pt-BR') }}</span>
+                          </v-list-item-subtitle>
+                          <template #append>
+                            <v-chip color="success" variant="tonal" size="x-small">
+                              {{ client.matchScore }}% match
+                            </v-chip>
+                          </template>
+                        </v-list-item>
+                      </v-list>
+                    </div>
+                    <v-alert v-else type="info" variant="tonal" density="compact">
+                      {{ isEditMode ? 'Clique em "Buscar Clientes" para encontrar clientes compatíveis com este imóvel.' : 'Salve o imóvel primeiro para buscar clientes compatíveis.' }}
+                    </v-alert>
+                  </v-card>
                 </v-col>
               </v-row>
             </v-window-item>
@@ -532,8 +694,14 @@ import { useRoute, useRouter } from 'vue-router'
 import type { VForm } from 'vuetify/components'
 import { propertiesService, type Property, type PropertyCreate, type PropertyUpdate, type AddressData } from '@/shared/services/properties.service'
 import { usersService, type User } from '@/shared/services/users.service'
+import { clientsService, type Client } from '@/shared/services/clients.service'
 import { formatCurrency, parseCurrency, formatCurrencyInput, formatPhone, parsePhone } from '@/shared/utils/masks'
 import PropertyImageUpload from '@/shared/components/PropertyImageUpload.vue'
+
+// Extended client type with match score
+interface MatchingClient extends Client {
+  matchScore: number
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -549,6 +717,11 @@ const corretores = ref<User[]>([])
 const addressSearch = ref('')
 const isGeocoding = ref(false)
 const geocodeError = ref<string | null>(null)
+
+// AI & Matching
+const isGeneratingProfile = ref(false)
+const isLoadingMatchingClients = ref(false)
+const matchingClients = ref<MatchingClient[]>([])
 
 const isEditMode = computed(() => !!route.params.id)
 
@@ -687,6 +860,219 @@ const rules = {
     if (!value) return true
     return value.length === 2 || 'Estado deve ter 2 letras'
   },
+}
+
+// AI & Matching Computed
+const calculatedScore = computed(() => {
+  let score = 0
+  const f = formData.value
+  
+  // Basic info (30 points max)
+  if (f.title) score += 10
+  if (f.description && f.description.length > 50) score += 10
+  if (f.main_image_url) score += 10
+  
+  // Location (20 points max)
+  if (f.city) score += 5
+  if (f.neighborhood) score += 5
+  if (f.street) score += 5
+  if (f.zip_code) score += 5
+  
+  // Characteristics (25 points max)
+  if (f.area_total) score += 5
+  if (f.bedrooms) score += 5
+  if (f.bathrooms) score += 5
+  if (f.parking_spaces !== null && f.parking_spaces !== undefined) score += 5
+  if (f.has_elevator || f.furnished) score += 5
+  
+  // Financial (15 points max)
+  if (f.price || f.rent_price) score += 10
+  if (f.condo_fee !== null || f.iptu !== null) score += 5
+  
+  // Commercial (10 points max)
+  if (f.status === 'PUBLISHED') score += 5
+  if (f.assigned_agent_id) score += 5
+  
+  return Math.min(score, 100)
+})
+
+const completenessItems = computed(() => {
+  const f = formData.value
+  return [
+    { label: 'Título e descrição', complete: !!f.title && !!f.description },
+    { label: 'Tipo de imóvel e negócio', complete: !!f.property_type && !!f.business_type },
+    { label: 'Localização completa', complete: !!f.city && !!f.neighborhood },
+    { label: 'Características básicas', complete: Number(f.bedrooms ?? 0) > 0 || Number(f.area_total ?? 0) > 0 },
+    { label: 'Preço definido', complete: Number(f.price ?? 0) > 0 || Number(f.rent_price ?? 0) > 0 },
+    { label: 'Imagem principal', complete: !!f.main_image_url },
+    { label: 'Corretor atribuído', complete: !!f.assigned_agent_id },
+  ]
+})
+
+const completenessPercentage = computed(() => {
+  const completed = completenessItems.value.filter(i => i.complete).length
+  return Math.round((completed / completenessItems.value.length) * 100)
+})
+
+const getScoreColor = (score: number): string => {
+  if (score >= 80) return 'text-success'
+  if (score >= 50) return 'text-warning'
+  return 'text-error'
+}
+
+const getScoreColorName = (score: number): string => {
+  if (score >= 80) return 'success'
+  if (score >= 50) return 'warning'
+  return 'error'
+}
+
+const getScoreAlertType = (score: number): 'success' | 'warning' | 'error' => {
+  if (score >= 80) return 'success'
+  if (score >= 50) return 'warning'
+  return 'error'
+}
+
+const getScoreMessage = (score: number): string => {
+  if (score >= 80) return 'Excelente! Este imóvel tem alta visibilidade.'
+  if (score >= 50) return 'Bom! Adicione mais detalhes para melhorar a visibilidade.'
+  return 'Baixa visibilidade. Complete os campos obrigatórios e adicione mais informações.'
+}
+
+const getInitials = (name: string): string => {
+  const parts = name.trim().split(' ')
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+  }
+  return name.substring(0, 2).toUpperCase()
+}
+
+const generateIdealClientProfile = () => {
+  isGeneratingProfile.value = true
+  
+  try {
+    const f = formData.value
+    const parts: string[] = []
+    
+    // Interest type based on business type
+    if (f.business_type === 'SALE' || f.business_type === 'BOTH') {
+      parts.push('compradores')
+    }
+    if (f.business_type === 'RENT' || f.business_type === 'BOTH') {
+      if (parts.length > 0) parts[0] += ' ou inquilinos'
+      else parts.push('inquilinos')
+    }
+    
+    // Property type preferences
+    const propertyTypeLabels: Record<string, string> = {
+      HOUSE: 'casas',
+      APARTMENT: 'apartamentos',
+      LAND: 'terrenos',
+      COMMERCIAL: 'imóveis comerciais',
+      RURAL: 'propriedades rurais'
+    }
+    const propType = propertyTypeLabels[f.property_type] || 'imóveis'
+    
+    // Build profile
+    let profile = `Ideal para ${parts.join(' ')} interessados em ${propType}`
+    
+    // Location
+    if (f.city) {
+      profile += ` na região de ${f.city}`
+      if (f.state) profile += `/${f.state}`
+    }
+    
+    // Characteristics
+    const characteristics: string[] = []
+    if (f.bedrooms && f.bedrooms > 0) characteristics.push(`${f.bedrooms} quarto${f.bedrooms > 1 ? 's' : ''}`)
+    if (f.bathrooms && f.bathrooms > 0) characteristics.push(`${f.bathrooms} banheiro${f.bathrooms > 1 ? 's' : ''}`)
+    if (f.parking_spaces && f.parking_spaces > 0) characteristics.push(`${f.parking_spaces} vaga${f.parking_spaces > 1 ? 's' : ''} de garagem`)
+    if (f.furnished) characteristics.push('mobiliado')
+    if (f.has_elevator) characteristics.push('com elevador')
+    
+    if (characteristics.length > 0) {
+      profile += `. Características: ${characteristics.join(', ')}`
+    }
+    
+    // Budget
+    const priceValue = Number(f.price) || Number(f.rent_price) || 0
+    if (priceValue > 0) {
+      const minBudget = priceValue * 0.8
+      const maxBudget = priceValue * 1.2
+      profile += `. Orçamento estimado: R$ ${minBudget.toLocaleString('pt-BR')} a R$ ${maxBudget.toLocaleString('pt-BR')}`
+    }
+    
+    // Area
+    if (f.area_total) {
+      profile += `. Área: ${f.area_total}m²`
+    }
+    
+    formData.value.ideal_client_profile = profile
+  } finally {
+    isGeneratingProfile.value = false
+  }
+}
+
+const findMatchingClients = async () => {
+  if (!isEditMode.value) return
+  
+  isLoadingMatchingClients.value = true
+  matchingClients.value = []
+  
+  try {
+    // Get all clients
+    const clients = await clientsService.getClients({ limit: 1000 })
+    
+    // Calculate match score for each client
+    const scoredClients: MatchingClient[] = clients
+      .map(client => {
+        let score = 0
+        const f = formData.value
+        
+        // City match (40 points)
+        if (client.current_city_interest && f.city) {
+          if (client.current_city_interest.toLowerCase() === f.city.toLowerCase()) {
+            score += 40
+          }
+        }
+        
+        // Property type match (20 points)
+        if (client.current_property_type && f.property_type) {
+          if (client.current_property_type === f.property_type) {
+            score += 20
+          }
+        }
+        
+        // Interest type match (20 points)
+        if (client.current_interest_type && f.business_type) {
+          const isMatch = 
+            (client.current_interest_type === 'BUY' && (f.business_type === 'SALE' || f.business_type === 'BOTH')) ||
+            (client.current_interest_type === 'RENT' && (f.business_type === 'RENT' || f.business_type === 'BOTH'))
+          if (isMatch) score += 20
+        }
+        
+        // Budget match (20 points)
+        const clientBudgetMax = client.current_budget_max ? parseFloat(client.current_budget_max) : null
+        const propertyPrice = Number(f.price) || Number(f.rent_price) || 0
+        if (clientBudgetMax && propertyPrice > 0) {
+          if (propertyPrice <= clientBudgetMax) {
+            score += 20
+          } else if (propertyPrice <= clientBudgetMax * 1.2) {
+            score += 10 // Within 20% above budget
+          }
+        }
+        
+        return { ...client, matchScore: score }
+      })
+      .filter(c => c.matchScore > 0)
+      .sort((a, b) => b.matchScore - a.matchScore)
+      .slice(0, 5) // Top 5 matches
+    
+    matchingClients.value = scoredClients
+  } catch (error) {
+    console.error('Error finding matching clients:', error)
+  } finally {
+    isLoadingMatchingClients.value = false
+  }
 }
 
 // Methods
