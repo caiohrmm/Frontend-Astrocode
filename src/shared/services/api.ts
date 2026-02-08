@@ -62,6 +62,14 @@ export class ApiClient {
     try {
       const response = await fetch(url, config)
 
+      // Handle 204 No Content responses (no body)
+      if (response.status === 204) {
+        if (response.ok) {
+          return undefined as unknown as T
+        }
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
       // Handle non-JSON responses (like redirects)
       const contentType = response.headers.get('content-type')
       if (!contentType?.includes('application/json')) {
@@ -71,16 +79,30 @@ export class ApiClient {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
 
-      const data = await response.json()
+      // Check if response has content before trying to parse JSON
+      const text = await response.text()
+      let data: any = null
+      
+      if (text) {
+        try {
+          data = JSON.parse(text)
+        } catch (parseError) {
+          // If parsing fails but response is ok, return empty object
+          if (response.ok) {
+            return {} as T
+          }
+          throw new Error(`Failed to parse response: ${parseError}`)
+        }
+      }
 
       if (!response.ok) {
-        const error: ApiError = data
+        const error: ApiError = data || { detail: `HTTP error! status: ${response.status}` }
         // Create a more detailed error message
         // FastAPI 422 errors may have a different structure
         let errorMessage = error.detail || `HTTP error! status: ${response.status}`
         
         // Handle FastAPI validation errors (422)
-        if (response.status === 422 && Array.isArray(data.detail)) {
+        if (response.status === 422 && data && Array.isArray(data.detail)) {
           const validationErrors = data.detail.map((err: any) => {
             return `${err.loc?.join('.')}: ${err.msg}`
           }).join(', ')
@@ -96,7 +118,7 @@ export class ApiClient {
         throw new Error(errorMessage)
       }
 
-      return data as T
+      return (data ?? {}) as T
     } catch (error) {
       if (error instanceof Error) {
         throw error
