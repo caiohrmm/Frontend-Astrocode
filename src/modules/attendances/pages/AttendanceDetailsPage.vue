@@ -360,9 +360,7 @@
                     <v-icon>mdi-arrow-right-circle</v-icon>
                   </template>
                   <div class="text-subtitle-2 font-weight-medium mb-2">Próximos Passos Sugeridos</div>
-                  <div class="text-body-2" style="white-space: pre-wrap; word-wrap: break-word;">
-                    {{ attendance.ai_next_steps }}
-                  </div>
+                  <div class="text-body-2 ai-next-steps-content" v-html="formatAINextSteps(attendance.ai_next_steps)"></div>
                 </v-alert>
               </v-card-text>
             </div>
@@ -1183,6 +1181,112 @@ const formatMarkdown = (text: string): string => {
   return html
 }
 
+// Translate and format AI next steps
+const formatAINextSteps = (nextSteps: string): string => {
+  if (!nextSteps) return ''
+  
+  // Translation maps for common English terms
+  const translations: Record<string, string> = {
+    // Interest types
+    'BUY': 'Comprar',
+    'RENT': 'Alugar',
+    'SELL': 'Vender',
+    'INVEST': 'Investir',
+    // Urgency levels
+    'LOW': 'Baixa',
+    'MEDIUM': 'Média',
+    'HIGH': 'Alta',
+    'IMMEDIATE': 'Imediata',
+    // Property types
+    'HOUSE': 'Casa',
+    'APARTMENT': 'Apartamento',
+    'LAND': 'Terreno',
+    'COMMERCIAL': 'Comercial',
+    'RURAL': 'Rural',
+    // Common English phrases
+    'Interest type detected': 'Tipo de interesse detectado',
+    'Tipo de interesse detectado': 'Tipo de interesse',
+    'Urgency': 'Urgência',
+    'Urgency level': 'Nível de urgência',
+    'Property type': 'Tipo de imóvel',
+    'Next steps': 'Próximos passos',
+    'Recommendations': 'Recomendações',
+    'Budget': 'Orçamento',
+    'Location': 'Localização',
+    'City': 'Cidade',
+  }
+  
+  let formatted = nextSteps
+  
+  // Replace English terms with Portuguese
+  Object.entries(translations).forEach(([en, pt]) => {
+    // Replace exact matches (for values like BUY, LOW)
+    formatted = formatted.replace(new RegExp(`:\\s*${en}\\b`, 'gi'), `: ${pt}`)
+    // Replace phrase matches
+    formatted = formatted.replace(new RegExp(`\\b${en}\\b`, 'g'), pt)
+  })
+  
+  // Parse and filter lines to remove pure metadata
+  const lines = formatted.split('\n')
+  const filteredLines: string[] = []
+  
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+    
+    // Skip lines that are just "Label: Value" with short values (metadata)
+    if (trimmed.match(/^(Tipo de interesse|Urgência|Nível de urgência|Orçamento):\s*.{1,20}$/i)) {
+      continue
+    }
+    
+    filteredLines.push(trimmed)
+  }
+  
+  // Format as HTML with proper styling
+  if (filteredLines.length === 0) {
+    return '<p class="text-medium-emphasis">Nenhum próximo passo específico definido.</p>'
+  }
+  
+  const htmlLines = filteredLines.map(line => {
+    // Check if it's a list item
+    const listMatch = line.match(/^[-*•]\s*(.+)/)
+    if (listMatch) {
+      return `<li>${listMatch[1]}</li>`
+    }
+    const numberedMatch = line.match(/^\d+\.\s*(.+)/)
+    if (numberedMatch) {
+      return `<li>${numberedMatch[1]}</li>`
+    }
+    return `<p>${line}</p>`
+  })
+  
+  // Wrap list items in ul
+  let result = ''
+  let inList = false
+  
+  for (const html of htmlLines) {
+    if (html.startsWith('<li>')) {
+      if (!inList) {
+        result += '<ul class="ai-next-steps-list">'
+        inList = true
+      }
+      result += html
+    } else {
+      if (inList) {
+        result += '</ul>'
+        inList = false
+      }
+      result += html
+    }
+  }
+  
+  if (inList) {
+    result += '</ul>'
+  }
+  
+  return result
+}
+
 onMounted(() => {
   loadAttendance()
 })
@@ -1267,6 +1371,34 @@ onMounted(() => {
 
 .markdown-content :deep(a:hover) {
   opacity: 1;
+}
+
+/* AI Next Steps styles */
+.ai-next-steps-content {
+  line-height: 1.6;
+}
+
+.ai-next-steps-content :deep(.ai-next-steps-list) {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+  list-style-type: disc;
+}
+
+.ai-next-steps-content :deep(.ai-next-steps-list li) {
+  margin: 0.375rem 0;
+  padding-left: 0.25rem;
+}
+
+.ai-next-steps-content :deep(p) {
+  margin: 0.25rem 0;
+}
+
+.ai-next-steps-content :deep(p:first-child) {
+  margin-top: 0;
+}
+
+.ai-next-steps-content :deep(p:last-child) {
+  margin-bottom: 0;
 }
 </style>
 

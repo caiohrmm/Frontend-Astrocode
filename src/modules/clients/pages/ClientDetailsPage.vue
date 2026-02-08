@@ -343,14 +343,14 @@
                             </div>
 
                             <!-- Next Steps Preview -->
-                            <div v-if="attendance.ai_next_steps" class="mb-2">
+                            <div v-if="attendance.ai_next_steps && hasValidNextSteps(attendance.ai_next_steps)" class="mb-2">
                               <div class="text-subtitle-2 font-weight-medium mb-1">
                                 <v-icon size="16" color="success" class="mr-1">mdi-arrow-right-circle</v-icon>
                                 Próximos Passos
                               </div>
                               <div 
                                 class="text-body-2 ai-next-steps-preview"
-                                v-html="formatMarkdown(truncateText(attendance.ai_next_steps, 150))"
+                                v-html="formatMarkdown(truncateText(formatAINextSteps(attendance.ai_next_steps), 150))"
                               ></div>
                             </div>
 
@@ -1229,20 +1229,68 @@ const aggregatedInsights = computed(() => {
     new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   )[0]
 
-  // Next Steps (aggregate from all summaries)
+  // Next Steps (aggregate from attendances ai_next_steps)
   const allNextSteps: string[] = []
-  completedSummaries.forEach(summary => {
-    // Extract next steps from summary text (simple heuristic)
-    const lines = summary.summary_text.split('\n')
-    lines.forEach(line => {
-      if (line.trim().match(/^(?:-|\*|\d+\.)\s*(.+)/i)) {
-        const step = line.trim().replace(/^(?:-|\*|\d+\.)\s*/, '')
-        if (step && !allNextSteps.includes(step)) {
-          allNextSteps.push(step)
-        }
+  
+  // First, try to get from attendances ai_next_steps field
+  clientAttendances.value
+    .filter(a => a.status === 'COMPLETED' && a.ai_next_steps)
+    .sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime())
+    .forEach(attendance => {
+      if (attendance.ai_next_steps) {
+        // Parse the ai_next_steps field and extract individual steps
+        const lines = attendance.ai_next_steps.split('\n')
+        lines.forEach(line => {
+          const trimmed = line.trim()
+          // Skip lines that look like metadata (e.g., "Tipo de interesse: BUY")
+          if (trimmed.match(/^(Tipo de interesse|Urgência|Interest type|Urgency):/i)) {
+            return
+          }
+          // Extract list items
+          const match = trimmed.match(/^(?:-|\*|\d+\.)\s*(.+)/)
+          if (match) {
+            const step = match[1].trim()
+            if (step && step.length > 10 && !allNextSteps.includes(step)) {
+              allNextSteps.push(step)
+            }
+          } else if (trimmed.length > 20 && !trimmed.includes(':') && !allNextSteps.includes(trimmed)) {
+            // Also include non-list paragraphs that look like action items
+            allNextSteps.push(trimmed)
+          }
+        })
       }
     })
-  })
+
+  // Generate smart suggestions based on client profile if no AI steps
+  if (allNextSteps.length === 0 && client.value) {
+    const c = client.value
+    
+    // Based on status
+    if (c.current_status === 'NEW_LEAD') {
+      allNextSteps.push('Fazer primeiro contato para qualificar o lead')
+      allNextSteps.push('Entender necessidades e preferências do cliente')
+    } else if (c.current_status === 'CONTACTED') {
+      allNextSteps.push('Agendar visita a imóveis compatíveis com o perfil')
+      allNextSteps.push('Enviar opções de imóveis por WhatsApp ou e-mail')
+    } else if (c.current_status === 'QUALIFIED') {
+      allNextSteps.push('Selecionar imóveis que atendam aos critérios do cliente')
+      allNextSteps.push('Agendar visitas presenciais')
+    } else if (c.current_status === 'VISIT_SCHEDULED' || c.current_status === 'VISITING') {
+      allNextSteps.push('Confirmar visita com antecedência')
+      allNextSteps.push('Preparar documentação do imóvel para apresentação')
+    } else if (c.current_status === 'PROPOSAL_SENT') {
+      allNextSteps.push('Fazer follow-up sobre a proposta enviada')
+      allNextSteps.push('Esclarecer dúvidas sobre valores e condições')
+    } else if (c.current_status === 'NEGOTIATING') {
+      allNextSteps.push('Negociar termos e condições finais')
+      allNextSteps.push('Preparar documentação para fechamento')
+    }
+    
+    // Based on urgency
+    if (c.current_urgency_level === 'IMMEDIATE' || c.current_urgency_level === 'HIGH') {
+      allNextSteps.unshift('Priorizar atendimento - cliente com urgência alta')
+    }
+  }
 
   return {
     clientSummary: mostRecentSummary?.summary_text || null,
@@ -1252,7 +1300,7 @@ const aggregatedInsights = computed(() => {
     },
     intents,
     averageLeadScore,
-    nextSteps: allNextSteps.slice(0, 5), // Top 5 next steps
+    nextSteps: allNextSteps.slice(0, 6), // Top 6 next steps
   }
 })
 
@@ -1664,6 +1712,89 @@ const truncateText = (text: string, maxLength: number): string => {
   if (!text) return ''
   if (text.length <= maxLength) return text
   return text.substring(0, maxLength) + '...'
+}
+
+// Translate and format AI next steps
+const formatAINextSteps = (nextSteps: string): string => {
+  if (!nextSteps) return ''
+  
+  // Translation maps for common English terms
+  const translations: Record<string, string> = {
+    // Interest types
+    'BUY': 'Comprar',
+    'RENT': 'Alugar',
+    'SELL': 'Vender',
+    'INVEST': 'Investir',
+    // Urgency levels
+    'LOW': 'Baixa',
+    'MEDIUM': 'Média',
+    'HIGH': 'Alta',
+    'IMMEDIATE': 'Imediata',
+    // Property types
+    'HOUSE': 'Casa',
+    'APARTMENT': 'Apartamento',
+    'LAND': 'Terreno',
+    'COMMERCIAL': 'Comercial',
+    'RURAL': 'Rural',
+    // Common English phrases
+    'Interest type detected': 'Tipo de interesse detectado',
+    'Urgency': 'Urgência',
+    'Urgency level': 'Nível de urgência',
+    'Property type': 'Tipo de imóvel',
+    'Next steps': 'Próximos passos',
+    'Recommendations': 'Recomendações',
+    'Budget': 'Orçamento',
+    'Location': 'Localização',
+    'City': 'Cidade',
+  }
+  
+  let formatted = nextSteps
+  
+  // Replace English terms with Portuguese
+  Object.entries(translations).forEach(([en, pt]) => {
+    // Replace exact matches (for values like BUY, LOW)
+    formatted = formatted.replace(new RegExp(`:\\s*${en}\\b`, 'gi'), `: ${pt}`)
+    // Replace phrase matches
+    formatted = formatted.replace(new RegExp(`\\b${en}\\b`, 'gi'), pt)
+  })
+  
+  // Clean up any remaining field labels that look like metadata
+  const lines = formatted.split('\n')
+  const cleanedLines = lines.filter(line => {
+    const trimmed = line.trim()
+    // Keep actual content, filter out raw metadata lines
+    if (!trimmed) return false
+    // Skip lines that are just "Label: Value" with short values
+    if (trimmed.match(/^[A-Za-zÀ-ú\s]+:\s*[A-Za-zÀ-ú]{1,15}$/)) {
+      return false
+    }
+    return true
+  })
+  
+  return cleanedLines.join('\n')
+}
+
+// Check if next steps has valid content (not just metadata)
+const hasValidNextSteps = (nextSteps: string): boolean => {
+  if (!nextSteps) return false
+  
+  const lines = nextSteps.split('\n')
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+    
+    // Skip lines that are just metadata (e.g., "Tipo de interesse detectado: BUY")
+    if (trimmed.match(/^(Tipo de interesse|Urgência|Interest type|Urgency|Budget|Orçamento).*:/i)) {
+      continue
+    }
+    
+    // If we find a line that's not metadata and has substantial content, return true
+    if (trimmed.length > 20) {
+      return true
+    }
+  }
+  
+  return false
 }
 
 const formatDuration = (seconds: number): string => {
