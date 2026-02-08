@@ -78,7 +78,7 @@
             <v-btn
               color="error"
               prepend-icon="mdi-delete"
-              @click="handleDelete"
+              @click="showDeleteDialog = true"
               :loading="isDeleting"
             >
               Excluir
@@ -576,6 +576,55 @@
         </v-col>
       </v-row>
     </div>
+
+    <!-- Delete Confirmation Dialog -->
+    <v-dialog v-model="showDeleteDialog" max-width="500" persistent>
+      <v-card>
+        <v-card-title class="d-flex align-center">
+          <v-icon color="error" class="mr-3">mdi-alert-circle</v-icon>
+          Confirmar Exclusão
+        </v-card-title>
+        <v-card-text>
+          <div class="text-body-1 mb-4">
+            Tem certeza que deseja excluir este atendimento?
+          </div>
+          <v-alert type="warning" variant="tonal" density="compact" class="mb-2">
+            <div class="text-body-2">
+              <strong>Atenção:</strong> Esta ação não pode ser desfeita.
+            </div>
+          </v-alert>
+          <v-alert type="error" variant="tonal" density="compact">
+            <div class="text-body-2">
+              <strong>Consequências:</strong>
+              <ul class="mt-2 mb-0">
+                <li>Todos os resumos e análises da IA relacionados serão excluídos permanentemente</li>
+                <li>O histórico completo do atendimento será removido</li>
+                <li>Nenhum dado poderá ser recuperado após a exclusão</li>
+              </ul>
+            </div>
+          </v-alert>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            variant="text"
+            @click="showDeleteDialog = false"
+            :disabled="isDeleting"
+          >
+            Cancelar
+          </v-btn>
+          <v-btn
+            color="error"
+            variant="flat"
+            prepend-icon="mdi-delete"
+            @click="confirmDelete"
+            :loading="isDeleting"
+          >
+            Excluir Permanentemente
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -596,6 +645,7 @@ const isLoading = ref(true)
 const isLoadingAISummary = ref(false)
 const isCompleting = ref(false)
 const isDeleting = ref(false)
+const showDeleteDialog = ref(false)
 const error = ref<string | null>(null)
 const attendance = ref<Attendance | null>(null)
 const client = ref<Client | null>(null)
@@ -1040,26 +1090,20 @@ const handleEdit = () => {
 }
 
 // Delete attendance
-const handleDelete = async () => {
+const confirmDelete = async () => {
   if (!attendance.value) return
-
-  // Confirm deletion
-  const confirmed = confirm(
-    'Tem certeza que deseja excluir este atendimento?\n\n' +
-    'Todos os resumos e análises da IA relacionados serão excluídos permanentemente.\n\n' +
-    'Esta ação não pode ser desfeita.'
-  )
-
-  if (!confirmed) return
 
   isDeleting.value = true
   try {
     await attendancesService.deleteAttendance(attendance.value.id)
-    // Navigate back to list
+    // Close dialog and navigate back to list
+    showDeleteDialog.value = false
     router.push({ name: 'attendances' })
   } catch (err: any) {
     console.error('Error deleting attendance:', err)
     error.value = err.response?.data?.detail || err.message || 'Erro ao excluir atendimento'
+    // Show error in dialog or as a snackbar
+    // For now, we'll show an alert if deletion fails
     alert(error.value)
   } finally {
     isDeleting.value = false
