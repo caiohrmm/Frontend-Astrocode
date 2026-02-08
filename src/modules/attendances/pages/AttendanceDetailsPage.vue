@@ -144,9 +144,10 @@
             <div v-else-if="aiSummary && aiSummary.status === 'COMPLETED'">
               <!-- AI Summary Text -->
               <v-card-text v-if="aiSummary.summary_text" class="pa-4 pt-0">
-                <div class="text-body-1 mb-4" style="white-space: pre-wrap; word-wrap: break-word;">
-                  {{ aiSummary.summary_text }}
-                </div>
+                <div 
+                  class="text-body-1 mb-4 markdown-content" 
+                  v-html="formatMarkdown(aiSummary.summary_text)"
+                ></div>
               </v-card-text>
 
               <!-- AI Analysis Cards -->
@@ -1110,12 +1111,162 @@ const confirmDelete = async () => {
   }
 }
 
+// Markdown formatting
+const formatMarkdown = (text: string): string => {
+  if (!text) return ''
+  
+  // Simple markdown parser for common formatting
+  let html = text
+  
+  // Code blocks first (to avoid processing markdown inside code)
+  html = html.replace(/```([\s\S]*?)```/g, '<pre class="markdown-pre"><code>$1</code></pre>')
+  
+  // Headers
+  html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>')
+  html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>')
+  html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>')
+  
+  // Bold
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+  html = html.replace(/__(.+?)__/g, '<strong>$1</strong>')
+  
+  // Italic (avoid conflicts with bold)
+  html = html.replace(/(?<!\*)\*(?!\*)([^*]+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>')
+  html = html.replace(/(?<!_)_(?!_)([^_]+?)(?<!_)_(?!_)/g, '<em>$1</em>')
+  
+  // Inline code
+  html = html.replace(/`([^`]+)`/g, '<code class="markdown-code">$1</code>')
+  
+  // Links
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+  
+  // Lists - process line by line
+  const lines = html.split('\n')
+  const processedLines: string[] = []
+  let inList = false
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]
+    const unorderedMatch = line.match(/^[\*\-] (.+)$/)
+    const orderedMatch = line.match(/^\d+\. (.+)$/)
+    
+    if (unorderedMatch || orderedMatch) {
+      if (!inList) {
+        processedLines.push('<ul>')
+        inList = true
+      }
+      processedLines.push(`<li>${unorderedMatch ? unorderedMatch[1] : orderedMatch![1]}</li>`)
+    } else {
+      if (inList) {
+        processedLines.push('</ul>')
+        inList = false
+      }
+      processedLines.push(line)
+    }
+  }
+  
+  if (inList) {
+    processedLines.push('</ul>')
+  }
+  
+  html = processedLines.join('\n')
+  
+  // Line breaks - double newline becomes paragraph break
+  html = html.replace(/\n\n+/g, '</p><p>')
+  html = html.replace(/\n/g, '<br>')
+  
+  // Wrap in paragraph if not already wrapped
+  if (!html.trim().startsWith('<')) {
+    html = '<p>' + html + '</p>'
+  }
+  
+  return html
+}
+
 onMounted(() => {
   loadAttendance()
 })
 </script>
 
 <style scoped>
-/* Additional styles if needed */
+/* Markdown content styles */
+.markdown-content {
+  line-height: 1.6;
+}
+
+.markdown-content :deep(h1) {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin: 1rem 0 0.5rem 0;
+  color: inherit;
+}
+
+.markdown-content :deep(h2) {
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin: 0.875rem 0 0.5rem 0;
+  color: inherit;
+}
+
+.markdown-content :deep(h3) {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0.75rem 0 0.5rem 0;
+  color: inherit;
+}
+
+.markdown-content :deep(p) {
+  margin: 0.5rem 0;
+}
+
+.markdown-content :deep(ul),
+.markdown-content :deep(ol) {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.markdown-content :deep(li) {
+  margin: 0.25rem 0;
+}
+
+.markdown-content :deep(strong) {
+  font-weight: 600;
+  color: inherit;
+}
+
+.markdown-content :deep(em) {
+  font-style: italic;
+}
+
+.markdown-content :deep(code) {
+  background-color: rgba(0, 0, 0, 0.1);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+.markdown-content :deep(pre) {
+  background-color: rgba(0, 0, 0, 0.1);
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 0.75rem 0;
+}
+
+.markdown-content :deep(pre code) {
+  background-color: transparent;
+  padding: 0;
+}
+
+.markdown-content :deep(a) {
+  color: inherit;
+  text-decoration: underline;
+  opacity: 0.9;
+}
+
+.markdown-content :deep(a:hover) {
+  opacity: 1;
+}
 </style>
 
