@@ -25,27 +25,40 @@
           <v-row>
             <!-- Cliente * -->
             <v-col cols="12" md="6">
-              <v-select v-model="formData.client_id" :items="clientOptions" :loading="isLoadingClients"
-                label="Cliente *" variant="outlined" :rules="[rules.required]" prepend-inner-icon="mdi-account"
-                hint="Selecione o cliente atendido" persistent-hint item-title="title" item-value="value"
-                @update:search="searchClients">
-                <template #item="{ item, props }">
-                  <v-list-item v-bind="props" :key="`client-${item.value}`">
-                    <template #prepend>
-                      <v-avatar color="primary" size="32" class="mr-3">
-                        <span class="text-caption text-white">
-                          {{ getInitials(item.title) }}
-                        </span>
-                      </v-avatar>
-                    </template>
-
-                    <v-list-item-subtitle v-if="item.raw?.phone">
-                      {{ formatPhone(item.raw.phone) }}
-                    </v-list-item-subtitle>
-                  </v-list-item>
-
+              <SearchSelectDialog
+                v-model="formData.client_id"
+                label="Cliente *"
+                dialog-title="Buscar Cliente"
+                icon="mdi-account"
+                icon-color="primary"
+                item-icon="mdi-account"
+                placeholder="Clique para buscar cliente..."
+                hint="Selecione o cliente atendido"
+                :persistent-hint="true"
+                :rules="[rules.required]"
+                :items="clientSearchItems"
+                :total-items="clientsTotalItems"
+                :items-per-page="clientsPerPage"
+                :is-loading="isLoadingClients"
+                display-field="name"
+                @search="handleClientSearch"
+                @select="handleClientSelect"
+              >
+                <template #item-prepend="{ item }">
+                  <v-avatar color="primary" size="40" class="mr-3">
+                    <span class="text-caption text-white">
+                      {{ getInitials(item.name || '') }}
+                    </span>
+                  </v-avatar>
                 </template>
-              </v-select>
+                <template #item-title="{ item }">
+                  {{ item.name }}
+                </template>
+                <template #item-subtitle="{ item }">
+                  <span v-if="item.phone">{{ formatPhone(item.phone) }}</span>
+                  <span v-else-if="item.email">{{ item.email }}</span>
+                </template>
+              </SearchSelectDialog>
             </v-col>
 
             <!-- Agente * -->
@@ -58,19 +71,39 @@
 
             <!-- Propriedade (Opcional) -->
             <v-col cols="12" md="6">
-              <v-select v-model="formData.property_id" :items="propertyOptions" :loading="isLoadingProperties"
-                label="Propriedade (Opcional)" variant="outlined" clearable prepend-inner-icon="mdi-home"
-                hint="Selecione a propriedade relacionada, se aplicável" persistent-hint item-title="title"
-                item-value="value" @update:search="searchProperties">
-                <template #item="{ item, props }">
-                  <v-list-item v-bind="props" :key="`property-${item.value}`">
-                    <v-list-item-subtitle v-if="item.raw?.code">
-                      Código: {{ item.raw.code }}
-                    </v-list-item-subtitle>
-                  </v-list-item>
-
+              <SearchSelectDialog
+                v-model="formData.property_id"
+                label="Propriedade (Opcional)"
+                dialog-title="Buscar Propriedade"
+                icon="mdi-home"
+                icon-color="success"
+                item-icon="mdi-home"
+                placeholder="Clique para buscar propriedade..."
+                hint="Selecione a propriedade relacionada, se aplicável"
+                :persistent-hint="true"
+                :clearable="true"
+                :items="propertySearchItems"
+                :total-items="propertiesTotalItems"
+                :items-per-page="propertiesPerPage"
+                :is-loading="isLoadingProperties"
+                display-field="title"
+                @search="handlePropertySearch"
+                @select="handlePropertySelect"
+              >
+                <template #item-prepend="{ item }">
+                  <v-avatar color="success" size="40" class="mr-3" rounded="lg">
+                    <v-img v-if="item.main_image_url" :src="item.main_image_url" cover></v-img>
+                    <v-icon v-else color="white">mdi-home</v-icon>
+                  </v-avatar>
                 </template>
-              </v-select>
+                <template #item-title="{ item }">
+                  {{ item.title }}
+                </template>
+                <template #item-subtitle="{ item }">
+                  <span>Código: {{ item.code }}</span>
+                  <span v-if="item.city" class="ml-2">• {{ item.city }}</span>
+                </template>
+              </SearchSelectDialog>
             </v-col>
 
             <!-- Canal * -->
@@ -81,18 +114,18 @@
                 <template #item="{ item, props }">
                   <v-list-item v-bind="props" :key="`channel-${item.value}`">
                     <template #prepend>
-                      <v-icon :color="item.raw?.color || item.color" class="mr-3">
-                        {{ item.raw?.icon || item.icon }}
+                      <v-icon :color="item.raw?.color" class="mr-3">
+                        {{ item.raw?.icon }}
                       </v-icon>
                     </template>
                   </v-list-item>
                 </template>
                 <template #selection="{ item }">
                   <div class="d-flex align-center">
-                    <v-icon :color="item.raw?.color || item.color" size="small" class="mr-2">
-                      {{ item.raw?.icon || item.icon }}
+                    <v-icon :color="item.raw?.color" size="small" class="mr-2">
+                      {{ item.raw?.icon }}
                     </v-icon>
-                    <span>{{ item.raw?.title || item.title }}</span>
+                    <span>{{ item.raw?.title }}</span>
                   </div>
                 </template>
               </v-select>
@@ -150,13 +183,12 @@ import {
   attendancesService,
   type AttendanceCreate,
   type AttendanceUpdate,
-  type AttendanceChannel,
-  type AttendanceStatus,
 } from '@/shared/services/attendances.service'
-import { clientsService, type Client } from '@/shared/services/clients.service'
+import { clientsService } from '@/shared/services/clients.service'
 import { usersService, type User } from '@/shared/services/users.service'
-import { propertiesService, type Property } from '@/shared/services/properties.service'
+import { propertiesService } from '@/shared/services/properties.service'
 import { formatPhone } from '@/shared/utils/masks'
+import SearchSelectDialog from '@/shared/components/SearchSelectDialog.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -170,9 +202,17 @@ const isLoadingAgents = ref(false)
 const isLoadingProperties = ref(false)
 const isLoadingAttendance = ref(false)
 
-const clients = ref<Client[]>([])
 const agents = ref<User[]>([])
-const properties = ref<Property[]>([])
+
+// Search state for clients
+const clientSearchItems = ref<any[]>([])
+const clientsTotalItems = ref(0)
+const clientsPerPage = 10
+
+// Search state for properties
+const propertySearchItems = ref<any[]>([])
+const propertiesTotalItems = ref(0)
+const propertiesPerPage = 10
 
 // Check if in edit mode
 const isEditMode = computed(() => !!route.params.id)
@@ -223,30 +263,6 @@ const statusOptions = [
   { title: 'Pausado', value: 'PAUSED' },
 ]
 
-const clientOptions = computed(() => {
-  if (!clients.value || clients.value.length === 0) return []
-
-  // Remove duplicates by ID first
-  const uniqueClients = Array.from(
-    new Map(clients.value.map(client => [client.id, client])).values()
-  )
-
-  // Map to options
-  const options = uniqueClients.map(client => ({
-    title: client.name,
-    value: client.id,
-    raw: client,
-  }))
-
-  // Final deduplication by value to ensure no duplicates in the list
-  const deduplicated = Array.from(
-    new Map(options.map(option => [option.value, option])).values()
-  )
-
-  console.log('Client options:', deduplicated.length, 'items')
-  return deduplicated
-})
-
 const agentOptions = computed(() => {
   // Remove duplicates by ID
   const uniqueAgents = Array.from(
@@ -261,30 +277,6 @@ const agentOptions = computed(() => {
   return Array.from(
     new Map(options.map(option => [option.value, option])).values()
   )
-})
-
-const propertyOptions = computed(() => {
-  if (!properties.value || properties.value.length === 0) return []
-
-  // Remove duplicates by ID first
-  const uniqueProperties = Array.from(
-    new Map(properties.value.map(property => [property.id, property])).values()
-  )
-
-  // Map to options
-  const options = uniqueProperties.map(property => ({
-    title: `${property.title} - ${property.code}`,
-    value: property.id,
-    raw: property,
-  }))
-
-  // Final deduplication by value to ensure no duplicates in the list
-  const deduplicated = Array.from(
-    new Map(options.map(option => [option.value, option])).values()
-  )
-
-  console.log('Property options:', deduplicated.length, 'items')
-  return deduplicated
 })
 
 // Validation Rules
@@ -309,24 +301,6 @@ const rules = {
 }
 
 // Methods
-const loadClients = async () => {
-  if (isLoadingClients.value) return // Prevent multiple simultaneous loads
-  isLoadingClients.value = true
-  try {
-    const data = await clientsService.getClients({ limit: 1000 })
-    // Remove duplicates by ID before setting
-    const uniqueClients = Array.from(
-      new Map(data.map(client => [client.id, client])).values()
-    )
-    clients.value = uniqueClients
-    console.log('Loaded clients:', uniqueClients.length, 'unique clients')
-  } catch (error) {
-    console.error('Error loading clients:', error)
-  } finally {
-    isLoadingClients.value = false
-  }
-}
-
 const loadAgents = async () => {
   if (isLoadingAgents.value) return // Prevent multiple simultaneous loads
   isLoadingAgents.value = true
@@ -345,34 +319,106 @@ const loadAgents = async () => {
   }
 }
 
-const loadProperties = async () => {
-  if (isLoadingProperties.value) return // Prevent multiple simultaneous loads
+// Handle client search from SearchSelectDialog
+const handleClientSearch = async (query: string, page: number) => {
+  isLoadingClients.value = true
+  try {
+    // Fetch all clients (backend doesn't support pagination/search filtering yet)
+    const data = await clientsService.getClients({ limit: 1000 })
+    
+    // Filter by search query client-side
+    let filtered = data
+    if (query && query.trim()) {
+      const lowerQuery = query.toLowerCase().trim()
+      filtered = data.filter(client =>
+        client.name.toLowerCase().includes(lowerQuery) ||
+        (client.email && client.email.toLowerCase().includes(lowerQuery)) ||
+        (client.phone && client.phone.includes(lowerQuery))
+      )
+    }
+    
+    // Apply pagination client-side
+    const startIndex = (page - 1) * clientsPerPage
+    const endIndex = startIndex + clientsPerPage
+    const paginatedItems = filtered.slice(startIndex, endIndex)
+    
+    // Map to search items format
+    clientSearchItems.value = paginatedItems.map(client => ({
+      id: client.id,
+      name: client.name,
+      email: client.email,
+      phone: client.phone,
+      title: client.name,
+      subtitle: client.phone || client.email,
+    }))
+    
+    clientsTotalItems.value = filtered.length
+  } catch (error) {
+    console.error('Error searching clients:', error)
+    clientSearchItems.value = []
+    clientsTotalItems.value = 0
+  } finally {
+    isLoadingClients.value = false
+  }
+}
+
+// Handle client selection
+const handleClientSelect = (item: any) => {
+  if (item) {
+    console.log('Client selected:', item)
+  }
+}
+
+// Handle property search from SearchSelectDialog
+const handlePropertySearch = async (query: string, page: number) => {
   isLoadingProperties.value = true
   try {
+    // Fetch all properties (backend doesn't support pagination/search filtering yet)
     const data = await propertiesService.listProperties({ limit: 1000 })
-    // Remove duplicates by ID before setting
-    const uniqueProperties = Array.from(
-      new Map(data.map(property => [property.id, property])).values()
-    )
-    properties.value = uniqueProperties
-    console.log('Loaded properties:', uniqueProperties.length, 'unique properties')
+    
+    // Filter by search query client-side
+    let filtered = data
+    if (query && query.trim()) {
+      const lowerQuery = query.toLowerCase().trim()
+      filtered = data.filter(property =>
+        property.title.toLowerCase().includes(lowerQuery) ||
+        property.code.toLowerCase().includes(lowerQuery) ||
+        (property.city && property.city.toLowerCase().includes(lowerQuery)) ||
+        (property.neighborhood && property.neighborhood.toLowerCase().includes(lowerQuery))
+      )
+    }
+    
+    // Apply pagination client-side
+    const startIndex = (page - 1) * propertiesPerPage
+    const endIndex = startIndex + propertiesPerPage
+    const paginatedItems = filtered.slice(startIndex, endIndex)
+    
+    // Map to search items format
+    propertySearchItems.value = paginatedItems.map(property => ({
+      id: property.id,
+      title: property.title,
+      code: property.code,
+      city: property.city,
+      neighborhood: property.neighborhood,
+      main_image_url: property.main_image_url,
+      subtitle: `${property.code} ${property.city ? '• ' + property.city : ''}`,
+    }))
+    
+    propertiesTotalItems.value = filtered.length
   } catch (error) {
-    console.error('Error loading properties:', error)
+    console.error('Error searching properties:', error)
+    propertySearchItems.value = []
+    propertiesTotalItems.value = 0
   } finally {
     isLoadingProperties.value = false
   }
 }
 
-const searchClients = async (search: string) => {
-  if (!search || search.length < 2) return
-  // Could implement search here if backend supports it
-  // For now, just load all clients
-}
-
-const searchProperties = async (search: string) => {
-  if (!search || search.length < 2) return
-  // Could implement search here if backend supports it
-  // For now, just load all properties
+// Handle property selection
+const handlePropertySelect = (item: any) => {
+  if (item) {
+    console.log('Property selected:', item)
+  }
 }
 
 // Load attendance for editing
@@ -498,15 +544,22 @@ const goBack = () => {
 }
 
 onMounted(async () => {
-  await Promise.all([
-    loadClients(),
-    loadAgents(),
-    loadProperties(),
-  ])
+  // Load agents (always needed as combobox)
+  await loadAgents()
   
-  // Load attendance if in edit mode
+  // Load attendance if in edit mode and populate search dialogs with selected items
   if (isEditMode.value) {
     await loadAttendance()
+    
+    // Pre-load client data for the search dialog if client is set
+    if (formData.value.client_id) {
+      await handleClientSearch('', 1)
+    }
+    
+    // Pre-load property data for the search dialog if property is set
+    if (formData.value.property_id) {
+      await handlePropertySearch('', 1)
+    }
   }
 })
 </script>
