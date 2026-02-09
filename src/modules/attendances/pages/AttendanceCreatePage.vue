@@ -11,6 +11,21 @@
         </v-icon>
         <span class="text-h5">{{ isEditMode ? 'Editar Atendimento' : 'Novo Atendimento' }}</span>
         <v-spacer></v-spacer>
+        
+        <!-- Toggle AI Panel (mobile) -->
+        <v-btn
+          v-if="$vuetify.display.mdAndDown"
+          :icon="showAIPanel ? 'mdi-robot-off' : 'mdi-robot'"
+          variant="tonal"
+          :color="showAIPanel ? 'error' : 'secondary'"
+          class="mr-2"
+          @click="showAIPanel = !showAIPanel"
+        >
+          <v-tooltip activator="parent" location="bottom">
+            {{ showAIPanel ? 'Ocultar Assistente IA' : 'Mostrar Assistente IA' }}
+          </v-tooltip>
+        </v-btn>
+        
         <v-btn color="primary" :loading="isSaving" :disabled="isSaving || !isFormValid" prepend-icon="mdi-content-save"
           @click="handleSave">
           Salvar
@@ -18,160 +33,219 @@
       </v-card-title>
     </v-card>
 
-    <!-- Form -->
-    <v-card elevation="2">
-      <v-card-text class="pa-6">
-        <v-form ref="formRef" v-model="isFormValid">
-          <v-row>
-            <!-- Cliente * -->
-            <v-col cols="12" md="6">
-              <SearchSelectDialog
-                v-model="formData.client_id"
-                label="Cliente *"
-                dialog-title="Buscar Cliente"
-                icon="mdi-account"
-                icon-color="primary"
-                item-icon="mdi-account"
-                placeholder="Clique para buscar cliente..."
-                hint="Selecione o cliente atendido"
-                :persistent-hint="true"
-                :rules="[rules.required]"
-                :items="clientSearchItems"
-                :total-items="clientsTotalItems"
-                :items-per-page="clientsPerPage"
-                :is-loading="isLoadingClients"
-                display-field="name"
-                @search="handleClientSearch"
-                @select="handleClientSelect"
-              >
-                <template #item-prepend="{ item }">
-                  <v-avatar color="primary" size="40" class="mr-3">
-                    <span class="text-caption text-white">
-                      {{ getInitials(item.name || '') }}
-                    </span>
-                  </v-avatar>
-                </template>
-                <template #item-title="{ item }">
-                  {{ item.name }}
-                </template>
-                <template #item-subtitle="{ item }">
-                  <span v-if="item.phone">{{ formatPhone(item.phone) }}</span>
-                  <span v-else-if="item.email">{{ item.email }}</span>
-                </template>
-              </SearchSelectDialog>
-            </v-col>
-
-            <!-- Agente * -->
-            <v-col cols="12" md="6">
-              <v-select v-model="formData.agent_id" :items="agentOptions" :loading="isLoadingAgents"
-                label="Agente Responsável *" variant="outlined" :rules="[rules.required]"
-                prepend-inner-icon="mdi-account-tie" hint="Selecione o agente que realizou o atendimento"
-                persistent-hint item-title="title" item-value="value"></v-select>
-            </v-col>
-
-            <!-- Propriedade (Opcional) -->
-            <v-col cols="12" md="6">
-              <SearchSelectDialog
-                v-model="formData.property_id"
-                label="Propriedade (Opcional)"
-                dialog-title="Buscar Propriedade"
-                icon="mdi-home"
-                icon-color="success"
-                item-icon="mdi-home"
-                placeholder="Clique para buscar propriedade..."
-                hint="Selecione a propriedade relacionada, se aplicável"
-                :persistent-hint="true"
-                :clearable="true"
-                :items="propertySearchItems"
-                :total-items="propertiesTotalItems"
-                :items-per-page="propertiesPerPage"
-                :is-loading="isLoadingProperties"
-                display-field="title"
-                @search="handlePropertySearch"
-                @select="handlePropertySelect"
-              >
-                <template #item-prepend="{ item }">
-                  <v-avatar color="success" size="40" class="mr-3" rounded="lg">
-                    <v-img v-if="item.main_image_url" :src="item.main_image_url" cover></v-img>
-                    <v-icon v-else color="white">mdi-home</v-icon>
-                  </v-avatar>
-                </template>
-                <template #item-title="{ item }">
-                  {{ item.title }}
-                </template>
-                <template #item-subtitle="{ item }">
-                  <span>Código: {{ item.code }}</span>
-                  <span v-if="item.city" class="ml-2">• {{ item.city }}</span>
-                </template>
-              </SearchSelectDialog>
-            </v-col>
-
-            <!-- Canal * -->
-            <v-col cols="12" md="6">
-              <v-select v-model="formData.channel" :items="channelOptions" label="Canal de Atendimento *"
-                variant="outlined" :rules="[rules.required]" prepend-inner-icon="mdi-phone"
-                hint="Como o atendimento foi realizado" persistent-hint item-title="title" item-value="value">
-                <template #item="{ item, props }">
-                  <v-list-item v-bind="props" :key="`channel-${item.value}`">
-                    <template #prepend>
-                      <v-icon :color="item.raw?.color" class="mr-3">
-                        {{ item.raw?.icon }}
-                      </v-icon>
+    <!-- Main Content with AI Panel -->
+    <v-row>
+      <!-- Form Column -->
+      <v-col cols="12" :lg="showAIPanel ? 8 : 12">
+        <v-card elevation="2">
+          <v-card-text class="pa-6">
+            <v-form ref="formRef" v-model="isFormValid">
+              <v-row>
+                <!-- Cliente * -->
+                <v-col cols="12" md="6">
+                  <SearchSelectDialog
+                    v-model="formData.client_id"
+                    label="Cliente *"
+                    dialog-title="Buscar Cliente"
+                    icon="mdi-account"
+                    icon-color="primary"
+                    item-icon="mdi-account"
+                    placeholder="Clique para buscar cliente..."
+                    hint="Selecione o cliente atendido"
+                    :persistent-hint="true"
+                    :rules="[rules.required]"
+                    :items="clientSearchItems"
+                    :total-items="clientsTotalItems"
+                    :items-per-page="clientsPerPage"
+                    :is-loading="isLoadingClients"
+                    display-field="name"
+                    @search="handleClientSearch"
+                    @select="handleClientSelect"
+                  >
+                    <template #item-prepend="{ item }">
+                      <v-avatar color="primary" size="40" class="mr-3">
+                        <span class="text-caption text-white">
+                          {{ getInitials(item.name || '') }}
+                        </span>
+                      </v-avatar>
                     </template>
-                  </v-list-item>
-                </template>
-                <template #selection="{ item }">
-                  <div class="d-flex align-center">
-                    <v-icon :color="item.raw?.color" size="small" class="mr-2">
-                      {{ item.raw?.icon }}
-                    </v-icon>
-                    <span>{{ item.raw?.title }}</span>
-                  </div>
-                </template>
-              </v-select>
-            </v-col>
+                    <template #item-title="{ item }">
+                      {{ item.name }}
+                    </template>
+                    <template #item-subtitle="{ item }">
+                      <span v-if="item.phone">{{ formatPhone(item.phone) }}</span>
+                      <span v-else-if="item.email">{{ item.email }}</span>
+                    </template>
+                  </SearchSelectDialog>
+                </v-col>
 
-            <!-- Data/Hora de Início * -->
-            <v-col cols="12" md="6">
-              <v-text-field v-model="formData.started_at" label="Data/Hora de Início *" type="datetime-local"
-                variant="outlined" :rules="[rules.required]" prepend-inner-icon="mdi-calendar-clock"
-                hint="Quando o atendimento começou" persistent-hint></v-text-field>
-            </v-col>
+                <!-- Agente * -->
+                <v-col cols="12" md="6">
+                  <v-select v-model="formData.agent_id" :items="agentOptions" :loading="isLoadingAgents"
+                    label="Agente Responsável *" variant="outlined" :rules="[rules.required]"
+                    prepend-inner-icon="mdi-account-tie" hint="Selecione o agente que realizou o atendimento"
+                    persistent-hint item-title="title" item-value="value"></v-select>
+                </v-col>
 
-            <!-- Data/Hora de Término (Opcional) -->
-            <v-col cols="12" md="6">
-              <v-text-field v-model="formData.ended_at" label="Data/Hora de Término (Opcional)" type="datetime-local"
-                variant="outlined" prepend-inner-icon="mdi-calendar-check"
-                :rules="[rules.dateValidation]"
-                hint="Quando o atendimento terminou (deve ser posterior à data de início)"
-                persistent-hint></v-text-field>
-            </v-col>
+                <!-- Propriedade (Opcional) -->
+                <v-col cols="12" md="6">
+                  <SearchSelectDialog
+                    v-model="formData.property_id"
+                    label="Propriedade (Opcional)"
+                    dialog-title="Buscar Propriedade"
+                    icon="mdi-home"
+                    icon-color="success"
+                    item-icon="mdi-home"
+                    placeholder="Clique para buscar propriedade..."
+                    hint="Selecione a propriedade relacionada, se aplicável"
+                    :persistent-hint="true"
+                    :clearable="true"
+                    :items="propertySearchItems"
+                    :total-items="propertiesTotalItems"
+                    :items-per-page="propertiesPerPage"
+                    :is-loading="isLoadingProperties"
+                    display-field="title"
+                    @search="handlePropertySearch"
+                    @select="handlePropertySelect"
+                  >
+                    <template #item-prepend="{ item }">
+                      <v-avatar color="success" size="40" class="mr-3" rounded="lg">
+                        <v-img v-if="item.main_image_url" :src="item.main_image_url" cover></v-img>
+                        <v-icon v-else color="white">mdi-home</v-icon>
+                      </v-avatar>
+                    </template>
+                    <template #item-title="{ item }">
+                      {{ item.title }}
+                    </template>
+                    <template #item-subtitle="{ item }">
+                      <span>Código: {{ item.code }}</span>
+                      <span v-if="item.city" class="ml-2">• {{ item.city }}</span>
+                    </template>
+                  </SearchSelectDialog>
+                </v-col>
 
-            <!-- Status -->
-            <v-col cols="12" md="6">
-              <v-select v-model="formData.status" :items="statusOptions" label="Status" variant="outlined"
-                prepend-inner-icon="mdi-flag" hint="Status do atendimento" persistent-hint item-title="title"
-                item-value="value"></v-select>
-            </v-col>
+                <!-- Canal * -->
+                <v-col cols="12" md="6">
+                  <v-select v-model="formData.channel" :items="channelOptions" label="Canal de Atendimento *"
+                    variant="outlined" :rules="[rules.required]" prepend-inner-icon="mdi-phone"
+                    hint="Como o atendimento foi realizado" persistent-hint item-title="title" item-value="value">
+                    <template #item="{ item, props }">
+                      <v-list-item v-bind="props" :key="`channel-${item.value}`">
+                        <template #prepend>
+                          <v-icon :color="item.raw?.color" class="mr-3">
+                            {{ item.raw?.icon }}
+                          </v-icon>
+                        </template>
+                      </v-list-item>
+                    </template>
+                    <template #selection="{ item }">
+                      <div class="d-flex align-center">
+                        <v-icon :color="item.raw?.color" size="small" class="mr-2">
+                          {{ item.raw?.icon }}
+                        </v-icon>
+                        <span>{{ item.raw?.title }}</span>
+                      </div>
+                    </template>
+                  </v-select>
+                </v-col>
 
-            <!-- Agendar Visita (Opcional) -->
-            <v-col cols="12" md="6">
-              <v-text-field v-model="formData.scheduled_visit_at" label="Agendar Visita (Opcional)"
-                type="datetime-local" variant="outlined" prepend-inner-icon="mdi-calendar-plus"
-                hint="Data/hora para agendar uma visita relacionada" persistent-hint></v-text-field>
-            </v-col>
+                <!-- Data/Hora de Início * -->
+                <v-col cols="12" md="6">
+                  <v-text-field v-model="formData.started_at" label="Data/Hora de Início *" type="datetime-local"
+                    variant="outlined" :rules="[rules.required]" prepend-inner-icon="mdi-calendar-clock"
+                    hint="Quando o atendimento começou" persistent-hint></v-text-field>
+                </v-col>
 
-            <!-- Conteúdo do Atendimento * -->
-            <v-col cols="12">
-              <v-textarea v-model="formData.raw_content" label="Conteúdo do Atendimento *" variant="outlined"
-                :rules="[rules.required, rules.minLength]" rows="8" prepend-inner-icon="mdi-text"
-                hint="Descreva o conteúdo completo do atendimento. Este conteúdo será usado pela IA para gerar resumos e próximos passos."
-                persistent-hint counter :maxlength="10000"></v-textarea>
-            </v-col>
-          </v-row>
-        </v-form>
-      </v-card-text>
-    </v-card>
+                <!-- Data/Hora de Término (Opcional) -->
+                <v-col cols="12" md="6">
+                  <v-text-field v-model="formData.ended_at" label="Data/Hora de Término (Opcional)" type="datetime-local"
+                    variant="outlined" prepend-inner-icon="mdi-calendar-check"
+                    :rules="[rules.dateValidation]"
+                    hint="Quando o atendimento terminou (deve ser posterior à data de início)"
+                    persistent-hint></v-text-field>
+                </v-col>
+
+                <!-- Status -->
+                <v-col cols="12" md="6">
+                  <v-select v-model="formData.status" :items="statusOptions" label="Status" variant="outlined"
+                    prepend-inner-icon="mdi-flag" hint="Status do atendimento" persistent-hint item-title="title"
+                    item-value="value"></v-select>
+                </v-col>
+
+                <!-- Agendar Visita (Opcional) -->
+                <v-col cols="12" md="6">
+                  <v-text-field v-model="formData.scheduled_visit_at" label="Agendar Visita (Opcional)"
+                    type="datetime-local" variant="outlined" prepend-inner-icon="mdi-calendar-plus"
+                    hint="Data/hora para agendar uma visita relacionada" persistent-hint></v-text-field>
+                </v-col>
+
+                <!-- Conteúdo do Atendimento * -->
+                <v-col cols="12">
+                  <v-textarea 
+                    v-model="formData.raw_content" 
+                    label="Conteúdo do Atendimento *" 
+                    variant="outlined"
+                    :rules="[rules.required, rules.minLength]" 
+                    :rows="showAIPanel ? 12 : 8" 
+                    prepend-inner-icon="mdi-text"
+                    hint="Descreva o conteúdo completo do atendimento. A IA analisará em tempo real."
+                    persistent-hint 
+                    counter 
+                    :maxlength="10000"
+                  >
+                    <template #append-inner>
+                      <v-chip 
+                        v-if="formData.raw_content.length >= 15 && !showAIPanel" 
+                        color="secondary" 
+                        size="small"
+                        variant="flat"
+                        class="cursor-pointer"
+                        @click="showAIPanel = true"
+                      >
+                        <v-icon start size="14">mdi-robot</v-icon>
+                        Ver IA
+                      </v-chip>
+                    </template>
+                  </v-textarea>
+                </v-col>
+              </v-row>
+            </v-form>
+          </v-card-text>
+        </v-card>
+      </v-col>
+
+      <!-- AI Panel Column -->
+      <v-col v-if="showAIPanel" cols="12" lg="4">
+        <div class="ai-panel-container">
+          <RealTimeAIPanel
+            :text="formData.raw_content"
+            :client-id="formData.client_id"
+            :include-properties="true"
+            :debounce-ms="800"
+            @analysis-complete="handleAIAnalysisComplete"
+            @select-property="handleAIPropertySelect"
+          />
+        </div>
+      </v-col>
+    </v-row>
+
+    <!-- Mobile AI Panel Drawer -->
+    <v-navigation-drawer
+      v-if="$vuetify.display.mdAndDown"
+      v-model="showAIPanel"
+      location="right"
+      temporary
+      width="350"
+    >
+      <RealTimeAIPanel
+        :text="formData.raw_content"
+        :client-id="formData.client_id"
+        :include-properties="true"
+        :debounce-ms="800"
+        @analysis-complete="handleAIAnalysisComplete"
+        @select-property="handleAIPropertySelect"
+      />
+    </v-navigation-drawer>
 
     <!-- AI Suggestions Dialog -->
     <ClientUpdateSuggestionsDialog
@@ -200,6 +274,8 @@ import { aiSummariesService, type AISummary } from '@/shared/services/aiSummarie
 import { formatPhone } from '@/shared/utils/masks'
 import SearchSelectDialog from '@/shared/components/SearchSelectDialog.vue'
 import ClientUpdateSuggestionsDialog from '@/shared/components/ClientUpdateSuggestionsDialog.vue'
+import RealTimeAIPanel from '@/shared/components/RealTimeAIPanel.vue'
+import type { RealTimeAnalysisResult } from '@/shared/services/realtime-ai.service'
 
 const router = useRouter()
 const route = useRoute()
@@ -220,6 +296,10 @@ const showSuggestionsDialog = ref(false)
 const suggestionsClient = ref<Client | null>(null)
 const suggestionsAISummary = ref<AISummary | null>(null)
 const savedAttendanceId = ref<string | null>(null)
+
+// Real-time AI Panel state
+const showAIPanel = ref(true)
+const lastAIAnalysis = ref<RealTimeAnalysisResult | null>(null)
 
 // Search state for clients
 const clientSearchItems = ref<any[]>([])
@@ -636,6 +716,35 @@ const goBack = () => {
   router.push({ name: 'attendances' })
 }
 
+// Real-time AI handlers
+const handleAIAnalysisComplete = (result: RealTimeAnalysisResult) => {
+  lastAIAnalysis.value = result
+  console.log('AI Analysis complete:', result.summary)
+}
+
+const handleAIPropertySelect = async (propertyId: string) => {
+  // When user clicks a suggested property, select it in the form
+  formData.value.property_id = propertyId
+  
+  // Load property details to update the search dialog
+  try {
+    const property = await propertiesService.getPropertyById(propertyId)
+    if (property) {
+      propertySearchItems.value = [{
+        id: property.id,
+        title: property.title,
+        code: property.code,
+        city: property.city,
+        neighborhood: property.neighborhood,
+        main_image_url: property.main_image_url,
+        subtitle: `${property.code} ${property.city ? '• ' + property.city : ''}`,
+      }]
+    }
+  } catch (error) {
+    console.error('Error loading property:', error)
+  }
+}
+
 onMounted(async () => {
   // Load agents (always needed as combobox)
   await loadAgents()
@@ -669,5 +778,16 @@ onMounted(async () => {
 
 :deep(.v-field--variant-outlined .v-field__outline) {
   top: 0 !important;
+}
+
+/* AI Panel Container */
+.ai-panel-container {
+  position: sticky;
+  top: 80px;
+  max-height: calc(100vh - 100px);
+}
+
+.cursor-pointer {
+  cursor: pointer;
 }
 </style>
