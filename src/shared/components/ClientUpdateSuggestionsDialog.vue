@@ -149,6 +149,8 @@ interface AISummaryProps {
   urgency_level_detected?: string | null
   budget_min_detected?: number | null
   budget_max_detected?: number | null
+  lead_score_suggested?: number | null
+  detected_intent?: string | null
   key_points?: {
     city?: string | null
     property_type?: string | null
@@ -287,8 +289,77 @@ const generateSuggestions = () => {
     })
   }
 
+  // Lead Score
+  if (ai.lead_score_suggested && ai.lead_score_suggested !== c.current_lead_score) {
+    newSuggestions.push({
+      field: 'current_lead_score',
+      currentValue: c.current_lead_score ? String(c.current_lead_score) : null,
+      suggestedValue: String(ai.lead_score_suggested),
+      reason: 'Lead Score calculado pela IA',
+      confidence: 0.85,
+      selected: true,
+    })
+  }
+
+  // Status - determinar baseado no contexto
+  const suggestedStatus = determineSuggestedStatus(c, ai)
+  if (suggestedStatus && suggestedStatus !== c.current_status) {
+    newSuggestions.push({
+      field: 'current_status',
+      currentValue: c.current_status,
+      suggestedValue: suggestedStatus,
+      reason: 'Status atualizado baseado no atendimento',
+      confidence: 0.8,
+      selected: true,
+    })
+  }
+
   suggestions.value = newSuggestions
 }
+
+const determineSuggestedStatus = (client: Client, ai: AISummaryProps): string | null => {
+  const current = client.current_status
+  const intent = ai.detected_intent
+  
+  // Status progression order
+  const statusOrder: Record<string, number> = {
+    NEW_LEAD: 1,
+    CONTACTED: 2,
+    QUALIFIED: 3,
+    VISIT_SCHEDULED: 4,
+    VISITING: 5,
+    PROPOSAL_SENT: 6,
+    NEGOTIATING: 7,
+    WON: 10,
+    LOST: 10,
+    INACTIVE: 0,
+  }
+  
+  const currentOrder = statusOrder[current || 'NEW_LEAD'] || 0
+  
+  // If NEW_LEAD, move to CONTACTED
+  if (!current || current === 'NEW_LEAD') {
+    return 'CONTACTED'
+  }
+  
+  // If CONTACTED and detected interest/budget, move to QUALIFIED
+  if (current === 'CONTACTED') {
+    if (ai.interest_type_detected || ai.budget_min_detected || ai.budget_max_detected) {
+      return 'QUALIFIED'
+    }
+  }
+  
+  // If intent is SCHEDULE_VISIT
+  if (intent === 'SCHEDULE_VISIT' && currentOrder < statusOrder['VISIT_SCHEDULED']) {
+    return 'VISIT_SCHEDULED'
+  }
+  
+  // If intent is PRICE_NEGOTIATION
+  if (intent === 'PRICE_NEGOTIATION' && currentOrder < statusOrder['NEGOTIATING']) {
+    return 'NEGOTIATING'
+  }
+  
+  return null
 
 const getFieldIcon = (field: string): string => {
   const icons: Record<string, string> = {
@@ -299,6 +370,7 @@ const getFieldIcon = (field: string): string => {
     current_budget_min: 'mdi-currency-usd',
     current_budget_max: 'mdi-currency-usd-off',
     current_status: 'mdi-flag',
+    current_lead_score: 'mdi-star',
   }
   return icons[field] || 'mdi-information'
 }
@@ -312,6 +384,7 @@ const getFieldLabel = (field: string): string => {
     current_budget_min: 'Orçamento Mínimo',
     current_budget_max: 'Orçamento Máximo',
     current_status: 'Status',
+    current_lead_score: 'Lead Score',
   }
   return labels[field] || field
 }
@@ -339,6 +412,18 @@ const formatValue = (field: string, value: string | null | undefined): string =>
       COMMERCIAL: 'Comercial',
       RURAL: 'Rural',
     },
+    current_status: {
+      NEW_LEAD: 'Novo Lead',
+      CONTACTED: 'Contatado',
+      QUALIFIED: 'Qualificado',
+      VISIT_SCHEDULED: 'Visita Agendada',
+      VISITING: 'Em Visita',
+      PROPOSAL_SENT: 'Proposta Enviada',
+      NEGOTIATING: 'Negociando',
+      WON: 'Fechado',
+      LOST: 'Perdido',
+      INACTIVE: 'Inativo',
+    },
   }
 
   if (translations[field] && translations[field][value]) {
@@ -351,6 +436,11 @@ const formatValue = (field: string, value: string | null | undefined): string =>
     if (!isNaN(num)) {
       return `R$ ${num.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
     }
+  }
+
+  // Format lead score
+  if (field === 'current_lead_score') {
+    return `${value} pontos`
   }
 
   return value
