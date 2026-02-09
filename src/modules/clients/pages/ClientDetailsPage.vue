@@ -36,6 +36,15 @@
                   Registrar Venda
                 </v-btn>
                 <v-btn
+                  variant="flat"
+                  color="warning"
+                  size="small"
+                  prepend-icon="mdi-account-remove"
+                  @click="openLossDialog"
+                >
+                  Registrar Perda
+                </v-btn>
+                <v-btn
                   variant="tonal"
                   color="white"
                   size="small"
@@ -450,6 +459,169 @@
             >
               <v-icon start>mdi-check</v-icon>
               Registrar Venda
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+      <!-- Loss Registration Dialog -->
+      <v-dialog v-model="showLossDialog" max-width="700" persistent>
+        <v-card rounded="lg">
+          <v-toolbar color="warning" density="compact">
+            <v-toolbar-title class="text-white font-weight-bold">
+              <v-icon start>mdi-account-remove</v-icon>
+              Registrar Perda de Cliente
+            </v-toolbar-title>
+            <v-spacer></v-spacer>
+            <v-btn icon variant="text" @click="closeLossDialog">
+              <v-icon color="white">mdi-close</v-icon>
+            </v-btn>
+          </v-toolbar>
+
+          <v-card-text class="pt-6">
+            <v-form ref="lossForm" v-model="isLossFormValid">
+              <v-row>
+                <!-- Cliente (readonly) -->
+                <v-col cols="12">
+                  <v-text-field
+                    :model-value="client?.name"
+                    label="Cliente"
+                    prepend-inner-icon="mdi-account"
+                    variant="outlined"
+                    density="comfortable"
+                    readonly
+                    bg-color="grey-lighten-4"
+                  ></v-text-field>
+                </v-col>
+
+                <!-- Motivo da perda -->
+                <v-col cols="12">
+                  <v-select
+                    v-model="newLoss.loss_reason"
+                    :items="lossReasonOptions"
+                    label="Motivo da perda *"
+                    prepend-inner-icon="mdi-help-circle"
+                    variant="outlined"
+                    density="comfortable"
+                    :rules="[(v: string | null) => !!v || 'Selecione o motivo']"
+                  >
+                    <template v-slot:item="{ props, item }">
+                      <v-list-item v-bind="props">
+                        <template v-slot:prepend>
+                          <v-icon :color="getLossReasonColor(item.raw.value)">
+                            {{ getLossReasonIcon(item.raw.value) }}
+                          </v-icon>
+                        </template>
+                      </v-list-item>
+                    </template>
+                  </v-select>
+                </v-col>
+
+                <!-- Estágio quando perdido -->
+                <v-col cols="12">
+                  <v-select
+                    v-model="newLoss.loss_stage"
+                    :items="lossStageOptions"
+                    label="Estágio quando perdido *"
+                    prepend-inner-icon="mdi-progress-check"
+                    variant="outlined"
+                    density="comfortable"
+                    :rules="[(v: string | null) => !!v || 'Selecione o estágio']"
+                  ></v-select>
+                </v-col>
+
+                <!-- Detalhes -->
+                <v-col cols="12">
+                  <v-textarea
+                    v-model="newLoss.detailed_reason"
+                    label="Detalhes sobre a perda"
+                    prepend-inner-icon="mdi-text"
+                    variant="outlined"
+                    density="comfortable"
+                    rows="2"
+                    auto-grow
+                    placeholder="Descreva o que aconteceu..."
+                  ></v-textarea>
+                </v-col>
+
+                <!-- Feedback do cliente -->
+                <v-col cols="12">
+                  <v-textarea
+                    v-model="newLoss.client_feedback"
+                    label="Feedback do cliente"
+                    prepend-inner-icon="mdi-comment-quote"
+                    variant="outlined"
+                    density="comfortable"
+                    rows="2"
+                    auto-grow
+                    placeholder="O que o cliente disse?"
+                  ></v-textarea>
+                </v-col>
+
+                <!-- Info do concorrente -->
+                <v-col cols="12" v-if="newLoss.loss_reason === 'BETTER_OFFER_COMPETITOR'">
+                  <v-textarea
+                    v-model="newLoss.competitor_info"
+                    label="Informações sobre o concorrente"
+                    prepend-inner-icon="mdi-account-switch"
+                    variant="outlined"
+                    density="comfortable"
+                    rows="2"
+                    auto-grow
+                    placeholder="Qual concorrente? Qual oferta?"
+                  ></v-textarea>
+                </v-col>
+
+                <!-- Poderia ter sido evitada? -->
+                <v-col cols="12">
+                  <v-switch
+                    v-model="newLoss.could_have_been_prevented"
+                    label="Esta perda poderia ter sido evitada?"
+                    color="warning"
+                    hide-details
+                  ></v-switch>
+                </v-col>
+
+                <!-- Lições aprendidas -->
+                <v-col cols="12" v-if="newLoss.could_have_been_prevented">
+                  <v-textarea
+                    v-model="newLoss.lessons_learned"
+                    label="Lições aprendidas"
+                    prepend-inner-icon="mdi-lightbulb"
+                    variant="outlined"
+                    density="comfortable"
+                    rows="2"
+                    auto-grow
+                    placeholder="O que poderia ter sido feito diferente?"
+                  ></v-textarea>
+                </v-col>
+              </v-row>
+            </v-form>
+
+            <v-alert type="info" variant="tonal" density="compact" class="mt-4">
+              <template v-slot:text>
+                A IA irá analisar esta perda e gerar insights para evitar situações similares.
+                Quanto mais detalhes você fornecer, melhor será a análise.
+              </template>
+            </v-alert>
+          </v-card-text>
+
+          <v-divider></v-divider>
+
+          <v-card-actions class="pa-4">
+            <v-spacer></v-spacer>
+            <v-btn variant="text" @click="closeLossDialog" :disabled="isCreatingLoss">
+              Cancelar
+            </v-btn>
+            <v-btn
+              color="warning"
+              variant="flat"
+              @click="createLoss"
+              :loading="isCreatingLoss"
+              :disabled="!isLossFormValid"
+            >
+              <v-icon start>mdi-check</v-icon>
+              Registrar Perda
             </v-btn>
           </v-card-actions>
         </v-card>
@@ -1472,6 +1644,13 @@ import { usersService, type User } from '@/shared/services/users.service'
 import { aiSummariesService, type AISummary, type Sentiment, type DetectedIntent } from '@/shared/services/aiSummaries.service'
 import { propertiesService, type Property } from '@/shared/services/properties.service'
 import { salesService } from '@/shared/services/sales.service'
+import { 
+  lossesService, 
+  lossReasonOptions, 
+  lossStageOptions,
+  getLossReasonColor,
+  getLossReasonIcon,
+} from '@/shared/services/losses.service'
 import { attendancesService, type Attendance } from '@/shared/services/attendances.service'
 import { formatPhone, formatCurrency, parseCurrency } from '@/shared/utils/masks'
 import ClientCreateDialog from '@/shared/components/ClientCreateDialog.vue'
@@ -1529,6 +1708,29 @@ const paymentMethodOptions = [
   { title: 'Parcelado', value: 'INSTALLMENTS' },
   { title: 'Misto', value: 'MIXED' },
 ]
+
+// Loss registration
+const showLossDialog = ref(false)
+const isLossFormValid = ref(false)
+const isCreatingLoss = ref(false)
+const lossForm = ref()
+const newLoss = ref<{
+  loss_reason: string | null
+  loss_stage: string | null
+  detailed_reason: string | null
+  client_feedback: string | null
+  competitor_info: string | null
+  could_have_been_prevented: boolean | null
+  lessons_learned: string | null
+}>({
+  loss_reason: null,
+  loss_stage: null,
+  detailed_reason: null,
+  client_feedback: null,
+  competitor_info: null,
+  could_have_been_prevented: false,
+  lessons_learned: null,
+})
 
 const aiSummaries = ref<AISummary[]>([])
 const recommendedProperties = ref<Property[]>([])
@@ -2462,6 +2664,62 @@ const formatPropertyPrice = (property: Property): string => {
     currency: 'BRL',
     maximumFractionDigits: 0,
   }).format(price)
+}
+
+// Loss registration functions
+const openLossDialog = () => {
+  // Set initial stage based on current client status
+  const statusToStage: Record<string, string> = {
+    'NEW_LEAD': 'INITIAL_CONTACT',
+    'CONTACTED': 'QUALIFICATION',
+    'QUALIFIED': 'QUALIFICATION',
+    'VISIT_SCHEDULED': 'VISIT_SCHEDULED',
+    'VISITING': 'VISIT_COMPLETED',
+    'PROPOSAL_SENT': 'PROPOSAL',
+    'NEGOTIATING': 'NEGOTIATION',
+  }
+  newLoss.value.loss_stage = statusToStage[client.value?.current_status || ''] || 'INITIAL_CONTACT'
+  showLossDialog.value = true
+}
+
+const closeLossDialog = () => {
+  showLossDialog.value = false
+  newLoss.value = {
+    loss_reason: null,
+    loss_stage: null,
+    detailed_reason: null,
+    client_feedback: null,
+    competitor_info: null,
+    could_have_been_prevented: false,
+    lessons_learned: null,
+  }
+}
+
+const createLoss = async () => {
+  if (!client.value || !isLossFormValid.value) return
+
+  isCreatingLoss.value = true
+  try {
+    await lossesService.createLoss({
+      client_id: client.value.id,
+      loss_reason: newLoss.value.loss_reason as any,
+      loss_stage: newLoss.value.loss_stage as any,
+      detailed_reason: newLoss.value.detailed_reason || undefined,
+      client_feedback: newLoss.value.client_feedback || undefined,
+      competitor_info: newLoss.value.competitor_info || undefined,
+      could_have_been_prevented: newLoss.value.could_have_been_prevented || undefined,
+      lessons_learned: newLoss.value.lessons_learned || undefined,
+    })
+    closeLossDialog()
+    // Reload client to get updated status
+    await loadClient()
+    alert('Perda registrada. A IA irá analisar este caso para gerar insights.')
+  } catch (error: any) {
+    console.error('Error creating loss:', error)
+    alert(`Erro ao registrar perda: ${error?.message || 'Erro desconhecido'}`)
+  } finally {
+    isCreatingLoss.value = false
+  }
 }
 
 // Helper functions for header

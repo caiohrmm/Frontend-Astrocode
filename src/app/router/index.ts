@@ -175,6 +175,15 @@ const routes: RouteRecordRaw[] = [
       requiresAuth: true,
     },
   },
+  {
+    path: '/losses',
+    name: 'losses',
+    component: () => import('@/modules/losses/pages/LossAnalysisPage.vue'),
+    meta: {
+      layout: 'app',
+      requiresAuth: true,
+    },
+  },
 ]
 
 const router = createRouter({

@@ -170,6 +170,13 @@
           @click="drawer = false"
         ></v-list-item>
         <v-list-item
+          prepend-icon="mdi-chart-timeline-variant"
+          title="Análise de Perdas"
+          value="losses"
+          :to="{ name: 'losses' }"
+          @click="drawer = false"
+        ></v-list-item>
+        <v-list-item
           v-if="authStore.hasRole('gestor')"
           prepend-icon="mdi-account-group"
           title="Usuários"
