@@ -7,81 +7,250 @@
 
     <!-- Content -->
     <div v-else-if="client">
-      <!-- Header Card -->
-      <v-card elevation="2" class="mb-4" rounded="lg">
-        <v-card-title class="d-flex align-center pa-4">
-          <v-btn
-            icon
-            variant="text"
-            class="mr-2"
-            @click="goBack"
-          >
-            <v-icon>mdi-arrow-left</v-icon>
-          </v-btn>
-          <v-avatar color="primary" size="48" class="mr-3">
-            <span class="text-h6 text-white">
-              {{ getInitials(client.name) }}
-            </span>
-          </v-avatar>
-          <div class="flex-grow-1">
-            <div class="text-h5 font-weight-bold">{{ client.name }}</div>
-            <div v-if="client.email" class="text-caption text-medium-emphasis">
-              {{ client.email }}
-            </div>
-            <div v-if="client.phone" class="text-caption text-medium-emphasis">
-              {{ formatPhone(client.phone) }}
-            </div>
-          </div>
-          <v-spacer></v-spacer>
-          <div class="d-flex flex-column align-end ga-2">
-            <!-- Status -->
-            <v-chip
-              v-if="client.current_status"
-              :color="getStatusColor(client.current_status)"
-              variant="flat"
-              size="large"
-            >
-              <v-icon start size="18">{{ getStatusIcon(client.current_status) }}</v-icon>
-              {{ getStatusLabel(client.current_status) }}
-            </v-chip>
-            <!-- Urgency -->
-            <v-chip
-              v-if="client.current_urgency_level"
-              :color="getUrgencyColor(client.current_urgency_level)"
-              variant="flat"
-              size="small"
-            >
-              <v-icon start size="16">mdi-alert-circle</v-icon>
-              {{ getUrgencyLabel(client.current_urgency_level) }}
-            </v-chip>
-          </div>
-          <v-btn
-            color="primary"
-            prepend-icon="mdi-pencil"
-            class="ml-4"
-            @click="handleEditClick"
-          >
-            Editar
-          </v-btn>
-        </v-card-title>
+      <!-- Modern Header -->
+      <v-card class="client-header mb-6" rounded="xl" elevation="0">
+        <!-- Gradient Background -->
+        <div class="header-gradient">
+          <div class="header-content pa-6">
+            <!-- Top Actions Bar -->
+            <div class="d-flex align-center justify-space-between mb-4">
+              <v-btn
+                icon
+                variant="text"
+                color="white"
+                size="small"
+                @click="goBack"
+              >
+                <v-icon>mdi-arrow-left</v-icon>
+                <v-tooltip activator="parent" location="bottom">Voltar</v-tooltip>
+              </v-btn>
 
-        <!-- Lead Score -->
-        <v-card-subtitle v-if="client.current_lead_score !== null" class="pa-4 pt-0">
-          <div class="d-flex align-center ga-3">
-            <span class="text-body-2 font-weight-medium">Lead Score:</span>
-            <v-progress-linear
-              :model-value="client.current_lead_score"
-              :color="getLeadScoreColor(client.current_lead_score)"
-              height="24"
-              rounded
-              style="flex: 1; max-width: 300px;"
-            ></v-progress-linear>
-            <span class="text-body-1 font-weight-bold">
-              {{ client.current_lead_score }}/100
-            </span>
+              <div class="d-flex align-center ga-2">
+                <v-btn
+                  variant="tonal"
+                  color="white"
+                  size="small"
+                  prepend-icon="mdi-pencil"
+                  @click="handleEditClick"
+                >
+                  Editar
+                </v-btn>
+                <v-btn
+                  variant="tonal"
+                  color="error"
+                  size="small"
+                  prepend-icon="mdi-delete"
+                  @click="showDeleteDialog = true"
+                >
+                  Excluir
+                </v-btn>
+              </div>
+            </div>
+
+            <!-- Client Info -->
+            <div class="d-flex align-start flex-wrap ga-6">
+              <!-- Avatar & Name -->
+              <div class="d-flex align-center">
+                <v-avatar 
+                  size="72" 
+                  class="avatar-ring mr-4"
+                >
+                  <span class="text-h4 font-weight-bold text-primary">
+                    {{ getInitials(client.name) }}
+                  </span>
+                </v-avatar>
+                <div>
+                  <h1 class="text-h4 font-weight-bold text-white mb-1">
+                    {{ client.name }}
+                  </h1>
+                  <div class="d-flex align-center ga-4 flex-wrap">
+                    <div v-if="client.phone" class="d-flex align-center text-white-darken-1">
+                      <v-icon size="16" class="mr-1">mdi-phone</v-icon>
+                      <span class="text-body-2">{{ formatPhone(client.phone) }}</span>
+                    </div>
+                    <div v-if="client.email" class="d-flex align-center text-white-darken-1">
+                      <v-icon size="16" class="mr-1">mdi-email</v-icon>
+                      <span class="text-body-2">{{ client.email }}</span>
+                    </div>
+                    <div v-if="client.lead_source" class="d-flex align-center text-white-darken-1">
+                      <v-icon size="16" class="mr-1">mdi-source-branch</v-icon>
+                      <span class="text-body-2">{{ getLeadSourceLabel(client.lead_source) }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <v-spacer class="d-none d-md-block"></v-spacer>
+
+              <!-- Status Chips -->
+              <div class="d-flex flex-column align-end ga-2">
+                <v-chip
+                  v-if="client.current_status"
+                  :color="getStatusColor(client.current_status)"
+                  variant="elevated"
+                  size="large"
+                  class="font-weight-bold"
+                >
+                  <v-icon start size="18">{{ getStatusIcon(client.current_status) }}</v-icon>
+                  {{ getStatusLabel(client.current_status) }}
+                </v-chip>
+                <div class="d-flex align-center ga-2">
+                  <v-chip
+                    v-if="client.current_urgency_level"
+                    :color="getUrgencyColor(client.current_urgency_level)"
+                    variant="elevated"
+                    size="small"
+                  >
+                    <v-icon start size="14">mdi-clock-alert</v-icon>
+                    {{ getUrgencyLabel(client.current_urgency_level) }}
+                  </v-chip>
+                  <v-chip
+                    v-if="client.current_interest_type"
+                    color="white"
+                    variant="flat"
+                    size="small"
+                  >
+                    <v-icon start size="14">mdi-handshake</v-icon>
+                    {{ getInterestTypeLabel(client.current_interest_type) }}
+                  </v-chip>
+                </div>
+              </div>
+            </div>
           </div>
-        </v-card-subtitle>
+        </div>
+
+        <!-- Metrics Bar -->
+        <v-card-text class="metrics-bar pa-0">
+          <v-row no-gutters class="divide-x">
+            <!-- Lead Score -->
+            <v-col cols="6" sm="3" class="pa-4 text-center">
+              <div class="d-flex flex-column align-center">
+                <v-progress-circular
+                  :model-value="client.current_lead_score || 0"
+                  :size="56"
+                  :width="6"
+                  :color="getLeadScoreColor(client.current_lead_score || 0)"
+                >
+                  <span class="text-body-1 font-weight-bold">{{ client.current_lead_score || 0 }}</span>
+                </v-progress-circular>
+                <span class="text-caption text-medium-emphasis mt-2">Lead Score</span>
+              </div>
+            </v-col>
+
+            <!-- Attendances -->
+            <v-col cols="6" sm="3" class="pa-4 text-center border-start">
+              <div class="d-flex flex-column align-center">
+                <div class="text-h5 font-weight-bold text-primary">
+                  {{ clientAttendances.length }}
+                </div>
+                <span class="text-caption text-medium-emphasis mt-1">Atendimentos</span>
+              </div>
+            </v-col>
+
+            <!-- Last Contact -->
+            <v-col cols="6" sm="3" class="pa-4 text-center border-start">
+              <div class="d-flex flex-column align-center">
+                <div class="text-h5 font-weight-bold" :class="getDaysSinceContactColor(client.last_contact_at)">
+                  {{ getDaysSinceContact(client.last_contact_at) }}
+                </div>
+                <span class="text-caption text-medium-emphasis mt-1">Dias s/ Contato</span>
+              </div>
+            </v-col>
+
+            <!-- Budget -->
+            <v-col cols="6" sm="3" class="pa-4 text-center border-start">
+              <div class="d-flex flex-column align-center">
+                <div class="text-body-1 font-weight-bold text-success">
+                  {{ formatBudgetRange(client.current_budget_min, client.current_budget_max) }}
+                </div>
+                <span class="text-caption text-medium-emphasis mt-1">Orçamento</span>
+              </div>
+            </v-col>
+          </v-row>
+        </v-card-text>
       </v-card>
+
+      <!-- Delete Confirmation Dialog -->
+      <v-dialog v-model="showDeleteDialog" max-width="500" persistent>
+        <v-card rounded="lg">
+          <v-card-title class="d-flex align-center pa-4 bg-error">
+            <v-icon color="white" class="mr-3" size="28">mdi-alert-circle</v-icon>
+            <span class="text-white text-h6">Excluir Cliente</span>
+          </v-card-title>
+          
+          <v-card-text class="pa-6">
+            <div class="text-center mb-4">
+              <v-avatar color="error" size="64" class="mb-3">
+                <span class="text-h5 text-white">{{ getInitials(client.name) }}</span>
+              </v-avatar>
+              <h3 class="text-h6 font-weight-bold">{{ client.name }}</h3>
+            </div>
+
+            <v-alert type="warning" variant="tonal" class="mb-4">
+              <div class="font-weight-bold mb-1">Atenção: Esta ação é irreversível!</div>
+              <div class="text-body-2">
+                Ao excluir este cliente, <strong>todos os dados relacionados</strong> serão removidos permanentemente:
+              </div>
+            </v-alert>
+
+            <v-list density="compact" class="bg-grey-lighten-4 rounded-lg">
+              <v-list-item>
+                <template #prepend>
+                  <v-icon color="error" size="20">mdi-phone</v-icon>
+                </template>
+                <v-list-item-title class="text-body-2">
+                  {{ clientAttendances.length }} atendimento(s) e resumos de IA
+                </v-list-item-title>
+              </v-list-item>
+              <v-list-item>
+                <template #prepend>
+                  <v-icon color="error" size="20">mdi-calendar</v-icon>
+                </template>
+                <v-list-item-title class="text-body-2">
+                  Todas as visitas agendadas
+                </v-list-item-title>
+              </v-list-item>
+              <v-list-item>
+                <template #prepend>
+                  <v-icon color="error" size="20">mdi-timeline</v-icon>
+                </template>
+                <v-list-item-title class="text-body-2">
+                  Histórico completo da jornada
+                </v-list-item-title>
+              </v-list-item>
+              <v-list-item>
+                <template #prepend>
+                  <v-icon color="error" size="20">mdi-robot</v-icon>
+                </template>
+                <v-list-item-title class="text-body-2">
+                  Todos os insights da IA
+                </v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-card-text>
+
+          <v-divider></v-divider>
+
+          <v-card-actions class="pa-4">
+            <v-btn
+              variant="text"
+              @click="showDeleteDialog = false"
+            >
+              Cancelar
+            </v-btn>
+            <v-spacer></v-spacer>
+            <v-btn
+              color="error"
+              variant="flat"
+              prepend-icon="mdi-delete"
+              :loading="isDeleting"
+              @click="handleDeleteClient"
+            >
+              Confirmar Exclusão
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
 
       <!-- Tabs -->
       <v-card elevation="2" rounded="lg">
@@ -1116,10 +1285,12 @@ const client = ref<Client | null>(null)
 const isLoading = ref(true)
 const isLoadingAIInsights = ref(false)
 const isLoadingAttendances = ref(false)
+const isDeleting = ref(false)
 const activeTab = ref('overview')
 const agents = ref<User[]>([])
 const showScheduleDialog = ref(false)
 const showEditDialog = ref(false)
+const showDeleteDialog = ref(false)
 const aiSummaries = ref<AISummary[]>([])
 const recommendedProperties = ref<Property[]>([])
 const profileBasedProperties = ref<Property[]>([])
@@ -1984,6 +2155,87 @@ const goToProperty = (propertyId: string) => {
   router.push({ name: 'properties-details', params: { id: propertyId } })
 }
 
+// Delete client handler
+const handleDeleteClient = async () => {
+  if (!client.value) return
+  
+  isDeleting.value = true
+  try {
+    await clientsService.deleteClient(client.value.id)
+    showDeleteDialog.value = false
+    router.push({ name: 'clients' })
+  } catch (error: any) {
+    console.error('Error deleting client:', error)
+    alert(`Erro ao excluir cliente: ${error?.message || 'Erro desconhecido'}`)
+  } finally {
+    isDeleting.value = false
+  }
+}
+
+// Helper functions for header
+const getDaysSinceContact = (lastContactAt: string | null): string => {
+  if (!lastContactAt) return '-'
+  const days = Math.floor((Date.now() - new Date(lastContactAt).getTime()) / (1000 * 60 * 60 * 24))
+  return String(days)
+}
+
+const getDaysSinceContactColor = (lastContactAt: string | null): string => {
+  if (!lastContactAt) return 'text-grey'
+  const days = Math.floor((Date.now() - new Date(lastContactAt).getTime()) / (1000 * 60 * 60 * 24))
+  if (days <= 3) return 'text-success'
+  if (days <= 7) return 'text-warning'
+  return 'text-error'
+}
+
+const formatBudgetRange = (min: number | null, max: number | null): string => {
+  if (!min && !max) return '-'
+  
+  const formatValue = (val: number): string => {
+    if (val >= 1000000) {
+      return `${(val / 1000000).toFixed(1)}M`
+    }
+    if (val >= 1000) {
+      return `${(val / 1000).toFixed(0)}K`
+    }
+    return val.toLocaleString('pt-BR')
+  }
+  
+  if (min && max) {
+    return `R$ ${formatValue(min)} - ${formatValue(max)}`
+  }
+  if (min) {
+    return `A partir de R$ ${formatValue(min)}`
+  }
+  if (max) {
+    return `Até R$ ${formatValue(max)}`
+  }
+  return '-'
+}
+
+const getLeadSourceLabel = (source: string): string => {
+  const labels: Record<string, string> = {
+    WEBSITE: 'Website',
+    REFERRAL: 'Indicação',
+    SOCIAL_MEDIA: 'Redes Sociais',
+    PHONE: 'Telefone',
+    EMAIL: 'E-mail',
+    WALK_IN: 'Presencial',
+    AD_CAMPAIGN: 'Campanha',
+    OTHER: 'Outro',
+  }
+  return labels[source] || source
+}
+
+const getInterestTypeLabel = (type: string): string => {
+  const labels: Record<string, string> = {
+    BUY: 'Comprar',
+    RENT: 'Alugar',
+    SELL: 'Vender',
+    INVEST: 'Investir',
+  }
+  return labels[type] || type
+}
+
 // AI Summary helpers
 const getAIStatusColor = (status: string): string => {
   const colors: Record<string, string> = {
@@ -2111,6 +2363,55 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* Modern Header Styles */
+.client-header {
+  overflow: hidden;
+  border: 1px solid rgba(var(--v-border-color), 0.12);
+}
+
+.header-gradient {
+  background: linear-gradient(135deg, 
+    rgb(var(--v-theme-primary)) 0%, 
+    rgb(var(--v-theme-primary-darken-1), 0.9) 50%,
+    rgb(var(--v-theme-secondary)) 100%
+  );
+  position: relative;
+}
+
+.header-gradient::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  opacity: 0.5;
+}
+
+.header-content {
+  position: relative;
+  z-index: 1;
+}
+
+.avatar-ring {
+  background: white;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.metrics-bar {
+  background: rgb(var(--v-theme-surface));
+  border-top: 1px solid rgba(var(--v-border-color), 0.12);
+}
+
+.border-start {
+  border-left: 1px solid rgba(var(--v-border-color), 0.12);
+}
+
+.text-white-darken-1 {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
 /* Card hover effects */
 .property-card,
 .attendance-card {
