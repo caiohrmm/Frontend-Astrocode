@@ -95,11 +95,13 @@
         <!-- Client Column -->
         <template #item.client_id="{ item }">
           <div class="d-flex align-center">
-            <v-avatar color="primary" size="32" class="mr-3">
-              <v-icon color="white" size="18">mdi-account</v-icon>
+            <v-avatar color="primary" size="36" class="mr-3">
+              <span class="text-caption text-white font-weight-bold">
+                {{ getClientInitials(item.client_id) }}
+              </span>
             </v-avatar>
             <div>
-              <div class="font-weight-medium">Cliente #{{ item.client_id.slice(0, 8) }}</div>
+              <div class="font-weight-medium">{{ getClientName(item.client_id) }}</div>
               <div class="text-caption text-medium-emphasis">
                 {{ formatDateTime(item.started_at) }}
               </div>
@@ -132,36 +134,64 @@
 
         <!-- Agent Column -->
         <template #item.agent_id="{ item }">
-          <span class="text-caption">Agente #{{ item.agent_id.slice(0, 8) }}</span>
+          <div class="d-flex align-center">
+            <v-avatar color="secondary" size="28" class="mr-2">
+              <v-icon color="white" size="16">mdi-account-tie</v-icon>
+            </v-avatar>
+            <span class="text-body-2">{{ getAgentName(item.agent_id) }}</span>
+          </div>
         </template>
 
         <!-- Duration Column -->
         <template #item.duration="{ item }">
-          <span v-if="item.duration !== null" class="text-caption">
+          <v-chip v-if="item.duration !== null" variant="tonal" size="small" color="info">
+            <v-icon start size="14">mdi-clock-outline</v-icon>
             {{ formatDuration(item.duration) }}
-          </span>
+          </v-chip>
           <span v-else class="text-medium-emphasis">-</span>
         </template>
 
         <!-- Started At Column -->
         <template #item.started_at="{ item }">
           <div class="text-caption">
+            <v-icon size="14" class="mr-1">mdi-calendar</v-icon>
             {{ formatDateTime(item.started_at) }}
           </div>
         </template>
 
         <!-- AI Summary Column -->
         <template #item.ai_summary="{ item }">
-          <v-chip
-            v-if="item.ai_summary"
-            color="success"
-            variant="tonal"
-            size="small"
-          >
-            <v-icon start size="14">mdi-robot</v-icon>
-            Resumo IA
+          <div v-if="item.ai_summary" class="ai-summary-cell">
+            <v-tooltip location="top" max-width="400">
+              <template #activator="{ props }">
+                <v-chip
+                  v-bind="props"
+                  color="success"
+                  variant="flat"
+                  size="small"
+                  class="cursor-pointer"
+                >
+                  <v-icon start size="14">mdi-robot</v-icon>
+                  {{ truncateText(item.ai_summary, 30) }}
+                </v-chip>
+              </template>
+              <div class="pa-2">
+                <div class="font-weight-bold mb-2">
+                  <v-icon size="16" class="mr-1">mdi-robot</v-icon>
+                  Resumo da IA
+                </div>
+                <div class="text-body-2">{{ item.ai_summary }}</div>
+                <div v-if="item.ai_next_steps" class="mt-2 pt-2 border-t">
+                  <div class="font-weight-medium mb-1">Próximos Passos:</div>
+                  <div class="text-body-2">{{ item.ai_next_steps }}</div>
+                </div>
+              </div>
+            </v-tooltip>
+          </div>
+          <v-chip v-else variant="tonal" size="small" color="grey">
+            <v-icon start size="14">mdi-robot-off</v-icon>
+            Pendente
           </v-chip>
-          <span v-else class="text-medium-emphasis">-</span>
         </template>
 
         <!-- Loading State -->
@@ -202,6 +232,7 @@ import {
   type AttendanceChannel,
 } from '@/shared/services/attendances.service'
 import { usersService, type User } from '@/shared/services/users.service'
+import { clientsService, type Client } from '@/shared/services/clients.service'
 
 const router = useRouter()
 
@@ -215,6 +246,20 @@ const filters = ref({
   agent_id: null as string | null,
 })
 const agents = ref<User[]>([])
+const clients = ref<Client[]>([])
+
+// Maps for quick lookup
+const clientsMap = computed(() => {
+  const map = new Map<string, Client>()
+  clients.value.forEach(client => map.set(client.id, client))
+  return map
+})
+
+const agentsMap = computed(() => {
+  const map = new Map<string, User>()
+  agents.value.forEach(agent => map.set(agent.id, agent))
+  return map
+})
 
 // Table Headers
 const headers = [
@@ -262,12 +307,22 @@ const hasActiveFilters = computed(() => {
 const filteredAttendances = computed(() => {
   let result = [...attendances.value]
 
-  // Search filter (raw_content)
+  // Search filter (raw_content, client name, agent name, ai_summary)
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
-    result = result.filter(attendance =>
-      attendance.raw_content.toLowerCase().includes(query)
-    )
+    result = result.filter(attendance => {
+      const clientName = getClientName(attendance.client_id).toLowerCase()
+      const agentName = getAgentName(attendance.agent_id).toLowerCase()
+      const rawContent = attendance.raw_content.toLowerCase()
+      const aiSummary = attendance.ai_summary?.toLowerCase() || ''
+      
+      return (
+        clientName.includes(query) ||
+        agentName.includes(query) ||
+        rawContent.includes(query) ||
+        aiSummary.includes(query)
+      )
+    })
   }
 
   // Status filter
@@ -284,6 +339,9 @@ const filteredAttendances = computed(() => {
   if (filters.value.agent_id) {
     result = result.filter(attendance => attendance.agent_id === filters.value.agent_id)
   }
+
+  // Sort by most recent first
+  result.sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime())
 
   return result
 })
@@ -313,6 +371,42 @@ const loadAgents = async () => {
     console.error('Error loading agents:', error)
     // If user doesn't have permission, just continue with empty list
   }
+}
+
+const loadClients = async () => {
+  try {
+    clients.value = await clientsService.getClients({ limit: 1000 })
+  } catch (error) {
+    console.error('Error loading clients:', error)
+  }
+}
+
+// Helper functions for displaying names
+const getClientName = (clientId: string): string => {
+  const client = clientsMap.value.get(clientId)
+  return client?.name || `Cliente #${clientId.slice(0, 8)}`
+}
+
+const getClientInitials = (clientId: string): string => {
+  const client = clientsMap.value.get(clientId)
+  if (client?.name) {
+    const parts = client.name.trim().split(' ')
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+    }
+    return client.name.substring(0, 2).toUpperCase()
+  }
+  return '??'
+}
+
+const getAgentName = (agentId: string): string => {
+  const agent = agentsMap.value.get(agentId)
+  return agent?.full_name || `Agente #${agentId.slice(0, 8)}`
+}
+
+const truncateText = (text: string, maxLength: number): string => {
+  if (text.length <= maxLength) return text
+  return text.substring(0, maxLength) + '...'
 }
 
 const handleSearch = () => {
@@ -419,9 +513,13 @@ const formatDuration = (seconds: number): string => {
   return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`
 }
 
-onMounted(() => {
-  loadAttendances()
-  loadAgents()
+onMounted(async () => {
+  // Load all data in parallel
+  await Promise.all([
+    loadAttendances(),
+    loadAgents(),
+    loadClients(),
+  ])
 })
 </script>
 
@@ -432,6 +530,18 @@ onMounted(() => {
 
 :deep(.v-data-table__tr:hover) {
   background-color: rgba(var(--v-theme-primary), 0.04);
+}
+
+.ai-summary-cell .v-chip {
+  max-width: 200px;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.border-t {
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
 }
 </style>
 

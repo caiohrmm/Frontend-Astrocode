@@ -130,6 +130,42 @@ const routes: RouteRecordRaw[] = [
       requiresAuth: true,
     },
   },
+  {
+    path: '/visits',
+    name: 'visits',
+    component: () => import('@/modules/visits/pages/VisitsListPage.vue'),
+    meta: {
+      layout: 'app',
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/visits/create',
+    name: 'visits-create',
+    component: () => import('@/modules/visits/pages/VisitFormPage.vue'),
+    meta: {
+      layout: 'app',
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/visits/:id',
+    name: 'visits-details',
+    component: () => import('@/modules/visits/pages/VisitDetailsPage.vue'),
+    meta: {
+      layout: 'app',
+      requiresAuth: true,
+    },
+  },
+  {
+    path: '/visits/:id/edit',
+    name: 'visits-edit',
+    component: () => import('@/modules/visits/pages/VisitFormPage.vue'),
+    meta: {
+      layout: 'app',
+      requiresAuth: true,
+    },
+  },
 ]
 
 const router = createRouter({
@@ -138,7 +174,7 @@ const router = createRouter({
 })
 
 // Navigation guard to protect routes
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore()
   
   // Check if route requires authentication (default is true if not specified)

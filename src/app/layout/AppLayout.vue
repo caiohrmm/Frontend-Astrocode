@@ -156,6 +156,13 @@
           @click="drawer = false"
         ></v-list-item>
         <v-list-item
+          prepend-icon="mdi-calendar-check"
+          title="Visitas"
+          value="visits"
+          :to="{ name: 'visits' }"
+          @click="drawer = false"
+        ></v-list-item>
+        <v-list-item
           v-if="authStore.hasRole('gestor')"
           prepend-icon="mdi-account-group"
           title="Usuários"
