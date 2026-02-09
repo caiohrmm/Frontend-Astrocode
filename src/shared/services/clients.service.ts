@@ -53,6 +53,28 @@ export interface Client {
 }
 
 /**
+ * AI Lead Classification Result
+ */
+export interface LeadClassificationResult {
+  lead_score: number
+  urgency_level: UrgencyLevel
+  interest_type: InterestType | null
+  property_type: PropertyType | null
+  suggested_status: ClientStatus
+  classification_reason: string
+  key_indicators: string[]
+  recommended_actions: string[]
+  confidence: number
+}
+
+/**
+ * Client with AI classification
+ */
+export interface ClientWithClassification extends Client {
+  ai_classification: LeadClassificationResult | null
+}
+
+/**
  * Client creation data (ClientCreate schema)
  */
 export interface ClientCreate {
@@ -60,6 +82,8 @@ export interface ClientCreate {
   phone: string
   email: string | null
   lead_source: LeadSource
+  initial_message?: string | null
+  use_ai_classification?: boolean
   current_status?: ClientStatus | null
   current_lead_score?: number | null
   current_urgency_level?: UrgencyLevel | null
@@ -137,10 +161,10 @@ class ClientsService {
   }
 
   /**
-   * Create a new client
+   * Create a new client with AI classification
    */
-  async createClient(clientData: ClientCreate): Promise<Client> {
-    return apiClient.post<Client>('/clients', clientData)
+  async createClient(clientData: ClientCreate): Promise<ClientWithClassification> {
+    return apiClient.post<ClientWithClassification>('/clients', clientData)
   }
 
   /**
@@ -155,6 +179,20 @@ class ClientsService {
    */
   async deleteClient(clientId: string): Promise<void> {
     return apiClient.delete<void>(`/clients/${clientId}`)
+  }
+
+  /**
+   * Classify or reclassify a lead using AI
+   */
+  async classifyLead(clientId: string, context?: { initial_message?: string; notes?: string }): Promise<LeadClassificationResult> {
+    return apiClient.post<LeadClassificationResult>(`/clients/${clientId}/classify`, context || {})
+  }
+
+  /**
+   * Apply AI classification to a client
+   */
+  async applyClassification(clientId: string, classification: LeadClassificationResult): Promise<Client> {
+    return apiClient.post<Client>(`/clients/${clientId}/apply-classification`, classification)
   }
 }
 
