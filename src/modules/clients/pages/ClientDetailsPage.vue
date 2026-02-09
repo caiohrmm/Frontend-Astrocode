@@ -27,6 +27,15 @@
 
               <div class="d-flex align-center ga-2">
                 <v-btn
+                  variant="flat"
+                  color="success"
+                  size="small"
+                  prepend-icon="mdi-handshake"
+                  @click="openSaleDialog"
+                >
+                  Registrar Venda
+                </v-btn>
+                <v-btn
                   variant="tonal"
                   color="white"
                   size="small"
@@ -247,6 +256,200 @@
               @click="handleDeleteClient"
             >
               Confirmar Exclusão
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+      <!-- Sale Registration Dialog -->
+      <v-dialog v-model="showSaleDialog" max-width="700" persistent>
+        <v-card rounded="lg">
+          <v-toolbar color="success" density="compact">
+            <v-toolbar-title class="text-white font-weight-bold">
+              <v-icon start>mdi-handshake</v-icon>
+              Registrar Venda/Aluguel
+            </v-toolbar-title>
+            <v-spacer></v-spacer>
+            <v-btn icon variant="text" @click="closeSaleDialog">
+              <v-icon color="white">mdi-close</v-icon>
+            </v-btn>
+          </v-toolbar>
+
+          <v-card-text class="pt-6">
+            <v-form ref="saleForm" v-model="isSaleFormValid">
+              <v-row>
+                <!-- Tipo de venda -->
+                <v-col cols="12">
+                  <v-btn-toggle
+                    v-model="newSale.sale_type"
+                    mandatory
+                    color="primary"
+                    class="w-100"
+                  >
+                    <v-btn value="SALE" class="flex-grow-1">
+                      <v-icon start>mdi-home-plus</v-icon>
+                      Venda
+                    </v-btn>
+                    <v-btn value="RENT" class="flex-grow-1">
+                      <v-icon start>mdi-key</v-icon>
+                      Aluguel
+                    </v-btn>
+                  </v-btn-toggle>
+                </v-col>
+
+                <!-- Cliente (readonly) -->
+                <v-col cols="12">
+                  <v-text-field
+                    :model-value="client?.name"
+                    label="Cliente"
+                    prepend-inner-icon="mdi-account"
+                    variant="outlined"
+                    density="comfortable"
+                    readonly
+                    bg-color="grey-lighten-4"
+                  ></v-text-field>
+                </v-col>
+
+                <!-- Imóvel -->
+                <v-col cols="12">
+                  <v-autocomplete
+                    v-model="newSale.property_id"
+                    :items="availableProperties"
+                    item-title="title"
+                    item-value="id"
+                    label="Imóvel (opcional)"
+                    prepend-inner-icon="mdi-home"
+                    variant="outlined"
+                    density="comfortable"
+                    clearable
+                    :loading="isLoadingProperties"
+                  >
+                    <template v-slot:item="{ props, item }">
+                      <v-list-item v-bind="props">
+                        <v-list-item-subtitle>
+                          {{ item.raw.city }} - R$ {{ formatPropertyPrice(item.raw) }}
+                        </v-list-item-subtitle>
+                      </v-list-item>
+                    </template>
+                  </v-autocomplete>
+                </v-col>
+
+                <!-- Valor -->
+                <v-col cols="12" sm="6">
+                  <v-text-field
+                    v-model.number="newSale.sale_value"
+                    label="Valor *"
+                    prepend-inner-icon="mdi-currency-usd"
+                    variant="outlined"
+                    density="comfortable"
+                    type="number"
+                    prefix="R$"
+                    :rules="[(v: number | null) => (v !== null && v > 0) || 'Valor deve ser maior que zero']"
+                  ></v-text-field>
+                </v-col>
+
+                <!-- Comissão -->
+                <v-col cols="12" sm="6">
+                  <v-text-field
+                    v-model.number="newSale.commission_percentage"
+                    label="Comissão (%)"
+                    prepend-inner-icon="mdi-percent"
+                    variant="outlined"
+                    density="comfortable"
+                    type="number"
+                    suffix="%"
+                  ></v-text-field>
+                </v-col>
+
+                <!-- Entrada -->
+                <v-col cols="12" sm="6">
+                  <v-text-field
+                    v-model.number="newSale.down_payment"
+                    label="Entrada (opcional)"
+                    prepend-inner-icon="mdi-cash"
+                    variant="outlined"
+                    density="comfortable"
+                    type="number"
+                    prefix="R$"
+                  ></v-text-field>
+                </v-col>
+
+                <!-- Forma de pagamento -->
+                <v-col cols="12" sm="6">
+                  <v-select
+                    v-model="newSale.payment_method"
+                    :items="paymentMethodOptions"
+                    label="Forma de Pagamento"
+                    prepend-inner-icon="mdi-credit-card"
+                    variant="outlined"
+                    density="comfortable"
+                    clearable
+                  ></v-select>
+                </v-col>
+
+                <!-- Campos de aluguel -->
+                <template v-if="newSale.sale_type === 'RENT'">
+                  <v-col cols="12" sm="6">
+                    <v-text-field
+                      v-model.number="newSale.rent_duration_months"
+                      label="Duração (meses)"
+                      prepend-inner-icon="mdi-calendar-range"
+                      variant="outlined"
+                      density="comfortable"
+                      type="number"
+                    ></v-text-field>
+                  </v-col>
+                  <v-col cols="12" sm="6">
+                    <v-text-field
+                      v-model="newSale.rent_start_date"
+                      label="Data de Início"
+                      prepend-inner-icon="mdi-calendar"
+                      variant="outlined"
+                      density="comfortable"
+                      type="date"
+                    ></v-text-field>
+                  </v-col>
+                </template>
+
+                <!-- Notas -->
+                <v-col cols="12">
+                  <v-textarea
+                    v-model="newSale.notes"
+                    label="Observações"
+                    prepend-inner-icon="mdi-note-text"
+                    variant="outlined"
+                    density="comfortable"
+                    rows="2"
+                    auto-grow
+                  ></v-textarea>
+                </v-col>
+              </v-row>
+            </v-form>
+
+            <v-alert type="info" variant="tonal" density="compact" class="mt-4">
+              <template v-slot:text>
+                Ao registrar a venda, o status do cliente será atualizado para "Ganho" e a IA irá
+                analisar a negociação quando a venda for concluída.
+              </template>
+            </v-alert>
+          </v-card-text>
+
+          <v-divider></v-divider>
+
+          <v-card-actions class="pa-4">
+            <v-spacer></v-spacer>
+            <v-btn variant="text" @click="closeSaleDialog" :disabled="isCreatingSale">
+              Cancelar
+            </v-btn>
+            <v-btn
+              color="success"
+              variant="flat"
+              @click="createSale"
+              :loading="isCreatingSale"
+              :disabled="!isSaleFormValid"
+            >
+              <v-icon start>mdi-check</v-icon>
+              Registrar Venda
             </v-btn>
           </v-card-actions>
         </v-card>
@@ -1268,6 +1471,7 @@ import {
 import { usersService, type User } from '@/shared/services/users.service'
 import { aiSummariesService, type AISummary, type Sentiment, type DetectedIntent } from '@/shared/services/aiSummaries.service'
 import { propertiesService, type Property } from '@/shared/services/properties.service'
+import { salesService } from '@/shared/services/sales.service'
 import { attendancesService, type Attendance } from '@/shared/services/attendances.service'
 import { formatPhone, formatCurrency, parseCurrency } from '@/shared/utils/masks'
 import ClientCreateDialog from '@/shared/components/ClientCreateDialog.vue'
@@ -1291,6 +1495,41 @@ const agents = ref<User[]>([])
 const showScheduleDialog = ref(false)
 const showEditDialog = ref(false)
 const showDeleteDialog = ref(false)
+const showSaleDialog = ref(false)
+const isSaleFormValid = ref(false)
+const isCreatingSale = ref(false)
+const isLoadingProperties = ref(false)
+const availableProperties = ref<Property[]>([])
+const saleForm = ref()
+const newSale = ref<{
+  sale_type: string
+  property_id: string | null
+  sale_value: number | null
+  commission_percentage: number | null
+  down_payment: number | null
+  payment_method: string | null
+  rent_duration_months: number | null
+  rent_start_date: string | null
+  notes: string | null
+}>({
+  sale_type: 'SALE',
+  property_id: null,
+  sale_value: null,
+  commission_percentage: 5,
+  down_payment: null,
+  payment_method: null,
+  rent_duration_months: null,
+  rent_start_date: null,
+  notes: null,
+})
+
+const paymentMethodOptions = [
+  { title: 'À Vista', value: 'CASH' },
+  { title: 'Financiamento', value: 'FINANCING' },
+  { title: 'Parcelado', value: 'INSTALLMENTS' },
+  { title: 'Misto', value: 'MIXED' },
+]
+
 const aiSummaries = ref<AISummary[]>([])
 const recommendedProperties = ref<Property[]>([])
 const profileBasedProperties = ref<Property[]>([])
@@ -1689,20 +1928,6 @@ const handleBudgetMinUpdate = async () => {
 const handleBudgetMaxUpdate = async () => {
   const parsed = parseCurrency(budgetMaxFormatted.value)
   await handleFieldUpdate('current_budget_max', parsed ? String(parsed) : null)
-}
-
-const formatBudgetRange = (): string => {
-  const min = client.value?.current_budget_min
-    ? formatCurrency(parseFloat(client.value.current_budget_min))
-    : null
-  const max = client.value?.current_budget_max
-    ? formatCurrency(parseFloat(client.value.current_budget_max))
-    : null
-  
-  if (min && max) return `${min} - ${max}`
-  if (min) return `A partir de ${min}`
-  if (max) return `Até ${max}`
-  return 'Não definido'
 }
 
 const formatMarkdown = (text: string): string => {
@@ -2172,6 +2397,73 @@ const handleDeleteClient = async () => {
   }
 }
 
+// Sale registration functions
+const openSaleDialog = async () => {
+  showSaleDialog.value = true
+  // Load available properties
+  isLoadingProperties.value = true
+  try {
+    availableProperties.value = await propertiesService.listProperties({ status: 'PUBLISHED' })
+  } catch (error) {
+    console.error('Error loading properties:', error)
+  } finally {
+    isLoadingProperties.value = false
+  }
+}
+
+const closeSaleDialog = () => {
+  showSaleDialog.value = false
+  newSale.value = {
+    sale_type: 'SALE',
+    property_id: null,
+    sale_value: null,
+    commission_percentage: 5,
+    down_payment: null,
+    payment_method: null,
+    rent_duration_months: null,
+    rent_start_date: null,
+    notes: null,
+  }
+}
+
+const createSale = async () => {
+  if (!client.value || !isSaleFormValid.value) return
+
+  isCreatingSale.value = true
+  try {
+    await salesService.createSale({
+      client_id: client.value.id,
+      property_id: newSale.value.property_id || undefined,
+      sale_type: newSale.value.sale_type as 'SALE' | 'RENT',
+      sale_value: newSale.value.sale_value!,
+      commission_percentage: newSale.value.commission_percentage || undefined,
+      down_payment: newSale.value.down_payment || undefined,
+      payment_method: newSale.value.payment_method as any || undefined,
+      rent_duration_months: newSale.value.rent_duration_months || undefined,
+      rent_start_date: newSale.value.rent_start_date || undefined,
+      notes: newSale.value.notes || undefined,
+    })
+    closeSaleDialog()
+    // Reload client to get updated status
+    await loadClient()
+    alert('Venda registrada com sucesso! 🎉')
+  } catch (error: any) {
+    console.error('Error creating sale:', error)
+    alert(`Erro ao registrar venda: ${error?.message || 'Erro desconhecido'}`)
+  } finally {
+    isCreatingSale.value = false
+  }
+}
+
+const formatPropertyPrice = (property: Property): string => {
+  const price = property.price || property.rent_price || 0
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    maximumFractionDigits: 0,
+  }).format(price)
+}
+
 // Helper functions for header
 const getDaysSinceContact = (lastContactAt: string | null): string => {
   if (!lastContactAt) return '-'
@@ -2224,16 +2516,6 @@ const getLeadSourceLabel = (source: string): string => {
     OTHER: 'Outro',
   }
   return labels[source] || source
-}
-
-const getInterestTypeLabel = (type: string): string => {
-  const labels: Record<string, string> = {
-    BUY: 'Comprar',
-    RENT: 'Alugar',
-    SELL: 'Vender',
-    INVEST: 'Investir',
-  }
-  return labels[type] || type
 }
 
 // AI Summary helpers

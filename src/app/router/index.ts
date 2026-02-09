@@ -166,6 +166,15 @@ const routes: RouteRecordRaw[] = [
       requiresAuth: true,
     },
   },
+  {
+    path: '/sales',
+    name: 'sales',
+    component: () => import('@/modules/sales/pages/SalesListPage.vue'),
+    meta: {
+      layout: 'app',
+      requiresAuth: true,
+    },
+  },
 ]
 
 const router = createRouter({

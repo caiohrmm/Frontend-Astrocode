@@ -163,6 +163,13 @@
           @click="drawer = false"
         ></v-list-item>
         <v-list-item
+          prepend-icon="mdi-handshake"
+          title="Vendas"
+          value="sales"
+          :to="{ name: 'sales' }"
+          @click="drawer = false"
+        ></v-list-item>
+        <v-list-item
           v-if="authStore.hasRole('gestor')"
           prepend-icon="mdi-account-group"
           title="Usuários"
