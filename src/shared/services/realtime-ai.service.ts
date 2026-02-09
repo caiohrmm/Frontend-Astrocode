@@ -8,7 +8,7 @@
  * - Alerts about important information
  */
 
-import api from './api'
+import { apiClient } from './api'
 
 // Types
 export interface DetectedInfo {
@@ -60,7 +60,7 @@ class RealTimeAIService {
    * Analyze attendance text in real-time
    */
   async analyzeText(request: RealTimeAnalysisRequest): Promise<RealTimeAnalysisResult> {
-    const response = await api.post<RealTimeAnalysisResult>('/ai/realtime/analyze', request)
+    const response = await apiClient.post<RealTimeAnalysisResult>('/ai/realtime/analyze', request)
     this.lastText = request.text
     this.lastResult = response.data
     return response.data
@@ -110,7 +110,7 @@ class RealTimeAIService {
    * Quick analysis without client context (faster)
    */
   async quickAnalyze(text: string): Promise<Omit<RealTimeAnalysisResult, 'property_suggestions'>> {
-    const response = await api.post<Omit<RealTimeAnalysisResult, 'property_suggestions'>>(
+    const response = await apiClient.post<Omit<RealTimeAnalysisResult, 'property_suggestions'>>(
       '/ai/realtime/quick-analysis',
       null,
       { params: { text } }

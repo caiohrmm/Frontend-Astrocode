@@ -360,6 +360,7 @@ const determineSuggestedStatus = (client: Client, ai: AISummaryProps): string | 
   }
   
   return null
+}
 
 const getFieldIcon = (field: string): string => {
   const icons: Record<string, string> = {
