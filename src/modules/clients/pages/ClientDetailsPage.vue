@@ -102,6 +102,10 @@
             <v-icon start>mdi-robot</v-icon>
             Insights da IA
           </v-tab>
+          <v-tab value="journey">
+            <v-icon start>mdi-map-marker-path</v-icon>
+            Jornada
+          </v-tab>
           <v-tab value="followup">
             <v-icon start>mdi-calendar-clock</v-icon>
             Follow-up
@@ -967,7 +971,12 @@
               </div>
             </v-window-item>
 
-            <!-- Tab 4: Follow-up -->
+            <!-- Tab 4: Jornada do Cliente -->
+            <v-window-item value="journey">
+              <ClientJourneyPanel :client-id="clientId" />
+            </v-window-item>
+
+            <!-- Tab 5: Follow-up -->
             <v-window-item value="followup">
               <v-row>
                 <!-- Próximo Follow-up -->
@@ -1093,10 +1102,14 @@ import { propertiesService, type Property } from '@/shared/services/properties.s
 import { attendancesService, type Attendance } from '@/shared/services/attendances.service'
 import { formatPhone, formatCurrency, parseCurrency } from '@/shared/utils/masks'
 import ClientCreateDialog from '@/shared/components/ClientCreateDialog.vue'
+import ClientJourneyPanel from '@/shared/components/ClientJourneyPanel.vue'
 // Markdown formatting (using simple parser, not marked library)
 
 const route = useRoute()
 const router = useRouter()
+
+// Computed
+const clientId = computed(() => route.params.id as string)
 
 // State
 const client = ref<Client | null>(null)
