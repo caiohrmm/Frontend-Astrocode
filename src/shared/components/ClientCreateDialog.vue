@@ -7,7 +7,7 @@
     <v-card>
       <v-card-title class="d-flex align-center pa-4">
         <v-icon
-          :color="isEditMode ? 'primary' : 'success'"
+          :color="isEditMode ? 'primary' : 'primary'"
           class="mr-3"
           size="32"
         >
