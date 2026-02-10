@@ -14,52 +14,24 @@
           <div class="header-content pa-6">
             <!-- Top Actions Bar -->
             <div class="d-flex align-center justify-space-between mb-4">
-              <v-btn
-                icon
-                variant="text"
-                color="white"
-                size="small"
-                @click="goBack"
-              >
+              <v-btn icon variant="text" color="white" size="small" @click="goBack">
                 <v-icon>mdi-arrow-left</v-icon>
                 <v-tooltip activator="parent" location="bottom">Voltar</v-tooltip>
               </v-btn>
 
               <div class="d-flex align-center ga-2">
-                <v-btn
-                  variant="flat"
-                  color="success"
-                  size="small"
-                  prepend-icon="mdi-handshake"
-                  @click="openSaleDialog"
-                >
+                <v-btn variant="flat" color="success" size="small" prepend-icon="mdi-handshake" @click="openSaleDialog">
                   Registrar Venda
                 </v-btn>
-                <v-btn
-                  variant="flat"
-                  color="warning"
-                  size="small"
-                  prepend-icon="mdi-account-remove"
-                  @click="openLossDialog"
-                >
+                <v-btn variant="flat" color="warning" size="small" prepend-icon="mdi-account-remove"
+                  @click="openLossDialog">
                   Registrar Perda
                 </v-btn>
-                <v-btn
-                  variant="tonal"
-                  color="white"
-                  size="small"
-                  prepend-icon="mdi-pencil"
-                  @click="handleEditClick"
-                >
+                <v-btn variant="tonal" color="white" size="small" prepend-icon="mdi-pencil" @click="handleEditClick">
                   Editar
                 </v-btn>
-                <v-btn
-                  variant="tonal"
-                  color="error"
-                  size="small"
-                  prepend-icon="mdi-delete"
-                  @click="showDeleteDialog = true"
-                >
+                <v-btn variant="tonal" color="error" size="small" prepend-icon="mdi-delete"
+                  @click="showDeleteDialog = true">
                   Excluir
                 </v-btn>
               </div>
@@ -69,10 +41,7 @@
             <div class="d-flex align-start flex-wrap ga-6">
               <!-- Avatar & Name -->
               <div class="d-flex align-center">
-                <v-avatar 
-                  size="72" 
-                  class="avatar-ring mr-4"
-                >
+                <v-avatar size="72" class="avatar-ring mr-4">
                   <span class="text-h4 font-weight-bold text-primary">
                     {{ getInitials(client.name) }}
                   </span>
@@ -102,32 +71,18 @@
 
               <!-- Status Chips -->
               <div class="d-flex flex-column align-end ga-2">
-                <v-chip
-                  v-if="client.current_status"
-                  :color="getStatusColor(client.current_status)"
-                  variant="elevated"
-                  size="large"
-                  class="font-weight-bold"
-                >
+                <v-chip v-if="client.current_status" :color="getStatusColor(client.current_status)" variant="elevated"
+                  size="large" class="font-weight-bold">
                   <v-icon start size="18">{{ getStatusIcon(client.current_status) }}</v-icon>
                   {{ getStatusLabel(client.current_status) }}
                 </v-chip>
                 <div class="d-flex align-center ga-2">
-                  <v-chip
-                    v-if="client.current_urgency_level"
-                    :color="getUrgencyColor(client.current_urgency_level)"
-                    variant="elevated"
-                    size="small"
-                  >
+                  <v-chip v-if="client.current_urgency_level" :color="getUrgencyColor(client.current_urgency_level)"
+                    variant="elevated" size="small">
                     <v-icon start size="14">mdi-clock-alert</v-icon>
                     {{ getUrgencyLabel(client.current_urgency_level) }}
                   </v-chip>
-                  <v-chip
-                    v-if="client.current_interest_type"
-                    color="white"
-                    variant="flat"
-                    size="small"
-                  >
+                  <v-chip v-if="client.current_interest_type" color="white" variant="flat" size="small">
                     <v-icon start size="14">mdi-handshake</v-icon>
                     {{ getInterestTypeLabel(client.current_interest_type) }}
                   </v-chip>
@@ -143,12 +98,8 @@
             <!-- Lead Score -->
             <v-col cols="6" sm="3" class="pa-4 text-center">
               <div class="d-flex flex-column align-center">
-                <v-progress-circular
-                  :model-value="client.current_lead_score || 0"
-                  :size="56"
-                  :width="6"
-                  :color="getLeadScoreColor(client.current_lead_score || 0)"
-                >
+                <v-progress-circular :model-value="client.current_lead_score || 0" :size="56" :width="6"
+                  :color="getLeadScoreColor(client.current_lead_score || 0)">
                   <span class="text-body-1 font-weight-bold">{{ client.current_lead_score || 0 }}</span>
                 </v-progress-circular>
                 <span class="text-caption text-medium-emphasis mt-2">Lead Score</span>
@@ -156,34 +107,41 @@
             </v-col>
 
             <!-- Attendances -->
-            <v-col cols="6" sm="3" class="pa-4 text-center border-start">
-              <div class="d-flex flex-column align-center">
+            <v-col cols="6" sm="3" class="pa-4 border-start d-flex align-center justify-center">
+              <div class="d-flex flex-column align-center text-center">
                 <div class="text-h5 font-weight-bold text-primary">
                   {{ clientAttendances.length }}
                 </div>
-                <span class="text-caption text-medium-emphasis mt-1">Atendimentos</span>
+                <span class="text-caption text-medium-emphasis mt-1">
+                  Atendimentos
+                </span>
               </div>
             </v-col>
 
             <!-- Last Contact -->
-            <v-col cols="6" sm="3" class="pa-4 text-center border-start">
-              <div class="d-flex flex-column align-center">
+            <v-col cols="6" sm="3" class="pa-4 border-start d-flex align-center justify-center">
+              <div class="d-flex flex-column align-center text-center">
                 <div class="text-h5 font-weight-bold" :class="getDaysSinceContactColor(client.last_contact_at)">
                   {{ getDaysSinceContact(client.last_contact_at) }}
                 </div>
-                <span class="text-caption text-medium-emphasis mt-1">Dias s/ Contato</span>
+                <span class="text-caption text-medium-emphasis mt-1">
+                  Dias s/ Contato
+                </span>
               </div>
             </v-col>
 
             <!-- Budget -->
-            <v-col cols="6" sm="3" class="pa-4 text-center border-start">
-              <div class="d-flex flex-column align-center">
+            <v-col cols="6" sm="3" class="pa-4 border-start d-flex align-center justify-center">
+              <div class="d-flex flex-column text-center">
                 <div class="text-body-1 font-weight-bold text-success">
                   {{ formatBudgetRange(client.current_budget_min, client.current_budget_max) }}
                 </div>
-                <span class="text-caption text-medium-emphasis mt-1">Orçamento</span>
+                <span class="text-caption text-medium-emphasis mt-1">
+                  Orçamento
+                </span>
               </div>
             </v-col>
+
           </v-row>
         </v-card-text>
       </v-card>
@@ -195,7 +153,7 @@
             <v-icon color="white" class="mr-3" size="28">mdi-alert-circle</v-icon>
             <span class="text-white text-h6">Excluir Cliente</span>
           </v-card-title>
-          
+
           <v-card-text class="pa-6">
             <div class="text-center mb-4">
               <v-avatar color="error" size="64" class="mb-3">
@@ -250,20 +208,12 @@
           <v-divider></v-divider>
 
           <v-card-actions class="pa-4">
-            <v-btn
-              variant="text"
-              @click="showDeleteDialog = false"
-            >
+            <v-btn variant="text" @click="showDeleteDialog = false">
               Cancelar
             </v-btn>
             <v-spacer></v-spacer>
-            <v-btn
-              color="error"
-              variant="flat"
-              prepend-icon="mdi-delete"
-              :loading="isDeleting"
-              @click="handleDeleteClient"
-            >
+            <v-btn color="error" variant="flat" prepend-icon="mdi-delete" :loading="isDeleting"
+              @click="handleDeleteClient">
               Confirmar Exclusão
             </v-btn>
           </v-card-actions>
@@ -289,12 +239,7 @@
               <v-row>
                 <!-- Tipo de venda -->
                 <v-col cols="12">
-                  <v-btn-toggle
-                    v-model="newSale.sale_type"
-                    mandatory
-                    color="primary"
-                    class="w-100"
-                  >
+                  <v-btn-toggle v-model="newSale.sale_type" mandatory color="primary" class="w-100">
                     <v-btn value="SALE" class="flex-grow-1">
                       <v-icon start>mdi-home-plus</v-icon>
                       Venda
@@ -308,31 +253,15 @@
 
                 <!-- Cliente (readonly) -->
                 <v-col cols="12">
-                  <v-text-field
-                    :model-value="client?.name"
-                    label="Cliente"
-                    prepend-inner-icon="mdi-account"
-                    variant="outlined"
-                    density="comfortable"
-                    readonly
-                    bg-color="grey-lighten-4"
-                  ></v-text-field>
+                  <v-text-field :model-value="client?.name" label="Cliente" prepend-inner-icon="mdi-account"
+                    variant="outlined" density="comfortable" readonly bg-color="grey-lighten-4"></v-text-field>
                 </v-col>
 
                 <!-- Imóvel -->
                 <v-col cols="12">
-                  <v-autocomplete
-                    v-model="newSale.property_id"
-                    :items="availableProperties"
-                    item-title="title"
-                    item-value="id"
-                    label="Imóvel (opcional)"
-                    prepend-inner-icon="mdi-home"
-                    variant="outlined"
-                    density="comfortable"
-                    clearable
-                    :loading="isLoadingProperties"
-                  >
+                  <v-autocomplete v-model="newSale.property_id" :items="availableProperties" item-title="title"
+                    item-value="id" label="Imóvel (opcional)" prepend-inner-icon="mdi-home" variant="outlined"
+                    density="comfortable" clearable :loading="isLoadingProperties">
                     <template v-slot:item="{ props, item }">
                       <v-list-item v-bind="props">
                         <v-list-item-subtitle>
@@ -345,92 +274,50 @@
 
                 <!-- Valor -->
                 <v-col cols="12" sm="6">
-                  <v-text-field
-                    v-model.number="newSale.sale_value"
-                    label="Valor *"
-                    prepend-inner-icon="mdi-currency-usd"
-                    variant="outlined"
-                    density="comfortable"
-                    type="number"
+                  <v-text-field v-model.number="newSale.sale_value" label="Valor *"
+                    prepend-inner-icon="mdi-currency-usd" variant="outlined" density="comfortable" type="number"
                     prefix="R$"
-                    :rules="[(v: number | null) => (v !== null && v > 0) || 'Valor deve ser maior que zero']"
-                  ></v-text-field>
+                    :rules="[(v: number | null) => (v !== null && v > 0) || 'Valor deve ser maior que zero']"></v-text-field>
                 </v-col>
 
                 <!-- Comissão -->
                 <v-col cols="12" sm="6">
-                  <v-text-field
-                    v-model.number="newSale.commission_percentage"
-                    label="Comissão (%)"
-                    prepend-inner-icon="mdi-percent"
-                    variant="outlined"
-                    density="comfortable"
-                    type="number"
-                    suffix="%"
-                  ></v-text-field>
+                  <v-text-field v-model.number="newSale.commission_percentage" label="Comissão (%)"
+                    prepend-inner-icon="mdi-percent" variant="outlined" density="comfortable" type="number"
+                    suffix="%"></v-text-field>
                 </v-col>
 
                 <!-- Entrada -->
                 <v-col cols="12" sm="6">
-                  <v-text-field
-                    v-model.number="newSale.down_payment"
-                    label="Entrada (opcional)"
-                    prepend-inner-icon="mdi-cash"
-                    variant="outlined"
-                    density="comfortable"
-                    type="number"
-                    prefix="R$"
-                  ></v-text-field>
+                  <v-text-field v-model.number="newSale.down_payment" label="Entrada (opcional)"
+                    prepend-inner-icon="mdi-cash" variant="outlined" density="comfortable" type="number"
+                    prefix="R$"></v-text-field>
                 </v-col>
 
                 <!-- Forma de pagamento -->
                 <v-col cols="12" sm="6">
-                  <v-select
-                    v-model="newSale.payment_method"
-                    :items="paymentMethodOptions"
-                    label="Forma de Pagamento"
-                    prepend-inner-icon="mdi-credit-card"
-                    variant="outlined"
-                    density="comfortable"
-                    clearable
-                  ></v-select>
+                  <v-select v-model="newSale.payment_method" :items="paymentMethodOptions" label="Forma de Pagamento"
+                    prepend-inner-icon="mdi-credit-card" variant="outlined" density="comfortable" clearable></v-select>
                 </v-col>
 
                 <!-- Campos de aluguel -->
                 <template v-if="newSale.sale_type === 'RENT'">
                   <v-col cols="12" sm="6">
-                    <v-text-field
-                      v-model.number="newSale.rent_duration_months"
-                      label="Duração (meses)"
-                      prepend-inner-icon="mdi-calendar-range"
-                      variant="outlined"
-                      density="comfortable"
-                      type="number"
-                    ></v-text-field>
+                    <v-text-field v-model.number="newSale.rent_duration_months" label="Duração (meses)"
+                      prepend-inner-icon="mdi-calendar-range" variant="outlined" density="comfortable"
+                      type="number"></v-text-field>
                   </v-col>
                   <v-col cols="12" sm="6">
-                    <v-text-field
-                      v-model="newSale.rent_start_date"
-                      label="Data de Início"
-                      prepend-inner-icon="mdi-calendar"
-                      variant="outlined"
-                      density="comfortable"
-                      type="date"
-                    ></v-text-field>
+                    <v-text-field v-model="newSale.rent_start_date" label="Data de Início"
+                      prepend-inner-icon="mdi-calendar" variant="outlined" density="comfortable"
+                      type="date"></v-text-field>
                   </v-col>
                 </template>
 
                 <!-- Notas -->
                 <v-col cols="12">
-                  <v-textarea
-                    v-model="newSale.notes"
-                    label="Observações"
-                    prepend-inner-icon="mdi-note-text"
-                    variant="outlined"
-                    density="comfortable"
-                    rows="2"
-                    auto-grow
-                  ></v-textarea>
+                  <v-textarea v-model="newSale.notes" label="Observações" prepend-inner-icon="mdi-note-text"
+                    variant="outlined" density="comfortable" rows="2" auto-grow></v-textarea>
                 </v-col>
               </v-row>
             </v-form>
@@ -450,13 +337,8 @@
             <v-btn variant="text" @click="closeSaleDialog" :disabled="isCreatingSale">
               Cancelar
             </v-btn>
-            <v-btn
-              color="success"
-              variant="flat"
-              @click="createSale"
-              :loading="isCreatingSale"
-              :disabled="!isSaleFormValid"
-            >
+            <v-btn color="success" variant="flat" @click="createSale" :loading="isCreatingSale"
+              :disabled="!isSaleFormValid">
               <v-icon start>mdi-check</v-icon>
               Registrar Venda
             </v-btn>
@@ -483,28 +365,15 @@
               <v-row>
                 <!-- Cliente (readonly) -->
                 <v-col cols="12">
-                  <v-text-field
-                    :model-value="client?.name"
-                    label="Cliente"
-                    prepend-inner-icon="mdi-account"
-                    variant="outlined"
-                    density="comfortable"
-                    readonly
-                    bg-color="grey-lighten-4"
-                  ></v-text-field>
+                  <v-text-field :model-value="client?.name" label="Cliente" prepend-inner-icon="mdi-account"
+                    variant="outlined" density="comfortable" readonly bg-color="grey-lighten-4"></v-text-field>
                 </v-col>
 
                 <!-- Motivo da perda -->
                 <v-col cols="12">
-                  <v-select
-                    v-model="newLoss.loss_reason"
-                    :items="lossReasonOptions"
-                    label="Motivo da perda *"
-                    prepend-inner-icon="mdi-help-circle"
-                    variant="outlined"
-                    density="comfortable"
-                    :rules="[(v: string | null) => !!v || 'Selecione o motivo']"
-                  >
+                  <v-select v-model="newLoss.loss_reason" :items="lossReasonOptions" label="Motivo da perda *"
+                    prepend-inner-icon="mdi-help-circle" variant="outlined" density="comfortable"
+                    :rules="[(v: string | null) => !!v || 'Selecione o motivo']">
                     <template v-slot:item="{ props, item }">
                       <v-list-item v-bind="props">
                         <template v-slot:prepend>
@@ -519,81 +388,43 @@
 
                 <!-- Estágio quando perdido -->
                 <v-col cols="12">
-                  <v-select
-                    v-model="newLoss.loss_stage"
-                    :items="lossStageOptions"
-                    label="Estágio quando perdido *"
-                    prepend-inner-icon="mdi-progress-check"
-                    variant="outlined"
-                    density="comfortable"
-                    :rules="[(v: string | null) => !!v || 'Selecione o estágio']"
-                  ></v-select>
+                  <v-select v-model="newLoss.loss_stage" :items="lossStageOptions" label="Estágio quando perdido *"
+                    prepend-inner-icon="mdi-progress-check" variant="outlined" density="comfortable"
+                    :rules="[(v: string | null) => !!v || 'Selecione o estágio']"></v-select>
                 </v-col>
 
                 <!-- Detalhes -->
                 <v-col cols="12">
-                  <v-textarea
-                    v-model="newLoss.detailed_reason"
-                    label="Detalhes sobre a perda"
-                    prepend-inner-icon="mdi-text"
-                    variant="outlined"
-                    density="comfortable"
-                    rows="2"
-                    auto-grow
-                    placeholder="Descreva o que aconteceu..."
-                  ></v-textarea>
+                  <v-textarea v-model="newLoss.detailed_reason" label="Detalhes sobre a perda"
+                    prepend-inner-icon="mdi-text" variant="outlined" density="comfortable" rows="2" auto-grow
+                    placeholder="Descreva o que aconteceu..."></v-textarea>
                 </v-col>
 
                 <!-- Feedback do cliente -->
                 <v-col cols="12">
-                  <v-textarea
-                    v-model="newLoss.client_feedback"
-                    label="Feedback do cliente"
-                    prepend-inner-icon="mdi-comment-quote"
-                    variant="outlined"
-                    density="comfortable"
-                    rows="2"
-                    auto-grow
-                    placeholder="O que o cliente disse?"
-                  ></v-textarea>
+                  <v-textarea v-model="newLoss.client_feedback" label="Feedback do cliente"
+                    prepend-inner-icon="mdi-comment-quote" variant="outlined" density="comfortable" rows="2" auto-grow
+                    placeholder="O que o cliente disse?"></v-textarea>
                 </v-col>
 
                 <!-- Info do concorrente -->
                 <v-col cols="12" v-if="newLoss.loss_reason === 'BETTER_OFFER_COMPETITOR'">
-                  <v-textarea
-                    v-model="newLoss.competitor_info"
-                    label="Informações sobre o concorrente"
-                    prepend-inner-icon="mdi-account-switch"
-                    variant="outlined"
-                    density="comfortable"
-                    rows="2"
-                    auto-grow
-                    placeholder="Qual concorrente? Qual oferta?"
-                  ></v-textarea>
+                  <v-textarea v-model="newLoss.competitor_info" label="Informações sobre o concorrente"
+                    prepend-inner-icon="mdi-account-switch" variant="outlined" density="comfortable" rows="2" auto-grow
+                    placeholder="Qual concorrente? Qual oferta?"></v-textarea>
                 </v-col>
 
                 <!-- Poderia ter sido evitada? -->
                 <v-col cols="12">
-                  <v-switch
-                    v-model="newLoss.could_have_been_prevented"
-                    label="Esta perda poderia ter sido evitada?"
-                    color="warning"
-                    hide-details
-                  ></v-switch>
+                  <v-switch v-model="newLoss.could_have_been_prevented" label="Esta perda poderia ter sido evitada?"
+                    color="warning" hide-details></v-switch>
                 </v-col>
 
                 <!-- Lições aprendidas -->
                 <v-col cols="12" v-if="newLoss.could_have_been_prevented">
-                  <v-textarea
-                    v-model="newLoss.lessons_learned"
-                    label="Lições aprendidas"
-                    prepend-inner-icon="mdi-lightbulb"
-                    variant="outlined"
-                    density="comfortable"
-                    rows="2"
-                    auto-grow
-                    placeholder="O que poderia ter sido feito diferente?"
-                  ></v-textarea>
+                  <v-textarea v-model="newLoss.lessons_learned" label="Lições aprendidas"
+                    prepend-inner-icon="mdi-lightbulb" variant="outlined" density="comfortable" rows="2" auto-grow
+                    placeholder="O que poderia ter sido feito diferente?"></v-textarea>
                 </v-col>
               </v-row>
             </v-form>
@@ -613,13 +444,8 @@
             <v-btn variant="text" @click="closeLossDialog" :disabled="isCreatingLoss">
               Cancelar
             </v-btn>
-            <v-btn
-              color="warning"
-              variant="flat"
-              @click="createLoss"
-              :loading="isCreatingLoss"
-              :disabled="!isLossFormValid"
-            >
+            <v-btn color="warning" variant="flat" @click="createLoss" :loading="isCreatingLoss"
+              :disabled="!isLossFormValid">
               <v-icon start>mdi-check</v-icon>
               Registrar Perda
             </v-btn>
@@ -629,11 +455,7 @@
 
       <!-- Tabs -->
       <v-card elevation="2" rounded="lg">
-        <v-tabs
-          v-model="activeTab"
-          bg-color="primary"
-          slider-color="white"
-        >
+        <v-tabs v-model="activeTab" bg-color="primary" slider-color="white">
           <v-tab value="overview">
             <v-icon start>mdi-account</v-icon>
             Visão Geral
@@ -667,19 +489,10 @@
                     <v-icon class="mr-2" color="primary">mdi-flag</v-icon>
                     <span class="text-subtitle-1 font-weight-medium">Status</span>
                   </div>
-                  <v-select
-                    v-model="editableFields.current_status"
-                    :items="statusOptions"
-                    variant="outlined"
-                    density="compact"
-                    @update:model-value="handleFieldUpdate('current_status', $event)"
-                  >
+                  <v-select v-model="editableFields.current_status" :items="statusOptions" variant="outlined"
+                    density="compact" @update:model-value="handleFieldUpdate('current_status', $event)">
                     <template #item="{ item }">
-                      <v-chip
-                        :color="getStatusColor(item.value)"
-                        variant="flat"
-                        size="small"
-                      >
+                      <v-chip :color="getStatusColor(item.value)" variant="flat" size="small">
                         {{ item.title }}
                       </v-chip>
                     </template>
@@ -692,13 +505,9 @@
                     <v-icon class="mr-2" color="primary">mdi-alert-circle</v-icon>
                     <span class="text-subtitle-1 font-weight-medium">Urgência</span>
                   </div>
-                  <v-select
-                    v-model="editableFields.current_urgency_level"
-                    :items="urgencyOptions"
-                    variant="outlined"
+                  <v-select v-model="editableFields.current_urgency_level" :items="urgencyOptions" variant="outlined"
                     density="compact"
-                    @update:model-value="handleFieldUpdate('current_urgency_level', $event)"
-                  ></v-select>
+                    @update:model-value="handleFieldUpdate('current_urgency_level', $event)"></v-select>
                 </v-col>
 
                 <!-- Agente Responsável -->
@@ -707,14 +516,9 @@
                     <v-icon class="mr-2" color="primary">mdi-account-tie</v-icon>
                     <span class="text-subtitle-1 font-weight-medium">Agente Responsável</span>
                   </div>
-                  <v-select
-                    v-model="editableFields.assigned_agent_id"
-                    :items="agentOptions"
-                    variant="outlined"
-                    density="compact"
-                    clearable
-                    @update:model-value="handleFieldUpdate('assigned_agent_id', $event)"
-                  ></v-select>
+                  <v-select v-model="editableFields.assigned_agent_id" :items="agentOptions" variant="outlined"
+                    density="compact" clearable
+                    @update:model-value="handleFieldUpdate('assigned_agent_id', $event)"></v-select>
                 </v-col>
 
                 <!-- Tipo de Interesse -->
@@ -723,14 +527,9 @@
                     <v-icon class="mr-2" color="primary">mdi-handshake</v-icon>
                     <span class="text-subtitle-1 font-weight-medium">Tipo de Interesse</span>
                   </div>
-                  <v-select
-                    v-model="editableFields.current_interest_type"
-                    :items="interestTypeOptions"
-                    variant="outlined"
-                    density="compact"
-                    clearable
-                    @update:model-value="handleFieldUpdate('current_interest_type', $event)"
-                  ></v-select>
+                  <v-select v-model="editableFields.current_interest_type" :items="interestTypeOptions"
+                    variant="outlined" density="compact" clearable
+                    @update:model-value="handleFieldUpdate('current_interest_type', $event)"></v-select>
                 </v-col>
 
                 <!-- Tipo de Imóvel -->
@@ -739,14 +538,9 @@
                     <v-icon class="mr-2" color="primary">mdi-home-variant</v-icon>
                     <span class="text-subtitle-1 font-weight-medium">Tipo de Imóvel</span>
                   </div>
-                  <v-select
-                    v-model="editableFields.current_property_type"
-                    :items="propertyTypeOptions"
-                    variant="outlined"
-                    density="compact"
-                    clearable
-                    @update:model-value="handleFieldUpdate('current_property_type', $event)"
-                  ></v-select>
+                  <v-select v-model="editableFields.current_property_type" :items="propertyTypeOptions"
+                    variant="outlined" density="compact" clearable
+                    @update:model-value="handleFieldUpdate('current_property_type', $event)"></v-select>
                 </v-col>
 
                 <!-- Cidade de Interesse -->
@@ -755,12 +549,8 @@
                     <v-icon class="mr-2" color="primary">mdi-map-marker</v-icon>
                     <span class="text-subtitle-1 font-weight-medium">Cidade de Interesse</span>
                   </div>
-                  <v-text-field
-                    v-model="editableFields.current_city_interest"
-                    variant="outlined"
-                    density="compact"
-                    @blur="handleFieldUpdate('current_city_interest', editableFields.current_city_interest)"
-                  ></v-text-field>
+                  <v-text-field v-model="editableFields.current_city_interest" variant="outlined" density="compact"
+                    @blur="handleFieldUpdate('current_city_interest', editableFields.current_city_interest)"></v-text-field>
                 </v-col>
 
                 <!-- Orçamento Mínimo -->
@@ -769,13 +559,8 @@
                     <v-icon class="mr-2" color="primary">mdi-currency-usd</v-icon>
                     <span class="text-subtitle-1 font-weight-medium">Orçamento Mínimo</span>
                   </div>
-                  <v-text-field
-                    v-model="budgetMinFormatted"
-                    @blur="handleBudgetMinUpdate"
-                    variant="outlined"
-                    density="compact"
-                    prefix="R$"
-                  ></v-text-field>
+                  <v-text-field v-model="budgetMinFormatted" @blur="handleBudgetMinUpdate" variant="outlined"
+                    density="compact" prefix="R$"></v-text-field>
                 </v-col>
 
                 <!-- Orçamento Máximo -->
@@ -784,13 +569,8 @@
                     <v-icon class="mr-2" color="primary">mdi-currency-usd-circle</v-icon>
                     <span class="text-subtitle-1 font-weight-medium">Orçamento Máximo</span>
                   </div>
-                  <v-text-field
-                    v-model="budgetMaxFormatted"
-                    @blur="handleBudgetMaxUpdate"
-                    variant="outlined"
-                    density="compact"
-                    prefix="R$"
-                  ></v-text-field>
+                  <v-text-field v-model="budgetMaxFormatted" @blur="handleBudgetMaxUpdate" variant="outlined"
+                    density="compact" prefix="R$"></v-text-field>
                 </v-col>
               </v-row>
             </v-window-item>
@@ -809,11 +589,7 @@
                 <div class="text-body-2 text-medium-emphasis mb-4">
                   Os atendimentos deste cliente aparecerão aqui quando forem criados.
                 </div>
-                <v-btn
-                  color="primary"
-                  prepend-icon="mdi-phone-plus"
-                  @click="goToCreateAttendance"
-                >
+                <v-btn color="primary" prepend-icon="mdi-phone-plus" @click="goToCreateAttendance">
                   Criar Atendimento
                 </v-btn>
               </div>
@@ -824,34 +600,18 @@
                   <div class="text-h6">
                     {{ clientAttendances.length }} atendimento(s)
                   </div>
-                  <v-btn
-                    color="primary"
-                    prepend-icon="mdi-phone-plus"
-                    @click="goToCreateAttendance"
-                  >
+                  <v-btn color="primary" prepend-icon="mdi-phone-plus" @click="goToCreateAttendance">
                     Novo Atendimento
                   </v-btn>
                 </div>
 
                 <v-row>
-                  <v-col
-                    v-for="attendance in clientAttendances"
-                    :key="attendance.id"
-                    cols="12"
-                  >
-                    <v-card
-                      variant="outlined"
-                      class="attendance-card"
-                      @click="goToAttendance(attendance.id)"
-                    >
+                  <v-col v-for="attendance in clientAttendances" :key="attendance.id" cols="12">
+                    <v-card variant="outlined" class="attendance-card" @click="goToAttendance(attendance.id)">
                       <v-card-text class="pa-4">
                         <div class="d-flex align-start">
                           <!-- Channel Icon -->
-                          <v-avatar
-                            :color="getChannelColor(attendance.channel)"
-                            size="48"
-                            class="mr-4"
-                          >
+                          <v-avatar :color="getChannelColor(attendance.channel)" size="48" class="mr-4">
                             <v-icon color="white">{{ getChannelIcon(attendance.channel) }}</v-icon>
                           </v-avatar>
 
@@ -859,17 +619,11 @@
                           <div class="flex-grow-1">
                             <div class="d-flex align-center justify-space-between mb-2">
                               <div class="d-flex align-center ga-2">
-                                <v-chip
-                                  :color="getAttendanceStatusColor(attendance.status)"
-                                  variant="flat"
-                                  size="small"
-                                >
+                                <v-chip :color="getAttendanceStatusColor(attendance.status)" variant="flat"
+                                  size="small">
                                   {{ getAttendanceStatusLabel(attendance.status) }}
                                 </v-chip>
-                                <v-chip
-                                  variant="outlined"
-                                  size="small"
-                                >
+                                <v-chip variant="outlined" size="small">
                                   {{ getChannelLabel(attendance.channel) }}
                                 </v-chip>
                               </div>
@@ -884,26 +638,25 @@
                                 <v-icon size="16" color="primary" class="mr-1">mdi-robot</v-icon>
                                 Resumo da IA
                               </div>
-                              <div 
-                                class="text-body-2 ai-summary-preview"
-                                v-html="formatMarkdown(truncateText(attendance.ai_summary, 200))"
-                              ></div>
+                              <div class="text-body-2 ai-summary-preview"
+                                v-html="formatMarkdown(truncateText(attendance.ai_summary, 200))"></div>
                             </div>
 
                             <!-- Next Steps Preview -->
-                            <div v-if="attendance.ai_next_steps && hasValidNextSteps(attendance.ai_next_steps)" class="mb-2">
+                            <div v-if="attendance.ai_next_steps && hasValidNextSteps(attendance.ai_next_steps)"
+                              class="mb-2">
                               <div class="text-subtitle-2 font-weight-medium mb-1">
                                 <v-icon size="16" color="success" class="mr-1">mdi-arrow-right-circle</v-icon>
                                 Próximos Passos
                               </div>
-                              <div 
-                                class="text-body-2 ai-next-steps-preview"
-                                v-html="formatMarkdown(truncateText(formatAINextSteps(attendance.ai_next_steps), 150))"
-                              ></div>
+                              <div class="text-body-2 ai-next-steps-preview"
+                                v-html="formatMarkdown(truncateText(formatAINextSteps(attendance.ai_next_steps), 150))">
+                              </div>
                             </div>
 
                             <!-- Raw Content Preview (if no AI summary) -->
-                            <div v-if="!attendance.ai_summary" class="text-body-2 text-medium-emphasis raw-content-preview">
+                            <div v-if="!attendance.ai_summary"
+                              class="text-body-2 text-medium-emphasis raw-content-preview">
                               {{ truncateText(attendance.raw_content, 200) }}
                             </div>
 
@@ -941,20 +694,18 @@
                         <v-icon class="mr-2" color="primary">mdi-account-circle</v-icon>
                         Resumo do Cliente
                         <v-spacer></v-spacer>
-                        <v-chip
-                          v-if="aiSummaries.length > 0"
-                          color="primary"
-                          variant="flat"
-                          size="small"
-                        >
+                        <v-chip v-if="aiSummaries.length > 0" color="primary" variant="flat" size="small">
                           {{ aiSummaries.length }} atendimento(s) analisado(s)
                         </v-chip>
                       </v-card-title>
                       <v-card-text>
-                        <div v-if="aggregatedInsights.clientSummary" class="text-body-1 mb-4" v-html="formatMarkdown(aggregatedInsights.clientSummary)"></div>
-                        <div v-else-if="client.summary_notes" class="text-body-1" v-html="formatMarkdown(client.summary_notes)"></div>
+                        <div v-if="aggregatedInsights.clientSummary" class="text-body-1 mb-4"
+                          v-html="formatMarkdown(aggregatedInsights.clientSummary)"></div>
+                        <div v-else-if="client.summary_notes" class="text-body-1"
+                          v-html="formatMarkdown(client.summary_notes)"></div>
                         <v-alert v-else type="info" variant="tonal">
-                          Nenhum resumo disponível. O resumo será gerado automaticamente pela IA com base nos atendimentos.
+                          Nenhum resumo disponível. O resumo será gerado automaticamente pela IA com base nos
+                          atendimentos.
                         </v-alert>
                       </v-card-text>
                     </v-card>
@@ -970,11 +721,8 @@
                       <v-card-text>
                         <div v-if="aggregatedInsights.sentimentAnalysis" class="d-flex flex-column ga-3">
                           <div class="text-center">
-                            <v-icon
-                              :color="getSentimentColor(aggregatedInsights.sentimentAnalysis.dominant)"
-                              size="64"
-                              class="mb-2"
-                            >
+                            <v-icon :color="getSentimentColor(aggregatedInsights.sentimentAnalysis.dominant)" size="64"
+                              class="mb-2">
                               {{ getSentimentIcon(aggregatedInsights.sentimentAnalysis.dominant) }}
                             </v-icon>
                             <div class="text-h6 font-weight-bold mb-1">
@@ -986,16 +734,10 @@
                           </div>
                           <v-divider></v-divider>
                           <div class="d-flex flex-column ga-2">
-                            <div
-                              v-for="(count, sentiment) in aggregatedInsights.sentimentAnalysis.distribution"
-                              :key="sentiment"
-                              class="d-flex align-center justify-space-between"
-                            >
+                            <div v-for="(count, sentiment) in aggregatedInsights.sentimentAnalysis.distribution"
+                              :key="sentiment" class="d-flex align-center justify-space-between">
                               <div class="d-flex align-center ga-2">
-                                <v-icon
-                                  :color="getSentimentColor(sentiment)"
-                                  size="20"
-                                >
+                                <v-icon :color="getSentimentColor(sentiment)" size="20">
                                   {{ getSentimentIcon(sentiment) }}
                                 </v-icon>
                                 <span class="text-body-2">{{ getSentimentLabel(sentiment) }}</span>
@@ -1021,21 +763,13 @@
                         Intenções Detectadas
                       </v-card-title>
                       <v-card-text>
-                        <div v-if="aggregatedInsights.intents && aggregatedInsights.intents.length > 0" class="d-flex flex-column ga-2">
-                          <v-chip
-                            v-for="intent in aggregatedInsights.intents"
-                            :key="intent.intent"
-                            :color="getIntentColor(intent.intent)"
-                            variant="flat"
-                            class="mb-1"
-                          >
+                        <div v-if="aggregatedInsights.intents && aggregatedInsights.intents.length > 0"
+                          class="d-flex flex-column ga-2">
+                          <v-chip v-for="intent in aggregatedInsights.intents" :key="intent.intent"
+                            :color="getIntentColor(intent.intent)" variant="flat" class="mb-1">
                             <v-icon start size="16">{{ getIntentIcon(intent.intent) }}</v-icon>
                             {{ getIntentLabel(intent.intent) }}
-                            <v-chip
-                              size="x-small"
-                              variant="text"
-                              class="ml-2"
-                            >
+                            <v-chip size="x-small" variant="text" class="ml-2">
                               {{ intent.count }}x
                             </v-chip>
                           </v-chip>
@@ -1083,7 +817,8 @@
                               </div>
                             </div>
                           </div>
-                          <div v-if="client.current_budget_min || client.current_budget_max" class="d-flex align-center ga-2">
+                          <div v-if="client.current_budget_min || client.current_budget_max"
+                            class="d-flex align-center ga-2">
                             <v-icon color="primary">mdi-currency-usd</v-icon>
                             <div>
                               <div class="text-caption text-medium-emphasis">Orçamento</div>
@@ -1111,25 +846,20 @@
                         <div v-if="client.current_lead_score !== null" class="d-flex flex-column ga-3">
                           <div>
                             <div class="text-caption text-medium-emphasis mb-2">Lead Score</div>
-                            <v-progress-linear
-                              :model-value="client.current_lead_score"
-                              :color="getLeadScoreColor(client.current_lead_score)"
-                              height="32"
-                              rounded
-                            ></v-progress-linear>
+                            <v-progress-linear :model-value="client.current_lead_score"
+                              :color="getLeadScoreColor(client.current_lead_score)" height="32"
+                              rounded></v-progress-linear>
                             <div class="text-center mt-2">
                               <span class="text-h6 font-weight-bold">
                                 {{ client.current_lead_score }}/100
                               </span>
                             </div>
                           </div>
-                          <v-alert
-                            :type="getLeadScoreAlertType(client.current_lead_score)"
-                            variant="tonal"
-                          >
+                          <v-alert :type="getLeadScoreAlertType(client.current_lead_score)" variant="tonal">
                             {{ getLeadScoreMessage(client.current_lead_score) }}
                           </v-alert>
-                          <div v-if="aggregatedInsights.averageLeadScore !== null" class="text-caption text-medium-emphasis">
+                          <div v-if="aggregatedInsights.averageLeadScore !== null"
+                            class="text-caption text-medium-emphasis">
                             Score médio sugerido pela IA: {{ aggregatedInsights.averageLeadScore }}/100
                           </div>
                         </div>
@@ -1153,38 +883,14 @@
                       </v-card-title>
                       <v-card-text>
                         <v-row dense>
-                          <v-col
-                            v-for="property in recommendedProperties"
-                            :key="property.id"
-                            cols="12"
-                            sm="6"
-                            md="4"
-                          >
-                            <v-card
-                              variant="outlined"
-                              class="h-100 property-card"
-                              @click="goToProperty(property.id)"
-                            >
+                          <v-col v-for="property in recommendedProperties" :key="property.id" cols="12" sm="6" md="4">
+                            <v-card variant="outlined" class="h-100 property-card" @click="goToProperty(property.id)">
                               <v-card-text class="pa-3">
                                 <div class="d-flex align-center mb-2">
-                                  <v-avatar
-                                    v-if="property.main_image_url"
-                                    size="56"
-                                    class="mr-3"
-                                    rounded="lg"
-                                  >
-                                    <v-img
-                                      :src="property.main_image_url"
-                                      cover
-                                    ></v-img>
+                                  <v-avatar v-if="property.main_image_url" size="56" class="mr-3" rounded="lg">
+                                    <v-img :src="property.main_image_url" cover></v-img>
                                   </v-avatar>
-                                  <v-avatar
-                                    v-else
-                                    color="primary"
-                                    size="56"
-                                    class="mr-3"
-                                    rounded="lg"
-                                  >
+                                  <v-avatar v-else color="primary" size="56" class="mr-3" rounded="lg">
                                     <v-icon color="white">mdi-home</v-icon>
                                   </v-avatar>
                                   <div class="flex-grow-1">
@@ -1196,12 +902,8 @@
                                     </div>
                                   </div>
                                 </div>
-                                <v-chip
-                                  :color="getPropertyStatusColor(property.status)"
-                                  variant="flat"
-                                  size="x-small"
-                                  class="mb-2"
-                                >
+                                <v-chip :color="getPropertyStatusColor(property.status)" variant="flat" size="x-small"
+                                  class="mb-2">
                                   {{ getPropertyStatusLabel(property.status) }}
                                 </v-chip>
                                 <div class="text-caption text-medium-emphasis">
@@ -1234,38 +936,14 @@
                           Conforme atendimentos forem processados, a IA fará recomendações mais precisas.
                         </v-alert>
                         <v-row dense>
-                          <v-col
-                            v-for="property in profileBasedProperties"
-                            :key="property.id"
-                            cols="12"
-                            sm="6"
-                            md="4"
-                          >
-                            <v-card
-                              variant="outlined"
-                              class="h-100 property-card"
-                              @click="goToProperty(property.id)"
-                            >
+                          <v-col v-for="property in profileBasedProperties" :key="property.id" cols="12" sm="6" md="4">
+                            <v-card variant="outlined" class="h-100 property-card" @click="goToProperty(property.id)">
                               <v-card-text class="pa-3">
                                 <div class="d-flex align-center mb-2">
-                                  <v-avatar
-                                    v-if="property.main_image_url"
-                                    size="56"
-                                    class="mr-3"
-                                    rounded="lg"
-                                  >
-                                    <v-img
-                                      :src="property.main_image_url"
-                                      cover
-                                    ></v-img>
+                                  <v-avatar v-if="property.main_image_url" size="56" class="mr-3" rounded="lg">
+                                    <v-img :src="property.main_image_url" cover></v-img>
                                   </v-avatar>
-                                  <v-avatar
-                                    v-else
-                                    color="info"
-                                    size="56"
-                                    class="mr-3"
-                                    rounded="lg"
-                                  >
+                                  <v-avatar v-else color="info" size="56" class="mr-3" rounded="lg">
                                     <v-icon color="white">mdi-home</v-icon>
                                   </v-avatar>
                                   <div class="flex-grow-1">
@@ -1277,12 +955,8 @@
                                     </div>
                                   </div>
                                 </div>
-                                <v-chip
-                                  :color="getPropertyStatusColor(property.status)"
-                                  variant="flat"
-                                  size="x-small"
-                                  class="mb-2"
-                                >
+                                <v-chip :color="getPropertyStatusColor(property.status)" variant="flat" size="x-small"
+                                  class="mb-2">
                                   {{ getPropertyStatusLabel(property.status) }}
                                 </v-chip>
                                 <div class="text-caption text-medium-emphasis">
@@ -1327,17 +1001,10 @@
                       </v-card-title>
                       <v-card-text>
                         <v-expansion-panels variant="accordion">
-                          <v-expansion-panel
-                            v-for="summary in aiSummaries"
-                            :key="summary.id"
-                          >
+                          <v-expansion-panel v-for="summary in aiSummaries" :key="summary.id">
                             <v-expansion-panel-title>
                               <div class="d-flex align-center w-100 pr-4">
-                                <v-icon
-                                  :color="getAIStatusColor(summary.status)"
-                                  class="mr-3"
-                                  size="24"
-                                >
+                                <v-icon :color="getAIStatusColor(summary.status)" class="mr-3" size="24">
                                   {{ getAIStatusIcon(summary.status) }}
                                 </v-icon>
                                 <div class="flex-grow-1">
@@ -1346,21 +1013,14 @@
                                       {{ formatDateTime(summary.created_at) }}
                                     </div>
                                     <div class="d-flex align-center ga-1">
-                                      <v-chip
-                                        v-if="summary.sentiment"
-                                        :color="getSentimentColor(summary.sentiment)"
-                                        size="x-small"
-                                        variant="flat"
-                                      >
+                                      <v-chip v-if="summary.sentiment" :color="getSentimentColor(summary.sentiment)"
+                                        size="x-small" variant="flat">
                                         <v-icon start size="12">{{ getSentimentIcon(summary.sentiment) }}</v-icon>
                                         {{ getSentimentLabel(summary.sentiment) }}
                                       </v-chip>
-                                      <v-chip
-                                        v-if="summary.lead_score_suggested"
-                                        :color="getLeadScoreColor(summary.lead_score_suggested)"
-                                        size="x-small"
-                                        variant="flat"
-                                      >
+                                      <v-chip v-if="summary.lead_score_suggested"
+                                        :color="getLeadScoreColor(summary.lead_score_suggested)" size="x-small"
+                                        variant="flat">
                                         Score: {{ summary.lead_score_suggested }}
                                       </v-chip>
                                     </div>
@@ -1378,10 +1038,8 @@
                                   <v-icon size="16" color="primary" class="mr-1">mdi-text-box</v-icon>
                                   Resumo
                                 </div>
-                                <div 
-                                  class="markdown-content ai-summary-content"
-                                  v-html="formatMarkdown(summary.summary_text)"
-                                ></div>
+                                <div class="markdown-content ai-summary-content"
+                                  v-html="formatMarkdown(summary.summary_text)"></div>
                               </div>
 
                               <!-- Key Points -->
@@ -1392,24 +1050,14 @@
                                 </div>
                                 <div class="d-flex flex-wrap ga-2">
                                   <template v-if="summary.key_points.topics">
-                                    <v-chip
-                                      v-for="topic in summary.key_points.topics"
-                                      :key="topic"
-                                      size="small"
-                                      variant="tonal"
-                                      color="primary"
-                                    >
+                                    <v-chip v-for="topic in summary.key_points.topics" :key="topic" size="small"
+                                      variant="tonal" color="primary">
                                       {{ topic }}
                                     </v-chip>
                                   </template>
                                   <template v-if="summary.key_points.requirements">
-                                    <v-chip
-                                      v-for="req in summary.key_points.requirements"
-                                      :key="req"
-                                      size="small"
-                                      variant="tonal"
-                                      color="info"
-                                    >
+                                    <v-chip v-for="req in summary.key_points.requirements" :key="req" size="small"
+                                      variant="tonal" color="info">
                                       {{ req }}
                                     </v-chip>
                                   </template>
@@ -1418,46 +1066,31 @@
 
                               <!-- AI Analysis -->
                               <div class="d-flex flex-wrap ga-2">
-                                <v-chip
-                                  v-if="summary.detected_intent"
-                                  :color="getIntentColor(summary.detected_intent)"
-                                  variant="flat"
-                                  size="small"
-                                >
+                                <v-chip v-if="summary.detected_intent" :color="getIntentColor(summary.detected_intent)"
+                                  variant="flat" size="small">
                                   <v-icon start size="14">{{ getIntentIcon(summary.detected_intent) }}</v-icon>
                                   {{ getIntentLabel(summary.detected_intent) }}
                                 </v-chip>
-                                <v-chip
-                                  v-if="summary.interest_type_detected"
-                                  color="teal"
-                                  variant="flat"
-                                  size="small"
-                                >
+                                <v-chip v-if="summary.interest_type_detected" color="teal" variant="flat" size="small">
                                   <v-icon start size="14">mdi-handshake</v-icon>
                                   {{ getInterestTypeLabel(summary.interest_type_detected as InterestType) }}
                                 </v-chip>
-                                <v-chip
-                                  v-if="summary.urgency_level_detected"
+                                <v-chip v-if="summary.urgency_level_detected"
                                   :color="getUrgencyColor(summary.urgency_level_detected as UrgencyLevel)"
-                                  variant="flat"
-                                  size="small"
-                                >
+                                  variant="flat" size="small">
                                   <v-icon start size="14">mdi-alert-circle</v-icon>
                                   Urgência: {{ getUrgencyLabel(summary.urgency_level_detected as UrgencyLevel) }}
                                 </v-chip>
-                                <v-chip
-                                  v-if="summary.budget_min_detected || summary.budget_max_detected"
-                                  color="amber"
-                                  variant="flat"
-                                  size="small"
-                                >
+                                <v-chip v-if="summary.budget_min_detected || summary.budget_max_detected" color="amber"
+                                  variant="flat" size="small">
                                   <v-icon start size="14">mdi-currency-usd</v-icon>
                                   {{ formatBudgetDetected(summary.budget_min_detected, summary.budget_max_detected) }}
                                 </v-chip>
                               </div>
 
                               <!-- Recommended Properties -->
-                              <div v-if="summary.recommended_properties && summary.recommended_properties.length > 0" class="mt-4">
+                              <div v-if="summary.recommended_properties && summary.recommended_properties.length > 0"
+                                class="mt-4">
                                 <div class="text-subtitle-2 font-weight-medium mb-2 d-flex align-center">
                                   <v-icon size="16" color="info" class="mr-1">mdi-home-search</v-icon>
                                   Propriedades Recomendadas
@@ -1492,10 +1125,7 @@
                       <v-card-text>
                         <div v-if="aggregatedInsights.nextSteps && aggregatedInsights.nextSteps.length > 0">
                           <v-list density="comfortable">
-                            <v-list-item
-                              v-for="(step, index) in aggregatedInsights.nextSteps"
-                              :key="index"
-                            >
+                            <v-list-item v-for="(step, index) in aggregatedInsights.nextSteps" :key="index">
                               <template #prepend>
                                 <v-avatar color="primary" size="32">
                                   <span class="text-white">{{ index + 1 }}</span>
@@ -1506,7 +1136,8 @@
                           </v-list>
                         </div>
                         <v-alert v-else type="info" variant="tonal">
-                          As sugestões de próximos passos serão geradas automaticamente pela IA com base no histórico de atendimentos e perfil do cliente.
+                          As sugestões de próximos passos serão geradas automaticamente pela IA com base no histórico de
+                          atendimentos e perfil do cliente.
                         </v-alert>
                       </v-card-text>
                     </v-card>
@@ -1536,18 +1167,12 @@
                           <div class="text-h6 font-weight-bold">
                             {{ formatDateTime(client.next_follow_up_at) }}
                           </div>
-                          <div
-                            :class="getFollowUpClass(client.next_follow_up_at)"
-                            class="text-caption font-weight-medium mt-2"
-                          >
+                          <div :class="getFollowUpClass(client.next_follow_up_at)"
+                            class="text-caption font-weight-medium mt-2">
                             {{ getFollowUpStatus(client.next_follow_up_at) }}
                           </div>
                         </div>
-                        <v-btn
-                          color="primary"
-                          prepend-icon="mdi-calendar-plus"
-                          @click="showScheduleDialog = true"
-                        >
+                        <v-btn color="primary" prepend-icon="mdi-calendar-plus" @click="showScheduleDialog = true">
                           Reagendar
                         </v-btn>
                       </div>
@@ -1555,11 +1180,7 @@
                         <v-alert type="warning" variant="tonal">
                           Nenhum follow-up agendado.
                         </v-alert>
-                        <v-btn
-                          color="primary"
-                          prepend-icon="mdi-calendar-plus"
-                          @click="showScheduleDialog = true"
-                        >
+                        <v-btn color="primary" prepend-icon="mdi-calendar-plus" @click="showScheduleDialog = true">
                           Agendar Próximo Contato
                         </v-btn>
                       </div>
@@ -1609,22 +1230,14 @@
       <div class="text-body-2 text-medium-emphasis mb-4">
         O cliente que você está procurando não existe ou foi removido.
       </div>
-      <v-btn
-        color="primary"
-        prepend-icon="mdi-arrow-left"
-        @click="goBack"
-      >
+      <v-btn color="primary" prepend-icon="mdi-arrow-left" @click="goBack">
         Voltar para Lista
       </v-btn>
     </v-card>
 
     <!-- Edit Client Dialog -->
-    <ClientCreateDialog
-      v-model="showEditDialog"
-      :client="client"
-      @saved="handleClientSaved"
-      @error="handleClientError"
-    />
+    <ClientCreateDialog v-model="showEditDialog" :client="client" @saved="handleClientSaved"
+      @error="handleClientError" />
   </div>
 </template>
 
@@ -1644,9 +1257,9 @@ import { usersService, type User } from '@/shared/services/users.service'
 import { aiSummariesService, type AISummary, type Sentiment, type DetectedIntent } from '@/shared/services/aiSummaries.service'
 import { propertiesService, type Property } from '@/shared/services/properties.service'
 import { salesService } from '@/shared/services/sales.service'
-import { 
-  lossesService, 
-  lossReasonOptions, 
+import {
+  lossesService,
+  lossReasonOptions,
   lossStageOptions,
   getLossReasonColor,
   getLossReasonIcon,
@@ -1799,7 +1412,7 @@ const hasInterestProfile = computed(() => {
 // Aggregated AI Insights
 const aggregatedInsights = computed(() => {
   const completedSummaries = aiSummaries.value.filter(s => s.status === 'COMPLETED')
-  
+
   if (completedSummaries.length === 0) {
     return {
       clientSummary: null,
@@ -1817,14 +1430,14 @@ const aggregatedInsights = computed(() => {
     NEGATIVE: 0,
     MIXED: 0,
   }
-  
+
   completedSummaries.forEach(summary => {
     if (summary.sentiment) {
       sentimentCounts[summary.sentiment]++
     }
   })
 
-  const dominantSentiment = Object.entries(sentimentCounts).reduce((a, b) => 
+  const dominantSentiment = Object.entries(sentimentCounts).reduce((a, b) =>
     sentimentCounts[a[0] as Sentiment] > sentimentCounts[b[0] as Sentiment] ? a : b
   )[0] as Sentiment
 
@@ -1844,19 +1457,19 @@ const aggregatedInsights = computed(() => {
   const leadScores = completedSummaries
     .map(s => s.lead_score_suggested)
     .filter((score): score is number => score !== null)
-  
+
   const averageLeadScore = leadScores.length > 0
     ? Math.round(leadScores.reduce((a, b) => a + b, 0) / leadScores.length)
     : null
 
   // Client Summary (from most recent summary)
-  const mostRecentSummary = completedSummaries.sort((a, b) => 
+  const mostRecentSummary = completedSummaries.sort((a, b) =>
     new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   )[0]
 
   // Next Steps (aggregate from attendances ai_next_steps)
   const allNextSteps: string[] = []
-  
+
   // First, try to get from attendances ai_next_steps field
   clientAttendances.value
     .filter(a => a.status === 'COMPLETED' && a.ai_next_steps)
@@ -1889,7 +1502,7 @@ const aggregatedInsights = computed(() => {
   // Generate smart suggestions based on client profile if no AI steps
   if (allNextSteps.length === 0 && client.value) {
     const c = client.value
-    
+
     // Based on status
     if (c.current_status === 'NEW_LEAD') {
       allNextSteps.push('Fazer primeiro contato para qualificar o lead')
@@ -1910,7 +1523,7 @@ const aggregatedInsights = computed(() => {
       allNextSteps.push('Negociar termos e condições finais')
       allNextSteps.push('Preparar documentação para fechamento')
     }
-    
+
     // Based on urgency
     if (c.current_urgency_level === 'IMMEDIATE' || c.current_urgency_level === 'HIGH') {
       allNextSteps.unshift('Priorizar atendimento - cliente com urgência alta')
@@ -1935,7 +1548,7 @@ const loadClient = async () => {
   try {
     const clientId = route.params.id as string
     client.value = await clientsService.getClientById(clientId)
-    
+
     // Initialize editable fields
     editableFields.value = {
       current_status: client.value.current_status,
@@ -1947,7 +1560,7 @@ const loadClient = async () => {
       current_budget_min: client.value.current_budget_min,
       current_budget_max: client.value.current_budget_max,
     }
-    
+
     // Format budget fields
     budgetMinFormatted.value = client.value.current_budget_min
       ? formatCurrency(parseFloat(client.value.current_budget_min))
@@ -1991,30 +1604,30 @@ const loadClientAttendances = async () => {
 // Load profile-based property recommendations when no AI recommendations exist
 const loadProfileBasedProperties = async () => {
   if (!client.value) return
-  
+
   // Only load if no AI recommendations and client has interest profile
   if (recommendedProperties.value.length > 0) return
   if (!hasInterestProfile.value) return
-  
+
   try {
     // Get all properties and filter based on client profile
     const allProperties = await propertiesService.listProperties({ limit: 100 })
-    
+
     // Filter properties based on client preferences
     const filtered = allProperties.filter(property => {
       // Only published properties
       if (property.status !== 'PUBLISHED') return false
-      
+
       // Match interest type
-      if (client.value?.current_interest_type === 'BUY' && 
-          property.business_type !== 'SALE' && property.business_type !== 'BOTH') return false
-      if (client.value?.current_interest_type === 'RENT' && 
-          property.business_type !== 'RENT' && property.business_type !== 'BOTH') return false
-      
+      if (client.value?.current_interest_type === 'BUY' &&
+        property.business_type !== 'SALE' && property.business_type !== 'BOTH') return false
+      if (client.value?.current_interest_type === 'RENT' &&
+        property.business_type !== 'RENT' && property.business_type !== 'BOTH') return false
+
       // Match property type
-      if (client.value?.current_property_type && 
-          property.property_type !== client.value.current_property_type) return false
-      
+      if (client.value?.current_property_type &&
+        property.property_type !== client.value.current_property_type) return false
+
       // Match city
       if (client.value?.current_city_interest && property.city) {
         const cityMatch = property.city.toLowerCase().includes(
@@ -2022,27 +1635,27 @@ const loadProfileBasedProperties = async () => {
         )
         if (!cityMatch) return false
       }
-      
+
       // Match budget
       const minBudget = client.value?.current_budget_min ? parseFloat(client.value.current_budget_min) : null
       const maxBudget = client.value?.current_budget_max ? parseFloat(client.value.current_budget_max) : null
-      
+
       if (minBudget || maxBudget) {
-        const priceValue = client.value?.current_interest_type === 'RENT' 
-          ? property.rent_price 
+        const priceValue = client.value?.current_interest_type === 'RENT'
+          ? property.rent_price
           : property.price
-        
+
         const price = typeof priceValue === 'string' ? parseFloat(priceValue) : priceValue
-        
+
         if (price) {
           if (minBudget && price < minBudget) return false
           if (maxBudget && price > maxBudget) return false
         }
       }
-      
+
       return true
     })
-    
+
     // Take top 6 properties
     profileBasedProperties.value = filtered.slice(0, 6)
   } catch (error) {
@@ -2073,14 +1686,14 @@ const loadAIInsights = async () => {
         propertiesService.getPropertyById(id).catch(() => null)
       )
       const propertiesResults = await Promise.allSettled(propertiesPromises)
-      
+
       recommendedProperties.value = propertiesResults
         .filter((result): result is PromiseFulfilledResult<Property> =>
           result.status === 'fulfilled' && result.value !== null
         )
         .map(result => result.value)
     }
-    
+
     // If no AI recommendations, try to find based on profile
     if (recommendedProperties.value.length === 0) {
       await loadProfileBasedProperties()
@@ -2104,14 +1717,14 @@ watch(activeTab, (newTab) => {
 
 const handleFieldUpdate = async (field: keyof ClientUpdate, value: any) => {
   if (!client.value) return
-  
+
   try {
     const updateData: ClientUpdate = {
       [field]: value,
     }
-    
+
     client.value = await clientsService.updateClient(client.value.id, updateData)
-    
+
     // Update local state
     editableFields.value[field] = value
   } catch (error: any) {
@@ -2134,21 +1747,21 @@ const handleBudgetMaxUpdate = async () => {
 
 const formatMarkdown = (text: string): string => {
   if (!text) return ''
-  
+
   // Split by lines to process lists properly
   const lines = text.split('\n')
   const processedLines: string[] = []
   let inList = false
   let listType: 'ul' | 'ol' | null = null
-  
+
   for (let i = 0; i < lines.length; i++) {
     let line = lines[i]
-    
+
     // Check for unordered list items
     const ulMatch = line.match(/^(\s*)[-*]\s+(.+)/)
     // Check for ordered list items
     const olMatch = line.match(/^(\s*)\d+\.\s+(.+)/)
-    
+
     if (ulMatch) {
       if (!inList || listType !== 'ul') {
         if (inList) processedLines.push(listType === 'ol' ? '</ol>' : '</ul>')
@@ -2174,7 +1787,7 @@ const formatMarkdown = (text: string): string => {
         inList = false
         listType = null
       }
-      
+
       // Process headers
       if (line.match(/^### /)) {
         line = `<h4 class="markdown-h4">${formatInlineMarkdown(line.replace(/^### /, ''))}</h4>`
@@ -2189,38 +1802,38 @@ const formatMarkdown = (text: string): string => {
         // Empty line - add spacing only if not in list
         line = '<div class="markdown-spacer"></div>'
       }
-      
+
       processedLines.push(line)
     }
   }
-  
+
   // Close any open list
   if (inList) {
     processedLines.push(listType === 'ol' ? '</ol>' : '</ul>')
   }
-  
+
   return processedLines.join('')
 }
 
 const formatInlineMarkdown = (text: string): string => {
   if (!text) return ''
-  
+
   let html = text
-  
+
   // Bold (process first to avoid conflicts with italic)
   html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
   html = html.replace(/__(.+?)__/g, '<strong>$1</strong>')
-  
+
   // Italic
   html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>')
   html = html.replace(/_([^_]+)_/g, '<em>$1</em>')
-  
+
   // Code
   html = html.replace(/`([^`]+)`/g, '<code class="markdown-code">$1</code>')
-  
+
   // Links
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" class="markdown-link">$1</a>')
-  
+
   return html
 }
 
@@ -2328,7 +1941,7 @@ const truncateText = (text: string, maxLength: number): string => {
 // Translate and format AI next steps
 const formatAINextSteps = (nextSteps: string): string => {
   if (!nextSteps) return ''
-  
+
   // Translation maps for common English terms
   const translations: Record<string, string> = {
     // Interest types
@@ -2358,9 +1971,9 @@ const formatAINextSteps = (nextSteps: string): string => {
     'Location': 'Localização',
     'City': 'Cidade',
   }
-  
+
   let formatted = nextSteps
-  
+
   // Replace English terms with Portuguese
   Object.entries(translations).forEach(([en, pt]) => {
     // Replace exact matches (for values like BUY, LOW)
@@ -2368,7 +1981,7 @@ const formatAINextSteps = (nextSteps: string): string => {
     // Replace phrase matches
     formatted = formatted.replace(new RegExp(`\\b${en}\\b`, 'gi'), pt)
   })
-  
+
   // Clean up any remaining field labels that look like metadata
   const lines = formatted.split('\n')
   const cleanedLines = lines.filter(line => {
@@ -2381,30 +1994,30 @@ const formatAINextSteps = (nextSteps: string): string => {
     }
     return true
   })
-  
+
   return cleanedLines.join('\n')
 }
 
 // Check if next steps has valid content (not just metadata)
 const hasValidNextSteps = (nextSteps: string): boolean => {
   if (!nextSteps) return false
-  
+
   const lines = nextSteps.split('\n')
   for (const line of lines) {
     const trimmed = line.trim()
     if (!trimmed) continue
-    
+
     // Skip lines that are just metadata (e.g., "Tipo de interesse detectado: BUY")
     if (trimmed.match(/^(Tipo de interesse|Urgência|Interest type|Urgency|Budget|Orçamento).*:/i)) {
       continue
     }
-    
+
     // If we find a line that's not metadata and has substantial content, return true
     if (trimmed.length > 20) {
       return true
     }
   }
-  
+
   return false
 }
 
@@ -2421,7 +2034,7 @@ const formatDuration = (seconds: number): string => {
 
 const formatBudgetDetected = (min: number | null, max: number | null): string => {
   const formatValue = (value: number) => formatCurrency(value)
-  
+
   if (min && max) return `${formatValue(min)} - ${formatValue(max)}`
   if (min) return `A partir de ${formatValue(min)}`
   if (max) return `Até ${formatValue(max)}`
@@ -2585,7 +2198,7 @@ const goToProperty = (propertyId: string) => {
 // Delete client handler
 const handleDeleteClient = async () => {
   if (!client.value) return
-  
+
   isDeleting.value = true
   try {
     await clientsService.deleteClient(client.value.id)
@@ -2739,7 +2352,7 @@ const getDaysSinceContactColor = (lastContactAt: string | null): string => {
 
 const formatBudgetRange = (min: number | null, max: number | null): string => {
   if (!min && !max) return '-'
-  
+
   const formatValue = (val: number): string => {
     if (val >= 1000000) {
       return `${(val / 1000000).toFixed(1)}M`
@@ -2749,7 +2362,7 @@ const formatBudgetRange = (min: number | null, max: number | null): string => {
     }
     return val.toLocaleString('pt-BR')
   }
-  
+
   if (min && max) {
     return `R$ ${formatValue(min)} - ${formatValue(max)}`
   }
@@ -2910,11 +2523,10 @@ onMounted(() => {
 }
 
 .header-gradient {
-  background: linear-gradient(135deg, 
-    rgb(var(--v-theme-primary)) 0%, 
-    rgb(var(--v-theme-primary-darken-1), 0.9) 50%,
-    rgb(var(--v-theme-secondary)) 100%
-  );
+  background: linear-gradient(135deg,
+      rgb(var(--v-theme-primary)) 0%,
+      rgb(var(--v-theme-primary-darken-1), 0.9) 50%,
+      rgb(var(--v-theme-secondary)) 100%);
   position: relative;
 }
 
@@ -3070,4 +2682,3 @@ onMounted(() => {
   margin-left: 1.25rem;
 }
 </style>
-
