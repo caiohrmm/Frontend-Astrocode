@@ -98,7 +98,6 @@
                   <v-select
                     v-model="formData.property_type"
                     :items="propertyTypeOptions"
-                    label="Tipo de Imóvel *"
                     variant="outlined"
                     :rules="[rules.required]"
                     prepend-inner-icon="mdi-home-variant"
@@ -133,7 +132,6 @@
                   <v-select
                     v-model="formData.business_type"
                     :items="businessTypeOptions"
-                    label="Tipo de Negócio *"
                     variant="outlined"
                     :rules="[rules.required]"
                     prepend-inner-icon="mdi-handshake"
@@ -517,7 +515,6 @@
                   <v-select
                     v-model="formData.status"
                     :items="statusOptions"
-                    label="Status *"
                     variant="outlined"
                     prepend-inner-icon="mdi-flag"
                     :rules="[rules.required]"
