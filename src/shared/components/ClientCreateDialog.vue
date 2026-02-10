@@ -1,27 +1,15 @@
 <template>
-  <v-dialog
-    v-model="dialogModel"
-    max-width="600"
-    persistent
-  >
+  <v-dialog v-model="dialogModel" max-width="600" persistent>
     <v-card>
       <v-card-title class="d-flex align-center pa-4">
-        <v-icon
-          :color="isEditMode ? 'primary' : 'primary'"
-          class="mr-3"
-          size="32"
-        >
+        <v-icon :color="isEditMode ? 'primary' : 'primary'" class="mr-3" size="32">
           {{ isEditMode ? 'mdi-account-edit' : 'mdi-account-plus' }}
         </v-icon>
         <span class="text-h5">
           {{ isEditMode ? 'Editar Cliente' : 'Novo Cliente' }}
         </span>
         <v-spacer></v-spacer>
-        <v-btn
-          icon
-          variant="text"
-          @click="handleClose"
-        >
+        <v-btn icon variant="text" @click="handleClose">
           <v-icon>mdi-close</v-icon>
         </v-btn>
       </v-card-title>
@@ -29,76 +17,40 @@
       <v-divider></v-divider>
 
       <v-card-text class="pa-6">
-        <v-form
-          ref="formRef"
-          v-model="isFormValid"
-        >
+        <v-form ref="formRef" v-model="isFormValid">
           <v-row>
             <!-- Nome -->
             <v-col cols="12">
-              <v-text-field
-                v-model="formData.name"
-                label="Nome *"
-                variant="outlined"
-                :rules="[rules.required]"
-                prepend-inner-icon="mdi-account"
-                hint="Nome completo do cliente"
-                persistent-hint
-              ></v-text-field>
+              <v-text-field v-model="formData.name" label="Nome *" variant="outlined" :rules="[rules.required]"
+                prepend-inner-icon="mdi-account" hint="Nome completo do cliente" persistent-hint></v-text-field>
             </v-col>
 
             <!-- Telefone -->
             <v-col cols="12" md="6">
-              <v-text-field
-                v-model="phoneFormatted"
-                @input="handlePhoneInput"
-                @blur="formData.phone = parsePhone(phoneFormatted)"
-                label="Telefone *"
-                variant="outlined"
-                :rules="[rules.required, rules.phone]"
-                prepend-inner-icon="mdi-phone"
-                hint="Telefone de contato"
-                persistent-hint
-              ></v-text-field>
+              <v-text-field v-model="phoneFormatted" @input="handlePhoneInput"
+                @blur="formData.phone = parsePhone(phoneFormatted)" label="Telefone *" variant="outlined"
+                :rules="[rules.required, rules.phone]" prepend-inner-icon="mdi-phone" hint="Telefone de contato"
+                persistent-hint></v-text-field>
             </v-col>
 
             <!-- Email -->
             <v-col cols="12" md="6">
-              <v-text-field
-                v-model="formData.email"
-                label="Email"
-                type="email"
-                variant="outlined"
-                :rules="[rules.email]"
-                prepend-inner-icon="mdi-email"
-                hint="Email de contato (opcional)"
-                persistent-hint
-              ></v-text-field>
+              <v-text-field v-model="formData.email" label="Email" type="email" variant="outlined"
+                :rules="[rules.email]" prepend-inner-icon="mdi-email" hint="Email de contato (opcional)"
+                persistent-hint></v-text-field>
             </v-col>
 
             <!-- Lead Source -->
             <v-col cols="12" md="6">
-              <v-select
-                v-model="formData.lead_source"
-                :items="leadSourceOptions"
-                label="Origem do Lead *"
-                variant="outlined"
-                :rules="[rules.required]"
-                prepend-inner-icon="mdi-source-branch"
-                hint="Como o cliente chegou até você"
-                persistent-hint
-              ></v-select>
+              <v-select v-model="formData.lead_source" :items="leadSourceOptions" label="Origem do Lead *"
+                variant="outlined" :rules="[rules.required]" prepend-inner-icon="mdi-source-branch"
+                hint="Como o cliente chegou até você" persistent-hint></v-select>
             </v-col>
 
             <!-- AI Classification Toggle -->
             <v-col cols="12" md="6" class="d-flex align-center">
-              <v-switch
-                v-model="formData.use_ai_classification"
-                label="Classificar com IA"
-                color="primary"
-                hide-details
-                class="mt-0"
-              >
+              <v-switch v-model="formData.use_ai_classification" label="Classificar com IA" color="primary" hide-details
+                class="mt-0">
                 <template v-slot:label>
                   <div class="d-flex align-center">
                     <v-icon start size="20" color="primary">mdi-robot</v-icon>
@@ -110,31 +62,21 @@
 
             <!-- Initial Message (for AI) -->
             <v-col cols="12" v-if="formData.use_ai_classification && !isEditMode">
-              <v-textarea
-                v-model="formData.initial_message"
-                label="Mensagem inicial do cliente"
-                variant="outlined"
-                rows="3"
-                auto-grow
-                prepend-inner-icon="mdi-message-text"
-                hint="Cole aqui a primeira mensagem do cliente para a IA analisar"
-                persistent-hint
-              ></v-textarea>
+              <v-textarea v-model="formData.initial_message" label="Mensagem inicial do cliente" variant="outlined"
+                rows="3" auto-grow prepend-inner-icon="mdi-message-text" persistent-placeholder
+                hint="Cole aqui a primeira mensagem do cliente para a IA analisar" persistent-hint />
+
             </v-col>
           </v-row>
         </v-form>
 
         <!-- AI Info Alert -->
-        <v-alert
-          v-if="formData.use_ai_classification && !isEditMode"
-          type="info"
-          variant="tonal"
-          density="compact"
-          class="mt-4"
-        >
+        <v-alert v-if="formData.use_ai_classification && !isEditMode" type="info" variant="tonal" density="compact"
+          class="mt-4">
           <template v-slot:text>
             A IA irá analisar as informações e definir automaticamente:
-            <strong>Lead Score</strong>, <strong>Urgência</strong>, <strong>Tipo de Interesse</strong> e <strong>Ações Recomendadas</strong>.
+            <strong>Lead Score</strong>, <strong>Urgência</strong>, <strong>Tipo de Interesse</strong> e <strong>Ações
+              Recomendadas</strong>.
           </template>
         </v-alert>
       </v-card-text>
@@ -143,20 +85,11 @@
 
       <v-card-actions class="pa-4">
         <v-spacer></v-spacer>
-        <v-btn
-          variant="text"
-          @click="handleClose"
-        >
+        <v-btn variant="text" @click="handleClose">
           Cancelar
         </v-btn>
-        <v-btn
-          color="primary"
-          variant="flat"
-          :loading="isSaving"
-          :disabled="!isFormValid || isSaving"
-          prepend-icon="mdi-content-save"
-          @click="handleSave"
-        >
+        <v-btn color="primary" variant="flat" :loading="isSaving" :disabled="!isFormValid || isSaving"
+          prepend-icon="mdi-content-save" @click="handleSave">
           {{ isEditMode ? 'Salvar' : 'Criar' }}
         </v-btn>
       </v-card-actions>
@@ -389,4 +322,3 @@ watch(() => props.client, () => {
   top: 0 !important;
 }
 </style>
-
