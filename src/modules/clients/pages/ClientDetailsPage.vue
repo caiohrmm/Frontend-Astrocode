@@ -555,7 +555,7 @@
                 <!-- Orçamento Máximo -->
                 <v-col cols="12" md="6">
                   <div class="d-flex align-center mb-2">
-                    <v-icon class="mr-2" color="primary">mdi-currency-usd-circle</v-icon>
+                    <v-icon class="mr-2" color="primary">mdi-currency-usd</v-icon>
                     <span class="text-subtitle-1 font-weight-medium">Orçamento Máximo</span>
                   </div>
                   <v-text-field v-model="budgetMaxFormatted" @blur="handleBudgetMaxUpdate" variant="outlined"
