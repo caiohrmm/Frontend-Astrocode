@@ -489,9 +489,20 @@
                     <v-icon class="mr-2" color="primary">mdi-flag</v-icon>
                     <span class="text-subtitle-1 font-weight-medium">Status</span>
                   </div>
-                  <v-select v-model="editableFields.current_status" :items="statusOptions" variant="outlined"
-                    density="compact" @update:model-value="handleFieldUpdate('current_status', $event)">
+                  <v-select 
+                    v-model="editableFields.current_status" 
+                    :items="statusOptions" 
+                    variant="outlined"
+                    density="compact" 
+                    item-title="title"
+                    item-value="value"
+                    @update:model-value="handleFieldUpdate('current_status', $event)">
                     <template #item="{ item }">
+                      <v-chip :color="getStatusColor(item.value)" variant="flat" size="small">
+                        {{ item.title }}
+                      </v-chip>
+                    </template>
+                    <template #selection="{ item }">
                       <v-chip :color="getStatusColor(item.value)" variant="flat" size="small">
                         {{ item.title }}
                       </v-chip>
