@@ -496,14 +496,25 @@
                     density="compact" 
                     item-title="title"
                     item-value="value"
-                    @update:model-value="handleFieldUpdate('current_status', $event)">
-                    <template #item="{ item }">
-                      <v-chip :color="getStatusColor(item.value)" variant="flat" size="small">
-                        {{ item.title }}
-                      </v-chip>
+                    @update:model-value="handleStatusChange">
+                    <template #item="{ props }">
+                      <v-list-item v-bind="props">
+                        <template #prepend>
+                          <v-chip 
+                            :color="getStatusColor(props.value)" 
+                            variant="flat" 
+                            size="small" 
+                            class="mr-2">
+                            {{ props.title }}
+                          </v-chip>
+                        </template>
+                      </v-list-item>
                     </template>
                     <template #selection="{ item }">
-                      <v-chip :color="getStatusColor(item.value)" variant="flat" size="small">
+                      <v-chip 
+                        :color="getStatusColor(item.value)" 
+                        variant="flat" 
+                        size="small">
                         {{ item.title }}
                       </v-chip>
                     </template>
@@ -1716,6 +1727,26 @@ const handleFieldUpdate = async (field: keyof ClientUpdate, value: any) => {
   } catch (error: any) {
     console.error(`Error updating ${field}:`, error)
     alert(`Erro ao atualizar ${field}: ${error.message}`)
+    // Reload client to revert changes
+    await loadClient()
+  }
+}
+
+const handleStatusChange = async (newStatus: ClientStatus) => {
+  if (!client.value) return
+  
+  // Update local state immediately for better UX
+  editableFields.value.current_status = newStatus
+  
+  try {
+    const updateData: ClientUpdate = {
+      current_status: newStatus,
+    }
+
+    client.value = await clientsService.updateClient(client.value.id, updateData)
+  } catch (error: any) {
+    console.error('Error updating status:', error)
+    alert(`Erro ao atualizar status: ${error.message}`)
     // Reload client to revert changes
     await loadClient()
   }
