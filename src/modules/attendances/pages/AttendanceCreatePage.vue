@@ -12,20 +12,6 @@
         <span class="text-h5">{{ isEditMode ? 'Editar Atendimento' : 'Novo Atendimento' }}</span>
         <v-spacer></v-spacer>
         
-        <!-- Toggle AI Panel (mobile) -->
-        <v-btn
-          v-if="$vuetify.display.mdAndDown"
-          :icon="showAIPanel ? 'mdi-robot-off' : 'mdi-robot'"
-          variant="tonal"
-          :color="showAIPanel ? 'error' : 'secondary'"
-          class="mr-2"
-          @click="showAIPanel = !showAIPanel"
-        >
-          <v-tooltip activator="parent" location="bottom">
-            {{ showAIPanel ? 'Ocultar Assistente IA' : 'Mostrar Assistente IA' }}
-          </v-tooltip>
-        </v-btn>
-        
         <v-btn color="primary" :loading="isSaving" :disabled="isSaving || !isFormValid" prepend-icon="mdi-content-save"
           @click="handleSave">
           Salvar
@@ -33,10 +19,10 @@
       </v-card-title>
     </v-card>
 
-    <!-- Main Content with AI Panel -->
+    <!-- Main Content -->
     <v-row>
       <!-- Form Column -->
-      <v-col cols="12" :lg="showAIPanel ? 8 : 12">
+      <v-col cols="12">
         <v-card elevation="2">
           <v-card-text class="pa-6">
             <v-form ref="formRef" v-model="isFormValid">
@@ -186,66 +172,20 @@
                     label="Conteúdo do Atendimento *" 
                     variant="outlined"
                     :rules="[rules.required, rules.minLength]" 
-                    :rows="showAIPanel ? 12 : 8" 
+                    :rows="8" 
                     prepend-inner-icon="mdi-text"
-                    hint="Descreva o conteúdo completo do atendimento. A IA analisará em tempo real."
+                    hint="Descreva o conteúdo completo do atendimento."
                     persistent-hint 
                     counter 
                     :maxlength="10000"
-                  >
-                    <template #append-inner>
-                      <v-chip 
-                        v-if="formData.raw_content.length >= 15 && !showAIPanel" 
-                        color="secondary" 
-                        size="small"
-                        variant="flat"
-                        class="cursor-pointer"
-                        @click="showAIPanel = true"
-                      >
-                        <v-icon start size="14">mdi-robot</v-icon>
-                        Ver IA
-                      </v-chip>
-                    </template>
-                  </v-textarea>
+                  />
                 </v-col>
               </v-row>
             </v-form>
           </v-card-text>
         </v-card>
       </v-col>
-
-      <!-- AI Panel Column -->
-      <v-col v-if="showAIPanel" cols="12" lg="4">
-        <div class="ai-panel-container">
-          <RealTimeAIPanel
-            :text="formData.raw_content"
-            :client-id="formData.client_id"
-            :include-properties="true"
-            :debounce-ms="800"
-            @analysis-complete="handleAIAnalysisComplete"
-            @select-property="handleAIPropertySelect"
-          />
-        </div>
-      </v-col>
     </v-row>
-
-    <!-- Mobile AI Panel Drawer -->
-    <v-navigation-drawer
-      v-if="$vuetify.display.mdAndDown"
-      v-model="showAIPanel"
-      location="right"
-      temporary
-      width="350"
-    >
-      <RealTimeAIPanel
-        :text="formData.raw_content"
-        :client-id="formData.client_id"
-        :include-properties="true"
-        :debounce-ms="800"
-        @analysis-complete="handleAIAnalysisComplete"
-        @select-property="handleAIPropertySelect"
-      />
-    </v-navigation-drawer>
 
     <!-- AI Suggestions Dialog -->
     <ClientUpdateSuggestionsDialog
@@ -274,8 +214,6 @@ import { aiSummariesService, type AISummary } from '@/shared/services/aiSummarie
 import { formatPhone } from '@/shared/utils/masks'
 import SearchSelectDialog from '@/shared/components/SearchSelectDialog.vue'
 import ClientUpdateSuggestionsDialog from '@/shared/components/ClientUpdateSuggestionsDialog.vue'
-import RealTimeAIPanel from '@/shared/components/RealTimeAIPanel.vue'
-import type { RealTimeAnalysisResult } from '@/shared/services/realtime-ai.service'
 
 const router = useRouter()
 const route = useRoute()
@@ -296,10 +234,6 @@ const showSuggestionsDialog = ref(false)
 const suggestionsClient = ref<Client | null>(null)
 const suggestionsAISummary = ref<AISummary | null>(null)
 const savedAttendanceId = ref<string | null>(null)
-
-// Real-time AI Panel state
-const showAIPanel = ref(true)
-const lastAIAnalysis = ref<RealTimeAnalysisResult | null>(null)
 
 // Search state for clients
 const clientSearchItems = ref<any[]>([])
@@ -714,35 +648,6 @@ const getInitials = (name: string): string => {
 
 const goBack = () => {
   router.push({ name: 'attendances' })
-}
-
-// Real-time AI handlers
-const handleAIAnalysisComplete = (result: RealTimeAnalysisResult) => {
-  lastAIAnalysis.value = result
-  console.log('AI Analysis complete:', result.summary)
-}
-
-const handleAIPropertySelect = async (propertyId: string) => {
-  // When user clicks a suggested property, select it in the form
-  formData.value.property_id = propertyId
-  
-  // Load property details to update the search dialog
-  try {
-    const property = await propertiesService.getPropertyById(propertyId)
-    if (property) {
-      propertySearchItems.value = [{
-        id: property.id,
-        title: property.title,
-        code: property.code,
-        city: property.city,
-        neighborhood: property.neighborhood,
-        main_image_url: property.main_image_url,
-        subtitle: `${property.code} ${property.city ? '• ' + property.city : ''}`,
-      }]
-    }
-  } catch (error) {
-    console.error('Error loading property:', error)
-  }
 }
 
 onMounted(async () => {
