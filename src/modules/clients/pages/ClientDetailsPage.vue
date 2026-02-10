@@ -510,17 +510,6 @@
                     @update:model-value="handleFieldUpdate('current_urgency_level', $event)"></v-select>
                 </v-col>
 
-                <!-- Agente Responsável -->
-                <v-col cols="12" md="6">
-                  <div class="d-flex align-center mb-2">
-                    <v-icon class="mr-2" color="primary">mdi-account-tie</v-icon>
-                    <span class="text-subtitle-1 font-weight-medium">Agente Responsável</span>
-                  </div>
-                  <v-select v-model="editableFields.assigned_agent_id" :items="agentOptions" variant="outlined"
-                    density="compact" clearable
-                    @update:model-value="handleFieldUpdate('assigned_agent_id', $event)"></v-select>
-                </v-col>
-
                 <!-- Tipo de Interesse -->
                 <v-col cols="12" md="6">
                   <div class="d-flex align-center mb-2">
@@ -1286,7 +1275,6 @@ const isLoadingAIInsights = ref(false)
 const isLoadingAttendances = ref(false)
 const isDeleting = ref(false)
 const activeTab = ref('overview')
-const agents = ref<User[]>([])
 const showScheduleDialog = ref(false)
 const showEditDialog = ref(false)
 const showDeleteDialog = ref(false)
@@ -1393,13 +1381,6 @@ const propertyTypeOptions = [
   { title: 'Comercial', value: 'COMMERCIAL' },
   { title: 'Rural', value: 'RURAL' },
 ]
-
-const agentOptions = computed(() => {
-  return agents.value.map(agent => ({
-    title: agent.full_name,
-    value: agent.id,
-  }))
-})
 
 // Computed
 const hasInterestProfile = computed(() => {
@@ -1556,7 +1537,6 @@ const loadClient = async () => {
     editableFields.value = {
       current_status: client.value.current_status,
       current_urgency_level: client.value.current_urgency_level,
-      assigned_agent_id: client.value.assigned_agent_id,
       current_interest_type: client.value.current_interest_type,
       current_property_type: client.value.current_property_type,
       current_city_interest: client.value.current_city_interest,
@@ -1576,14 +1556,6 @@ const loadClient = async () => {
     client.value = null
   } finally {
     isLoading.value = false
-  }
-}
-
-const loadAgents = async () => {
-  try {
-    agents.value = await usersService.getCorretores()
-  } catch (error) {
-    console.error('Error loading agents:', error)
   }
 }
 
@@ -2514,7 +2486,6 @@ const getPropertyStatusLabel = (status: string): string => {
 
 onMounted(() => {
   loadClient()
-  loadAgents()
 })
 </script>
 

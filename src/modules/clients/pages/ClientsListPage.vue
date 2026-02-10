@@ -65,18 +65,6 @@
             ></v-select>
           </v-col>
           <v-col cols="12" sm="6" md="2">
-            <v-select
-              v-model="filters.assigned_agent_id"
-              :items="agentOptions"
-              label="Agente"
-              variant="outlined"
-              density="compact"
-              clearable
-              hide-details
-              @update:model-value="applyFilters"
-            ></v-select>
-          </v-col>
-          <v-col cols="12" sm="6" md="2">
             <v-btn
               variant="outlined"
               color="grey"
@@ -234,9 +222,7 @@ const searchQuery = ref('')
 const filters = ref({
   status: null as ClientStatus | null,
   urgency: null as UrgencyLevel | null,
-  assigned_agent_id: null as string | null,
 })
-const agents = ref<User[]>([])
 const showCreateDialog = ref(false)
 const clientToEdit = ref<Client | null>(null)
 
@@ -272,13 +258,6 @@ const urgencyOptions = [
   { title: 'Imediata', value: 'IMMEDIATE' },
 ]
 
-const agentOptions = computed(() => {
-  return agents.value.map(agent => ({
-    title: agent.full_name,
-    value: agent.id,
-  }))
-})
-
 // Computed
 const hasActiveFilters = computed(() => {
   return !!(
@@ -311,13 +290,6 @@ const filteredClients = computed(() => {
     result = result.filter(client => client.current_urgency_level === filters.value.urgency)
   }
 
-  // Agent filter
-  if (filters.value.assigned_agent_id) {
-    result = result.filter(
-      client => client.assigned_agent_id === filters.value.assigned_agent_id
-    )
-  }
-
   return result
 })
 
@@ -334,15 +306,6 @@ const loadClients = async () => {
   }
 }
 
-const loadAgents = async () => {
-  try {
-    agents.value = await usersService.getCorretores()
-  } catch (error) {
-    console.error('Error loading agents:', error)
-    // If user doesn't have permission, just continue with empty list
-  }
-}
-
 const handleSearch = () => {
   // Search is reactive via computed property
 }
@@ -355,7 +318,6 @@ const clearFilters = () => {
   filters.value = {
     status: null,
     urgency: null,
-    assigned_agent_id: null,
   }
   searchQuery.value = ''
 }
@@ -472,7 +434,6 @@ const getFollowUpClass = (dateString: string): string => {
 
 onMounted(() => {
   loadClients()
-  loadAgents()
 })
 </script>
 
