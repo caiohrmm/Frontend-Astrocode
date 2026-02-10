@@ -823,7 +823,10 @@
                             <div>
                               <div class="text-caption text-medium-emphasis">Orçamento</div>
                               <div class="text-body-1 font-weight-medium">
-                                {{ formatBudgetRange() }}
+                                {{ formatBudgetRange(
+                                  client.current_budget_min ? parseFloat(client.current_budget_min) : null,
+                                  client.current_budget_max ? parseFloat(client.current_budget_max) : null
+                                ) }}
                               </div>
                             </div>
                           </div>
