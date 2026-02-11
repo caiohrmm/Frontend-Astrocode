@@ -8,7 +8,7 @@ import { apiClient } from './api'
 // Enums matching backend
 export type AttendanceChannel = 'WHATSAPP' | 'SITE' | 'PHONE' | 'EMAIL' | 'IN_PERSON'
 
-export type AttendanceStatus = 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'PAUSED'
+export type AttendanceStatus = 'ACTIVE' | 'COMPLETED' | 'LOST' | 'ABANDONED'
 
 /**
  * Client status update (from attendance)
@@ -27,11 +27,12 @@ export interface Attendance {
   client_id: string
   agent_id: string
   property_id: string | null
+  objective: string | null // Clear objective of this interaction cycle
   channel: AttendanceChannel
   started_at: string
   ended_at: string | null
   duration: number | null
-  raw_content: string
+  raw_content: string // Accumulated conversations within the same cycle
   ai_summary: string | null
   ai_next_steps: string | null
   status: AttendanceStatus
@@ -48,10 +49,11 @@ export interface AttendanceCreate {
   client_id: string
   agent_id: string
   property_id?: string | null
+  objective?: string | null // Optional: will be auto-detected from raw_content if not provided
   channel: AttendanceChannel
   started_at: string
   ended_at?: string | null
-  raw_content: string
+  raw_content: string // New conversation content (will be accumulated if updating existing cycle)
   ai_summary?: string | null
   ai_next_steps?: string | null
   status?: AttendanceStatus
@@ -66,10 +68,11 @@ export interface AttendanceUpdate {
   client_id?: string | null
   agent_id?: string | null
   property_id?: string | null
+  objective?: string | null // Updating objective may trigger new cycle creation
   channel?: AttendanceChannel | null
   started_at?: string | null
   ended_at?: string | null
-  raw_content?: string | null
+  raw_content?: string | null // New content will be appended to existing cycle
   ai_summary?: string | null
   ai_next_steps?: string | null
   status?: AttendanceStatus | null
@@ -161,6 +164,19 @@ class AttendancesService {
    */
   async deleteAttendance(attendanceId: string): Promise<void> {
     return apiClient.delete<void>(`/attendances/${attendanceId}`)
+  }
+
+  /**
+   * Get the active attendance for a specific client
+   * 
+   * Returns the currently active attendance cycle for the client.
+   * If no active attendance exists, returns 404.
+   * 
+   * @param clientId - Client UUID
+   * @returns Active attendance or throws 404 if not found
+   */
+  async getActiveAttendanceByClient(clientId: string): Promise<Attendance> {
+    return apiClient.get<Attendance>(`/attendances/active/client/${clientId}`)
   }
 }
 

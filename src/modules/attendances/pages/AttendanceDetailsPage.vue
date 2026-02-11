@@ -57,13 +57,22 @@
           <div class="d-flex ga-2">
             <!-- Complete Button -->
             <v-btn
-              v-if="attendance.status !== 'COMPLETED'"
+              v-if="attendance.status === 'ACTIVE'"
               color="success"
               prepend-icon="mdi-check-circle"
               @click="handleCompleteAttendance"
               :loading="isCompleting"
             >
               Marcar como Concluído
+            </v-btn>
+            <!-- Add Conversation Button (only for ACTIVE cycles) -->
+            <v-btn
+              v-if="attendance.status === 'ACTIVE'"
+              color="primary"
+              prepend-icon="mdi-message-plus"
+              @click="showAddConversationDialog = true"
+            >
+              Adicionar Conversa
             </v-btn>
             <!-- Edit Button -->
             <v-btn
@@ -104,16 +113,46 @@
       <v-row>
         <!-- Left Column - Main Info -->
         <v-col cols="12" md="8">
-          <!-- Raw Content -->
+          <!-- Objective Card -->
+          <v-card v-if="attendance.objective" elevation="2" class="mb-4" rounded="lg">
+            <v-card-title class="pa-4 d-flex align-center">
+              <v-icon class="mr-2" color="primary">mdi-target</v-icon>
+              <span>Objetivo do Ciclo</span>
+            </v-card-title>
+            <v-card-text class="pa-4">
+              <div class="text-body-1 font-weight-medium">
+                {{ attendance.objective }}
+              </div>
+              <v-alert type="info" variant="tonal" density="compact" class="mt-3">
+                <div class="text-caption">
+                  Este ciclo representa uma interação contínua com objetivo específico. 
+                  Múltiplas conversas podem ser adicionadas ao mesmo ciclo enquanto o objetivo permanecer o mesmo.
+                </div>
+              </v-alert>
+            </v-card-text>
+          </v-card>
+
+          <!-- Raw Content (Accumulated Conversations) -->
           <v-card elevation="2" class="mb-4" rounded="lg">
-            <v-card-title class="pa-4">
+            <v-card-title class="pa-4 d-flex align-center">
               <v-icon class="mr-2">mdi-text</v-icon>
-              Conteúdo do Atendimento
+              <span>Conversas do Ciclo</span>
+              <v-spacer></v-spacer>
+              <v-chip v-if="attendance.status === 'ACTIVE'" color="success" variant="flat" size="small">
+                <v-icon start size="14">mdi-sync</v-icon>
+                Ciclo Ativo
+              </v-chip>
             </v-card-title>
             <v-card-text class="pa-4">
               <div class="text-body-1" style="white-space: pre-wrap; word-wrap: break-word;">
                 {{ attendance.raw_content }}
               </div>
+              <v-alert v-if="attendance.status === 'ACTIVE'" type="info" variant="tonal" density="compact" class="mt-3">
+                <div class="text-caption">
+                  <v-icon size="16" class="mr-1">mdi-information</v-icon>
+                  Você pode adicionar novas conversas a este ciclo usando o botão "Adicionar Conversa" no cabeçalho.
+                </div>
+              </v-alert>
             </v-card-text>
           </v-card>
 
@@ -428,7 +467,7 @@
             >
               <v-icon color="info" size="64" class="mb-4">mdi-information</v-icon>
               <div class="text-body-1 text-medium-emphasis">
-                Complete o atendimento para gerar o resumo da IA
+                Complete o ciclo para gerar o resumo da IA
               </div>
             </v-card-text>
           </v-card>
@@ -576,6 +615,56 @@
       </v-row>
     </div>
 
+    <!-- Add Conversation Dialog -->
+    <v-dialog v-model="showAddConversationDialog" max-width="700" persistent>
+      <v-card>
+        <v-card-title class="d-flex align-center">
+          <v-icon color="primary" class="mr-3">mdi-message-plus</v-icon>
+          Adicionar Conversa ao Ciclo
+        </v-card-title>
+        <v-card-text>
+          <v-alert type="info" variant="tonal" density="comfortable" class="mb-4">
+            <div class="text-body-2">
+              Esta conversa será adicionada ao ciclo atual. O objetivo permanece o mesmo:
+              <strong class="ml-1">{{ attendance?.objective || 'Não definido' }}</strong>
+            </div>
+          </v-alert>
+          <v-textarea
+            v-model="newConversationContent"
+            label="Nova Conversa *"
+            variant="outlined"
+            :rows="6"
+            prepend-inner-icon="mdi-text"
+            hint="Descreva o conteúdo da nova conversa"
+            persistent-hint
+            counter
+            :maxlength="100000"
+            :rules="[rules.required, rules.minLength]"
+          ></v-textarea>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            variant="text"
+            @click="showAddConversationDialog = false"
+            :disabled="isAddingConversation"
+          >
+            Cancelar
+          </v-btn>
+          <v-btn
+            color="primary"
+            variant="flat"
+            prepend-icon="mdi-content-save"
+            @click="handleAddConversation"
+            :loading="isAddingConversation"
+            :disabled="!newConversationContent || newConversationContent.trim().length < 10"
+          >
+            Adicionar Conversa
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- Delete Confirmation Dialog -->
     <v-dialog v-model="showDeleteDialog" max-width="500" persistent>
       <v-card>
@@ -644,7 +733,10 @@ const isLoading = ref(true)
 const isLoadingAISummary = ref(false)
 const isCompleting = ref(false)
 const isDeleting = ref(false)
+const isAddingConversation = ref(false)
 const showDeleteDialog = ref(false)
+const showAddConversationDialog = ref(false)
+const newConversationContent = ref('')
 const error = ref<string | null>(null)
 const attendance = ref<Attendance | null>(null)
 const client = ref<Client | null>(null)
@@ -789,10 +881,65 @@ const handleCompleteAttendance = async () => {
     }, 2000)
   } catch (err: any) {
     console.error('Error completing attendance:', err)
-    error.value = err.response?.data?.detail || err.message || 'Erro ao completar atendimento'
+    error.value = err.response?.data?.detail || err.message || 'Erro ao completar ciclo'
   } finally {
     isCompleting.value = false
   }
+}
+
+// Add conversation to active cycle
+const handleAddConversation = async () => {
+  if (!attendance.value || !newConversationContent.value.trim()) return
+
+  isAddingConversation.value = true
+  try {
+    // Use POST endpoint to add conversation to existing cycle
+    // Backend will detect that there's an active cycle with same objective
+    // and accumulate the new content instead of creating a new cycle
+    const attendanceData = {
+      client_id: attendance.value.client_id,
+      agent_id: attendance.value.agent_id,
+      property_id: attendance.value.property_id,
+      objective: attendance.value.objective, // Keep same objective
+      channel: attendance.value.channel,
+      started_at: attendance.value.started_at, // Keep original start time
+      raw_content: newConversationContent.value.trim(), // New conversation content
+      status: 'ACTIVE' as const,
+    }
+
+    // Backend will accumulate this content into the existing cycle
+    const updatedAttendance = await attendancesService.createAttendance(attendanceData)
+
+    // Reload attendance to get updated content
+    attendance.value = await attendancesService.getAttendanceById(updatedAttendance.id)
+    
+    // Clear dialog
+    newConversationContent.value = ''
+    showAddConversationDialog.value = false
+
+    // Show success message (you can replace with a snackbar if available)
+    alert('Conversa adicionada com sucesso ao ciclo!')
+  } catch (err: any) {
+    console.error('Error adding conversation:', err)
+    error.value = err.response?.data?.detail || err.message || 'Erro ao adicionar conversa'
+    alert(`Erro ao adicionar conversa: ${error.value}`)
+  } finally {
+    isAddingConversation.value = false
+  }
+}
+
+// Validation rules
+const rules = {
+  required: (value: any) => {
+    if (typeof value === 'string') {
+      return value.trim() !== '' || 'Campo obrigatório'
+    }
+    return value !== null && value !== undefined || 'Campo obrigatório'
+  },
+  minLength: (value: string) => {
+    if (!value) return 'Campo obrigatório'
+    return value.trim().length >= 10 || 'Conteúdo deve ter pelo menos 10 caracteres'
+  },
 }
 
 // Poll AI summary until completed
@@ -851,30 +998,30 @@ const getInitials = (name: string): string => {
 // Status helpers
 const getStatusColor = (status: AttendanceStatus): string => {
   const colors: Record<AttendanceStatus, string> = {
-    IN_PROGRESS: 'info',
-    COMPLETED: 'success',
-    CANCELLED: 'error',
-    PAUSED: 'warning',
+    ACTIVE: 'success',
+    COMPLETED: 'primary',
+    LOST: 'error',
+    ABANDONED: 'warning',
   }
   return colors[status] || 'grey'
 }
 
 const getStatusIcon = (status: AttendanceStatus): string => {
   const icons: Record<AttendanceStatus, string> = {
-    IN_PROGRESS: 'mdi-clock-outline',
+    ACTIVE: 'mdi-check-circle',
     COMPLETED: 'mdi-check-circle',
-    CANCELLED: 'mdi-cancel',
-    PAUSED: 'mdi-pause-circle',
+    LOST: 'mdi-close-circle',
+    ABANDONED: 'mdi-pause-circle',
   }
   return icons[status] || 'mdi-help-circle'
 }
 
 const getStatusLabel = (status: AttendanceStatus): string => {
   const labels: Record<AttendanceStatus, string> = {
-    IN_PROGRESS: 'Em Andamento',
+    ACTIVE: 'Ativo',
     COMPLETED: 'Concluído',
-    CANCELLED: 'Cancelado',
-    PAUSED: 'Pausado',
+    LOST: 'Perdido',
+    ABANDONED: 'Abandonado',
   }
   return labels[status] || status
 }

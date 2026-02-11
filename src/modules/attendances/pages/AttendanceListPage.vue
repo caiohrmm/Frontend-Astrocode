@@ -109,6 +109,34 @@
           </div>
         </template>
 
+        <!-- Objective Column -->
+        <template #item.objective="{ item }">
+          <div v-if="item.objective" class="objective-cell">
+            <v-tooltip location="top" max-width="300">
+              <template #activator="{ props }">
+                <v-chip
+                  v-bind="props"
+                  color="primary"
+                  variant="outlined"
+                  size="small"
+                  class="cursor-pointer"
+                >
+                  <v-icon start size="14">mdi-target</v-icon>
+                  {{ truncateText(item.objective, 40) }}
+                </v-chip>
+              </template>
+              <div class="pa-2">
+                <div class="font-weight-bold mb-1">Objetivo do Ciclo:</div>
+                <div class="text-body-2">{{ item.objective }}</div>
+              </div>
+            </v-tooltip>
+          </div>
+          <v-chip v-else variant="tonal" size="small" color="grey">
+            <v-icon start size="14">mdi-help-circle</v-icon>
+            Não definido
+          </v-chip>
+        </template>
+
         <!-- Channel Column -->
         <template #item.channel="{ item }">
           <v-chip
@@ -264,6 +292,7 @@ const agentsMap = computed(() => {
 // Table Headers
 const headers = [
   { title: 'Cliente', key: 'client_id', sortable: true },
+  { title: 'Objetivo', key: 'objective', sortable: false },
   { title: 'Canal', key: 'channel', sortable: true },
   { title: 'Status', key: 'status', sortable: true },
   { title: 'Agente', key: 'agent_id', sortable: true },
@@ -274,10 +303,10 @@ const headers = [
 
 // Options
 const statusOptions = [
-  { title: 'Em Andamento', value: 'IN_PROGRESS' },
+  { title: 'Ativo', value: 'ACTIVE' },
   { title: 'Concluído', value: 'COMPLETED' },
-  { title: 'Cancelado', value: 'CANCELLED' },
-  { title: 'Pausado', value: 'PAUSED' },
+  { title: 'Perdido', value: 'LOST' },
+  { title: 'Abandonado', value: 'ABANDONED' },
 ]
 
 const channelOptions = [
@@ -437,20 +466,20 @@ const goToCreate = () => {
 // Formatting helpers
 const getStatusLabel = (status: AttendanceStatus): string => {
   const labels: Record<AttendanceStatus, string> = {
-    IN_PROGRESS: 'Em Andamento',
+    ACTIVE: 'Ativo',
     COMPLETED: 'Concluído',
-    CANCELLED: 'Cancelado',
-    PAUSED: 'Pausado',
+    LOST: 'Perdido',
+    ABANDONED: 'Abandonado',
   }
   return labels[status] || status
 }
 
 const getStatusColor = (status: AttendanceStatus): string => {
   const colors: Record<AttendanceStatus, string> = {
-    IN_PROGRESS: 'info',
-    COMPLETED: 'success',
-    CANCELLED: 'error',
-    PAUSED: 'warning',
+    ACTIVE: 'success',
+    COMPLETED: 'primary',
+    LOST: 'error',
+    ABANDONED: 'warning',
   }
   return colors[status] || 'grey'
 }

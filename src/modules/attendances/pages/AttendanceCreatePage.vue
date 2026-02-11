@@ -151,10 +151,50 @@
                     persistent-hint></v-text-field>
                 </v-col>
 
+                <!-- Objective (Optional) -->
+                <v-col cols="12">
+                  <v-text-field
+                    v-model="formData.objective"
+                    label="Objetivo do Ciclo (Opcional)"
+                    variant="outlined"
+                    prepend-inner-icon="mdi-target"
+                    hint="Objetivo claro deste ciclo de interação (ex: 'Comprar apartamento em São Paulo'). Se não informado, será detectado automaticamente pelo conteúdo."
+                    persistent-hint
+                    placeholder="Ex: Comprar apartamento em São Paulo"
+                    :maxlength="500"
+                    counter
+                  >
+                    <template #append-inner>
+                      <v-tooltip location="top" max-width="400">
+                        <template #activator="{ props }">
+                          <v-icon v-bind="props" color="info" size="small" class="ml-2">mdi-information</v-icon>
+                        </template>
+                        <div class="pa-2">
+                          <div class="font-weight-bold mb-2">Lógica de Ciclos:</div>
+                          <div class="text-body-2">
+                            <p class="mb-2">
+                              <strong>Se o cliente já tem um ciclo ATIVO com objetivo similar:</strong><br>
+                              O novo conteúdo será adicionado ao ciclo existente (conversas acumuladas).
+                            </p>
+                            <p class="mb-2">
+                              <strong>Se o objetivo mudou significativamente:</strong><br>
+                              O ciclo anterior será fechado e um novo ciclo será criado.
+                            </p>
+                            <p class="mb-0">
+                              <strong>Se não houver ciclo ativo:</strong><br>
+                              Um novo ciclo será criado automaticamente.
+                            </p>
+                          </div>
+                        </template>
+                      </v-tooltip>
+                    </template>
+                  </v-text-field>
+                </v-col>
+
                 <!-- Status -->
                 <v-col cols="12" md="6">
                   <v-select v-model="formData.status" :items="statusOptions" label="Status" variant="outlined"
-                    prepend-inner-icon="mdi-flag" hint="Status do atendimento" persistent-hint item-title="title"
+                    prepend-inner-icon="mdi-flag" hint="Status do ciclo de atendimento" persistent-hint item-title="title"
                     item-value="value"></v-select>
                 </v-col>
 
@@ -169,15 +209,15 @@
                 <v-col cols="12">
                   <v-textarea 
                     v-model="formData.raw_content" 
-                    label="Conteúdo do Atendimento *" 
+                    label="Conteúdo da Conversa *" 
                     variant="outlined"
                     :rules="[rules.required, rules.minLength]" 
                     :rows="8" 
                     prepend-inner-icon="mdi-text"
-                    hint="Descreva o conteúdo completo do atendimento."
+                    hint="Descreva o conteúdo da conversa. Se houver um ciclo ativo com objetivo similar, este conteúdo será adicionado ao ciclo existente. Caso contrário, um novo ciclo será criado."
                     persistent-hint 
                     counter 
-                    :maxlength="10000"
+                    :maxlength="100000"
                   />
                 </v-col>
               </v-row>
@@ -264,11 +304,12 @@ const formData = ref<AttendanceCreate>({
   client_id: '',
   agent_id: '',
   property_id: null,
+  objective: null, // Optional: will be auto-detected
   channel: 'WHATSAPP',
   started_at: new Date().toISOString().slice(0, 16), // Current date/time in local format
   ended_at: null,
   raw_content: '',
-  status: 'IN_PROGRESS',
+  status: 'ACTIVE',
   scheduled_visit_at: null,
 })
 
@@ -288,10 +329,10 @@ const channelOptions = computed(() => {
 })
 
 const statusOptions = [
-  { title: 'Em Andamento', value: 'IN_PROGRESS' },
+  { title: 'Ativo', value: 'ACTIVE' },
   { title: 'Concluído', value: 'COMPLETED' },
-  { title: 'Cancelado', value: 'CANCELLED' },
-  { title: 'Pausado', value: 'PAUSED' },
+  { title: 'Perdido', value: 'LOST' },
+  { title: 'Abandonado', value: 'ABANDONED' },
 ]
 
 const agentOptions = computed(() => {
@@ -465,6 +506,7 @@ const loadAttendance = async () => {
       client_id: attendance.client_id,
       agent_id: attendance.agent_id,
       property_id: attendance.property_id || null,
+      objective: attendance.objective || null,
       channel: attendance.channel,
       started_at: convertISOToLocalDateTime(attendance.started_at) || '',
       ended_at: convertISOToLocalDateTime(attendance.ended_at),
@@ -500,6 +542,7 @@ const handleSave = async () => {
         client_id: formData.value.client_id,
         agent_id: formData.value.agent_id,
         property_id: formData.value.property_id || null,
+        objective: formData.value.objective || null,
         channel: formData.value.channel,
         started_at: convertLocalDateTimeToISO(formData.value.started_at),
         ended_at: formData.value.ended_at
@@ -527,6 +570,7 @@ const handleSave = async () => {
         client_id: formData.value.client_id,
         agent_id: formData.value.agent_id,
         property_id: formData.value.property_id || null,
+        objective: formData.value.objective || null, // Optional: backend will auto-detect if not provided
         channel: formData.value.channel,
         started_at: convertLocalDateTimeToISO(formData.value.started_at),
         ended_at: formData.value.ended_at
