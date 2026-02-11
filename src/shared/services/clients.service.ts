@@ -48,6 +48,10 @@ export interface Client {
   last_contact_at: string | null
   next_follow_up_at: string | null
   summary_notes: string | null
+  // State Derivation Tracking (for visibility/transparency)
+  last_state_derivation_at: string | null // Timestamp of last automatic state derivation
+  state_derivation_count: number // Number of times state was automatically derived
+  state_derived_from_attendances_count: number | null // Number of attendances used in last derivation
   created_at: string
   updated_at: string
 }

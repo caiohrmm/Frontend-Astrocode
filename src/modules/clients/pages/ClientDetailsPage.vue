@@ -583,6 +583,11 @@
                   <v-text-field v-model="budgetMaxFormatted" @blur="handleBudgetMaxUpdate" variant="outlined"
                     density="compact" prefix="R$"></v-text-field>
                 </v-col>
+
+                <!-- State Derivation Info -->
+                <v-col cols="12" class="mt-4">
+                  <ClientStateDerivationInfo :client="client" />
+                </v-col>
               </v-row>
             </v-window-item>
 
@@ -1446,6 +1451,7 @@ import { formatPhone, formatCurrency, parseCurrency } from '@/shared/utils/masks
 import ClientCreateDialog from '@/shared/components/ClientCreateDialog.vue'
 import ClientJourneyPanel from '@/shared/components/ClientJourneyPanel.vue'
 import ClientAttendanceCycles from '@/shared/components/ClientAttendanceCycles.vue'
+import ClientStateDerivationInfo from '@/shared/components/ClientStateDerivationInfo.vue'
 // Markdown formatting (using simple parser, not marked library)
 
 const route = useRoute()
