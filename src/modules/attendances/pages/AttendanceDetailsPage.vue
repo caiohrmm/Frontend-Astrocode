@@ -638,9 +638,39 @@
             hint="Descreva o conteúdo da nova conversa"
             persistent-hint
             counter
+            :counter-value="newConversationLength"
             :maxlength="100000"
-            :rules="[rules.required, rules.minLength]"
-          ></v-textarea>
+            :rules="[rules.required, rules.minLength, rules.maxLength]"
+            :error-messages="newConversationErrorMessages"
+            :error="newConversationErrorMessages.length > 0"
+          >
+            <template #counter="{ value, maxLength }">
+              <span :class="getCounterColor(value, maxLength)">
+                {{ formatCounter(value, maxLength) }}
+              </span>
+            </template>
+          </v-textarea>
+          <!-- Warning when approaching limit -->
+          <v-alert
+            v-if="newConversationLength > 90000"
+            type="warning"
+            variant="tonal"
+            density="compact"
+            class="mt-2"
+          >
+            <div class="d-flex align-center">
+              <v-icon size="18" class="mr-2">mdi-alert</v-icon>
+              <div>
+                <div class="text-body-2 font-weight-medium">
+                  Você está próximo do limite de 100.000 caracteres
+                </div>
+                <div class="text-caption">
+                  Restam {{ (100000 - newConversationLength).toLocaleString('pt-BR') }} caracteres.
+                  O conteúdo será truncado automaticamente pela IA se exceder o limite.
+                </div>
+              </div>
+            </div>
+          </v-alert>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -657,7 +687,7 @@
             prepend-icon="mdi-content-save"
             @click="handleAddConversation"
             :loading="isAddingConversation"
-            :disabled="!newConversationContent || newConversationContent.trim().length < 10"
+            :disabled="!newConversationContent || newConversationContent.trim().length < 10 || newConversationLength > 100000"
           >
             Adicionar Conversa
           </v-btn>
@@ -925,6 +955,16 @@ const handleCompleteAttendance = async () => {
 const handleAddConversation = async () => {
   if (!attendance.value || !newConversationContent.value.trim()) return
 
+  // Check content length before sending
+  if (newConversationContent.value.length > 100000) {
+    showSnackbar(
+      'error',
+      'O conteúdo excede o limite de 100.000 caracteres. Por favor, reduza o tamanho do texto.',
+      'mdi-alert-circle'
+    )
+    return
+  }
+
   isAddingConversation.value = true
   try {
     // Use POST endpoint to add conversation to existing cycle
@@ -986,6 +1026,16 @@ const handleAddConversation = async () => {
   }
 }
 
+// Raw content validation
+const newConversationLength = computed(() => newConversationContent.value?.length || 0)
+const newConversationErrorMessages = computed(() => {
+  const messages: string[] = []
+  if (newConversationLength.value > 100000) {
+    messages.push('Conteúdo excede o limite de 100.000 caracteres')
+  }
+  return messages
+})
+
 // Validation rules
 const rules = {
   required: (value: any) => {
@@ -997,6 +1047,10 @@ const rules = {
   minLength: (value: string) => {
     if (!value) return 'Campo obrigatório'
     return value.trim().length >= 10 || 'Conteúdo deve ter pelo menos 10 caracteres'
+  },
+  maxLength: (value: string) => {
+    if (!value) return true
+    return value.length <= 100000 || 'Conteúdo não pode exceder 100.000 caracteres'
   },
 }
 
@@ -1490,6 +1544,17 @@ const formatAINextSteps = (nextSteps: string): string => {
   }
   
   return result
+}
+
+// Counter formatting
+const formatCounter = (value: number, maxLength: number): string => {
+  return `${value.toLocaleString('pt-BR')} / ${maxLength.toLocaleString('pt-BR')}`
+}
+
+const getCounterColor = (value: number, maxLength: number): string => {
+  if (value > maxLength) return 'text-error'
+  if (value > maxLength * 0.9) return 'text-warning'
+  return 'text-medium-emphasis'
 }
 
 onMounted(() => {

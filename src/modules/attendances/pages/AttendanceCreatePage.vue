@@ -213,14 +213,44 @@
                     v-model="formData.raw_content" 
                     label="Conteúdo da Conversa *" 
                     variant="outlined"
-                    :rules="[rules.required, rules.minLength]" 
+                    :rules="[rules.required, rules.minLength, rules.maxLength]" 
                     :rows="8" 
                     prepend-inner-icon="mdi-text"
                     hint="Descreva o conteúdo da conversa. Se houver um ciclo ativo com objetivo similar, este conteúdo será adicionado ao ciclo existente. Caso contrário, um novo ciclo será criado."
                     persistent-hint 
-                    counter 
+                    counter
+                    :counter-value="rawContentLength"
                     :maxlength="100000"
-                  />
+                    :error-messages="rawContentErrorMessages"
+                    :error="rawContentErrorMessages.length > 0"
+                  >
+                    <template #counter="{ value, maxLength }">
+                      <span :class="getCounterColor(value, maxLength)">
+                        {{ formatCounter(value, maxLength) }}
+                      </span>
+                    </template>
+                  </v-textarea>
+                  <!-- Warning when approaching limit -->
+                  <v-alert
+                    v-if="rawContentLength > 90000"
+                    type="warning"
+                    variant="tonal"
+                    density="compact"
+                    class="mt-2"
+                  >
+                    <div class="d-flex align-center">
+                      <v-icon size="18" class="mr-2">mdi-alert</v-icon>
+                      <div>
+                        <div class="text-body-2 font-weight-medium">
+                          Você está próximo do limite de 100.000 caracteres
+                        </div>
+                        <div class="text-caption">
+                          Restam {{ (100000 - rawContentLength).toLocaleString('pt-BR') }} caracteres.
+                          O conteúdo será truncado automaticamente pela IA se exceder o limite.
+                        </div>
+                      </div>
+                    </div>
+                  </v-alert>
                 </v-col>
               </v-row>
             </v-form>
@@ -293,6 +323,16 @@ const showSuggestionsDialog = ref(false)
 const suggestionsClient = ref<Client | null>(null)
 const suggestionsAISummary = ref<AISummary | null>(null)
 const savedAttendanceId = ref<string | null>(null)
+
+// Raw content validation
+const rawContentLength = computed(() => formData.value.raw_content?.length || 0)
+const rawContentErrorMessages = computed(() => {
+  const messages: string[] = []
+  if (rawContentLength.value > 100000) {
+    messages.push('Conteúdo excede o limite de 100.000 caracteres')
+  }
+  return messages
+})
 
 // Snackbar state
 const snackbar = ref(false)
@@ -398,6 +438,10 @@ const rules = {
   minLength: (value: string) => {
     if (!value) return 'Campo obrigatório'
     return value.trim().length >= 10 || 'Conteúdo deve ter pelo menos 10 caracteres'
+  },
+  maxLength: (value: string) => {
+    if (!value) return true
+    return value.length <= 100000 || 'Conteúdo não pode exceder 100.000 caracteres'
   },
   dateValidation: (value: string) => {
     if (!value) return true // Optional field
@@ -563,6 +607,16 @@ const loadAttendance = async () => {
 
 const handleSave = async () => {
   if (!formRef.value) return
+
+  // Check content length before validation
+  if (formData.value.raw_content && formData.value.raw_content.length > 100000) {
+    showSnackbar(
+      'error',
+      'O conteúdo excede o limite de 100.000 caracteres. Por favor, reduza o tamanho do texto.',
+      'mdi-alert-circle'
+    )
+    return
+  }
 
   const { valid } = await formRef.value.validate()
   if (!valid) {
@@ -751,6 +805,17 @@ const getInitials = (name: string): string => {
 
 const goBack = () => {
   router.push({ name: 'attendances' })
+}
+
+// Counter formatting
+const formatCounter = (value: number, maxLength: number): string => {
+  return `${value.toLocaleString('pt-BR')} / ${maxLength.toLocaleString('pt-BR')}`
+}
+
+const getCounterColor = (value: number, maxLength: number): string => {
+  if (value > maxLength) return 'text-error'
+  if (value > maxLength * 0.9) return 'text-warning'
+  return 'text-medium-emphasis'
 }
 
 onMounted(async () => {
