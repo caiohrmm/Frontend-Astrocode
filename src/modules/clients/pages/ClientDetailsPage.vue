@@ -586,27 +586,9 @@
               </v-row>
             </v-window-item>
 
-            <!-- Tab 2: Atendimentos -->
+            <!-- Tab 2: Atendimentos (Ciclos) -->
             <v-window-item value="attendances">
-              <!-- Loading State -->
-              <div v-if="isLoadingAttendances" class="d-flex justify-center pa-8">
-                <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
-              </div>
-
-              <!-- Empty State -->
-              <div v-else-if="clientAttendances.length === 0" class="text-center pa-12">
-                <v-icon size="80" color="grey-lighten-1" class="mb-4">mdi-phone-off</v-icon>
-                <div class="text-h6 text-medium-emphasis mb-2">Nenhum atendimento registrado</div>
-                <div class="text-body-2 text-medium-emphasis mb-6">
-                  Os atendimentos deste cliente aparecerão aqui quando forem criados.
-                </div>
-                <v-btn color="primary" size="large" prepend-icon="mdi-phone-plus" @click="goToCreateAttendance">
-                  Criar Primeiro Atendimento
-                </v-btn>
-              </div>
-
-              <!-- Attendances List -->
-              <div v-else>
+              <ClientAttendanceCycles :client-id="clientId" />
                 <!-- Header -->
                 <div class="d-flex justify-space-between align-center mb-6">
                   <div>
@@ -1463,6 +1445,7 @@ import { attendancesService, type Attendance } from '@/shared/services/attendanc
 import { formatPhone, formatCurrency, parseCurrency } from '@/shared/utils/masks'
 import ClientCreateDialog from '@/shared/components/ClientCreateDialog.vue'
 import ClientJourneyPanel from '@/shared/components/ClientJourneyPanel.vue'
+import ClientAttendanceCycles from '@/shared/components/ClientAttendanceCycles.vue'
 // Markdown formatting (using simple parser, not marked library)
 
 const route = useRoute()
