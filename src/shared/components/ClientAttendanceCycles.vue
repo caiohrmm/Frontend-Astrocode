@@ -404,7 +404,9 @@ const handleViewDetails = (attendanceId: string) => {
   })
 }
 
-const handleAddConversation = (attendanceId: string) => {
+const handleAddConversation = async (attendanceId: string) => {
+  // Navigate to details page where user can add conversation
+  // The details page will handle showing feedback
   router.push({
     name: 'attendances-details',
     params: { id: attendanceId },

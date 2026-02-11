@@ -713,6 +713,23 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Snackbar for cycle action feedback -->
+    <v-snackbar
+      v-model="snackbar"
+      :color="snackbarColor"
+      :timeout="5000"
+      location="top"
+      rounded="lg"
+    >
+      <div class="d-flex align-center">
+        <v-icon v-if="snackbarIcon" :icon="snackbarIcon" class="mr-2"></v-icon>
+        <span>{{ snackbarText }}</span>
+      </div>
+      <template #actions>
+        <v-btn variant="text" @click="snackbar = false">Fechar</v-btn>
+      </template>
+    </v-snackbar>
   </div>
 </template>
 
@@ -738,6 +755,23 @@ const showDeleteDialog = ref(false)
 const showAddConversationDialog = ref(false)
 const newConversationContent = ref('')
 const error = ref<string | null>(null)
+
+// Snackbar state
+const snackbar = ref(false)
+const snackbarText = ref('')
+const snackbarColor = ref<'success' | 'info' | 'warning' | 'error'>('success')
+const snackbarIcon = ref('')
+
+const showSnackbar = (
+  color: 'success' | 'info' | 'warning' | 'error',
+  text: string,
+  icon: string = ''
+) => {
+  snackbarColor.value = color
+  snackbarText.value = text
+  snackbarIcon.value = icon
+  snackbar.value = true
+}
 const attendance = ref<Attendance | null>(null)
 const client = ref<Client | null>(null)
 const property = ref<Property | null>(null)
@@ -910,15 +944,39 @@ const handleAddConversation = async () => {
     // Backend will accumulate this content into the existing cycle
     const updatedAttendance = await attendancesService.createAttendance(attendanceData)
 
-    // Reload attendance to get updated content
-    attendance.value = await attendancesService.getAttendanceById(updatedAttendance.id)
+    // Show feedback based on cycle action
+    if (updatedAttendance.cycle_action === 'NEW_CYCLE_CREATED') {
+      if (updatedAttendance.previous_cycle_id) {
+        showSnackbar(
+          'warning',
+          `Novo ciclo criado! O ciclo anterior foi fechado devido à mudança de objetivo.`,
+          'mdi-alert-circle'
+        )
+      } else {
+        showSnackbar(
+          'info',
+          'Novo ciclo de atendimento criado!',
+          'mdi-information'
+        )
+      }
+      // Reload to show new cycle
+      await loadAttendance()
+    } else if (updatedAttendance.cycle_action === 'CYCLE_UPDATED') {
+      showSnackbar(
+        'success',
+        'Conversa adicionada ao ciclo atual com sucesso!',
+        'mdi-check-circle'
+      )
+      // Reload attendance to get updated content
+      attendance.value = await attendancesService.getAttendanceById(updatedAttendance.id)
+    } else {
+      // Fallback: reload anyway
+      attendance.value = await attendancesService.getAttendanceById(updatedAttendance.id)
+    }
     
     // Clear dialog
     newConversationContent.value = ''
     showAddConversationDialog.value = false
-
-    // Show success message (you can replace with a snackbar if available)
-    alert('Conversa adicionada com sucesso ao ciclo!')
   } catch (err: any) {
     console.error('Error adding conversation:', err)
     error.value = err.response?.data?.detail || err.message || 'Erro ao adicionar conversa'

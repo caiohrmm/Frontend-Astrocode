@@ -237,6 +237,23 @@
       @applied="handleSuggestionsApplied"
       @skipped="handleSuggestionsSkipped"
     />
+
+    <!-- Snackbar for cycle action feedback -->
+    <v-snackbar
+      v-model="snackbar"
+      :color="snackbarColor"
+      :timeout="5000"
+      location="top"
+      rounded="lg"
+    >
+      <div class="d-flex align-center">
+        <v-icon v-if="snackbarIcon" :icon="snackbarIcon" class="mr-2"></v-icon>
+        <span>{{ snackbarText }}</span>
+      </div>
+      <template #actions>
+        <v-btn variant="text" @click="snackbar = false">Fechar</v-btn>
+      </template>
+    </v-snackbar>
   </div>
 </template>
 
@@ -276,6 +293,23 @@ const showSuggestionsDialog = ref(false)
 const suggestionsClient = ref<Client | null>(null)
 const suggestionsAISummary = ref<AISummary | null>(null)
 const savedAttendanceId = ref<string | null>(null)
+
+// Snackbar state
+const snackbar = ref(false)
+const snackbarText = ref('')
+const snackbarColor = ref<'success' | 'info' | 'warning' | 'error'>('success')
+const snackbarIcon = ref('')
+
+const showSnackbar = (
+  color: 'success' | 'info' | 'warning' | 'error',
+  text: string,
+  icon: string = ''
+) => {
+  snackbarColor.value = color
+  snackbarText.value = text
+  snackbarIcon.value = icon
+  snackbar.value = true
+}
 
 // Search state for clients
 const clientSearchItems = ref<any[]>([])
@@ -586,6 +620,29 @@ const handleSave = async () => {
       }
 
       const created = await attendancesService.createAttendance(attendanceData)
+      
+      // Show feedback based on cycle action
+      if (created.cycle_action === 'NEW_CYCLE_CREATED') {
+        if (created.previous_cycle_id) {
+          showSnackbar(
+            'info',
+            `Novo ciclo criado! O ciclo anterior foi fechado devido à mudança de objetivo.`,
+            'mdi-information'
+          )
+        } else {
+          showSnackbar(
+            'success',
+            'Novo ciclo de atendimento criado com sucesso!',
+            'mdi-check-circle'
+          )
+        }
+      } else if (created.cycle_action === 'CYCLE_UPDATED') {
+        showSnackbar(
+          'success',
+          'Conversa adicionada ao ciclo atual com sucesso!',
+          'mdi-message-plus'
+        )
+      }
       
       // If attendance is completed, check for AI suggestions
       if (created.status === 'COMPLETED') {

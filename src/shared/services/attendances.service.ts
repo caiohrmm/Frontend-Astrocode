@@ -10,6 +10,8 @@ export type AttendanceChannel = 'WHATSAPP' | 'SITE' | 'PHONE' | 'EMAIL' | 'IN_PE
 
 export type AttendanceStatus = 'ACTIVE' | 'COMPLETED' | 'LOST' | 'ABANDONED'
 
+export type CycleAction = 'NEW_CYCLE_CREATED' | 'CYCLE_UPDATED' | 'PREVIOUS_CYCLE_CLOSED'
+
 /**
  * Client status update (from attendance)
  */
@@ -40,6 +42,8 @@ export interface Attendance {
   scheduled_visit_at: string | null
   created_at: string
   updated_at: string
+  cycle_action?: CycleAction | null // Action taken: NEW_CYCLE_CREATED, CYCLE_UPDATED, or PREVIOUS_CYCLE_CLOSED
+  previous_cycle_id?: string | null // ID of the previous cycle that was closed (if any)
 }
 
 /**
