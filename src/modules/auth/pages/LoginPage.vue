@@ -194,8 +194,13 @@ const handleLogin = async () => {
       password: password.value,
     })
     
-    // Redirect to dashboard on success
-    router.push({ name: 'dashboard' })
+    // Redirect based on user role
+    const userRoles = authStore.userRoles
+    if (userRoles.includes('gestor')) {
+      router.push({ name: 'dashboard' })
+    } else {
+      router.push({ name: 'clients' })
+    }
   } catch (error) {
     // Error is already handled by the store
     console.error('Login failed:', error)

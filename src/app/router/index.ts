@@ -36,7 +36,8 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/modules/dashboard/pages/DashboardPage.vue'),
     meta: {
       layout: 'app',
-      requiresAuth: true, // Protected route
+      requiresAuth: true,
+      requiresManager: true, // Only managers can access
     },
   },
   {
@@ -182,6 +183,7 @@ const routes: RouteRecordRaw[] = [
     meta: {
       layout: 'app',
       requiresAuth: true,
+      requiresManager: true, // Only managers can access
     },
   },
   {
@@ -191,6 +193,7 @@ const routes: RouteRecordRaw[] = [
     meta: {
       layout: 'app',
       requiresAuth: true,
+      requiresManager: true, // Only managers can access
     },
   },
 ]
@@ -245,16 +248,22 @@ router.beforeEach(async (to, _from, next) => {
     if (to.meta.requiresManager) {
       const userRoles = authStore.userRoles
       if (!userRoles.includes('gestor')) {
-        // User doesn't have manager role, redirect to dashboard
-        next({ name: 'dashboard' })
+        // User doesn't have manager role, redirect to clients page
+        next({ name: 'clients' })
         return
       }
     }
   }
   
-  // If user is authenticated and trying to access login/register, redirect to dashboard
+  // If user is authenticated and trying to access login/register, redirect appropriately
   if ((to.name === 'login' || to.name === 'register') && authStore.isAuthenticated) {
-    next({ name: 'dashboard' })
+    // Redirect to dashboard if user is gestor, otherwise to clients
+    const userRoles = authStore.userRoles
+    if (userRoles.includes('gestor')) {
+      next({ name: 'dashboard' })
+    } else {
+      next({ name: 'clients' })
+    }
     return
   }
   

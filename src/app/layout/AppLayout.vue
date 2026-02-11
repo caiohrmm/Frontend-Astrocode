@@ -128,6 +128,7 @@
     >
       <v-list>
         <v-list-item
+          v-if="authStore.hasRole('gestor')"
           prepend-icon="mdi-view-dashboard"
           title="Dashboard"
           value="dashboard"
@@ -163,6 +164,7 @@
           @click="drawer = false"
         ></v-list-item>
         <v-list-item
+          v-if="authStore.hasRole('gestor')"
           prepend-icon="mdi-handshake"
           title="Vendas"
           value="sales"
@@ -170,6 +172,7 @@
           @click="drawer = false"
         ></v-list-item>
         <v-list-item
+          v-if="authStore.hasRole('gestor')"
           prepend-icon="mdi-chart-timeline-variant"
           title="Análise de Perdas"
           value="losses"

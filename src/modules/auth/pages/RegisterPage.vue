@@ -270,8 +270,8 @@ const handleRegister = async () => {
       full_name: fullName.value.trim(),
     })
     
-    // Redirect to dashboard on success
-    router.push({ name: 'dashboard' })
+    // Redirect based on user role (new users are always atendente, so redirect to clients)
+    router.push({ name: 'clients' })
   } catch (error) {
     // Error is already handled by the store
     console.error('Registration failed:', error)

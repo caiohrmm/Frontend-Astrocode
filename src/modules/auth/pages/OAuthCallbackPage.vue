@@ -56,8 +56,13 @@ onMounted(async () => {
       // Clear URL hash for security
       window.history.replaceState(null, '', window.location.pathname)
       
-      // Redirect to dashboard on success
-      router.push({ name: 'dashboard' })
+      // Redirect based on user role
+      const userRoles = authStore.userRoles
+      if (userRoles.includes('gestor')) {
+        router.push({ name: 'dashboard' })
+      } else {
+        router.push({ name: 'clients' })
+      }
     } catch (error) {
       authStore.error = error instanceof Error ? error.message : 'Falha ao obter informações do usuário'
       router.push({ name: 'login' })
