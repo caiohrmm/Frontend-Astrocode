@@ -594,97 +594,278 @@
               </div>
 
               <!-- Empty State -->
-              <div v-else-if="clientAttendances.length === 0" class="text-center pa-8">
-                <v-icon size="64" color="grey-lighten-1" class="mb-4">mdi-phone-off</v-icon>
+              <div v-else-if="clientAttendances.length === 0" class="text-center pa-12">
+                <v-icon size="80" color="grey-lighten-1" class="mb-4">mdi-phone-off</v-icon>
                 <div class="text-h6 text-medium-emphasis mb-2">Nenhum atendimento registrado</div>
-                <div class="text-body-2 text-medium-emphasis mb-4">
+                <div class="text-body-2 text-medium-emphasis mb-6">
                   Os atendimentos deste cliente aparecerão aqui quando forem criados.
                 </div>
-                <v-btn color="primary" prepend-icon="mdi-phone-plus" @click="goToCreateAttendance">
-                  Criar Atendimento
+                <v-btn color="primary" size="large" prepend-icon="mdi-phone-plus" @click="goToCreateAttendance">
+                  Criar Primeiro Atendimento
                 </v-btn>
               </div>
 
               <!-- Attendances List -->
               <div v-else>
-                <div class="d-flex justify-space-between align-center mb-4">
-                  <div class="text-h6">
-                    {{ clientAttendances.length }} atendimento(s)
+                <!-- Header -->
+                <div class="d-flex justify-space-between align-center mb-6">
+                  <div>
+                    <div class="text-h5 font-weight-bold mb-1">
+                      Atendimentos
+                    </div>
+                    <div class="text-body-2 text-medium-emphasis">
+                      {{ clientAttendances.length }} {{ clientAttendances.length === 1 ? 'atendimento registrado' : 'atendimentos registrados' }}
+                    </div>
                   </div>
-                  <v-btn color="primary" prepend-icon="mdi-phone-plus" @click="goToCreateAttendance">
+                  <v-btn 
+                    color="primary" 
+                    size="large"
+                    prepend-icon="mdi-phone-plus" 
+                    @click="goToCreateAttendance"
+                    elevation="2"
+                  >
                     Novo Atendimento
                   </v-btn>
                 </div>
 
-                <v-row>
-                  <v-col v-for="attendance in clientAttendances" :key="attendance.id" cols="12">
-                    <v-card variant="outlined" class="attendance-card" @click="goToAttendance(attendance.id)">
-                      <v-card-text class="pa-4">
-                        <div class="d-flex align-start">
-                          <!-- Channel Icon -->
-                          <v-avatar :color="getChannelColor(attendance.channel)" size="48" class="mr-4">
-                            <v-icon color="white">{{ getChannelIcon(attendance.channel) }}</v-icon>
-                          </v-avatar>
+                <!-- Timeline Style List -->
+                <div class="attendances-timeline">
+                  <v-expansion-panels 
+                    v-model="expandedAttendances" 
+                    variant="accordion"
+                    multiple
+                    class="mb-4"
+                  >
+                    <v-expansion-panel
+                      v-for="(attendance, index) in clientAttendances"
+                      :key="attendance.id"
+                      :value="attendance.id"
+                      class="attendance-panel mb-4"
+                      elevation="2"
+                      rounded="lg"
+                    >
+                      <v-expansion-panel-title class="pa-0">
+                        <template #default="{ expanded }">
+                          <v-card 
+                            :class="['attendance-card-header', { 'expanded': expanded }]"
+                            variant="flat"
+                            @click.stop="goToAttendance(attendance.id)"
+                          >
+                            <v-card-text class="pa-4">
+                              <div class="d-flex align-start">
+                                <!-- Timeline Indicator -->
+                                <div class="timeline-indicator mr-4">
+                                  <v-avatar 
+                                    :color="getChannelColor(attendance.channel)" 
+                                    size="56"
+                                    class="timeline-avatar"
+                                  >
+                                    <v-icon color="white" size="28">
+                                      {{ getChannelIcon(attendance.channel) }}
+                                    </v-icon>
+                                  </v-avatar>
+                                  <div v-if="index < clientAttendances.length - 1" class="timeline-line"></div>
+                                </div>
 
-                          <!-- Content -->
-                          <div class="flex-grow-1">
-                            <div class="d-flex align-center justify-space-between mb-2">
-                              <div class="d-flex align-center ga-2">
-                                <v-chip :color="getAttendanceStatusColor(attendance.status)" variant="flat"
-                                  size="small">
-                                  {{ getAttendanceStatusLabel(attendance.status) }}
-                                </v-chip>
-                                <v-chip variant="outlined" size="small">
-                                  {{ getChannelLabel(attendance.channel) }}
-                                </v-chip>
+                                <!-- Content -->
+                                <div class="flex-grow-1">
+                                  <!-- Header Row -->
+                                  <div class="d-flex align-center justify-space-between mb-3">
+                                    <div class="d-flex align-center ga-2 flex-wrap">
+                                      <v-chip 
+                                        :color="getAttendanceStatusColor(attendance.status)" 
+                                        variant="flat"
+                                        size="small"
+                                        class="font-weight-medium"
+                                      >
+                                        <v-icon start size="16">
+                                          {{ getAttendanceStatusIcon(attendance.status) }}
+                                        </v-icon>
+                                        {{ getAttendanceStatusLabel(attendance.status) }}
+                                      </v-chip>
+                                      <v-chip 
+                                        :color="getChannelColor(attendance.channel)" 
+                                        variant="tonal"
+                                        size="small"
+                                      >
+                                        {{ getChannelLabel(attendance.channel) }}
+                                      </v-chip>
+                                    </div>
+                                    <div class="text-body-2 font-weight-medium text-medium-emphasis">
+                                      <v-icon size="16" class="mr-1">mdi-clock-outline</v-icon>
+                                      {{ formatDateTime(attendance.started_at) }}
+                                    </div>
+                                  </div>
+
+                                  <!-- AI Summary (Always visible) -->
+                                  <div v-if="attendance.ai_summary" class="mb-3">
+                                    <div class="text-subtitle-1 font-weight-bold mb-2 d-flex align-center">
+                                      <v-icon size="20" color="primary" class="mr-2">mdi-robot</v-icon>
+                                      Resumo da IA
+                                    </div>
+                                    <div 
+                                      class="text-body-1 ai-summary-content pa-3 rounded"
+                                      v-html="formatMarkdown(attendance.ai_summary)"
+                                    ></div>
+                                  </div>
+
+                                  <!-- Raw Content (if no AI summary) -->
+                                  <div v-else-if="attendance.raw_content" class="mb-3">
+                                    <div class="text-subtitle-1 font-weight-bold mb-2 d-flex align-center">
+                                      <v-icon size="20" color="grey" class="mr-2">mdi-text</v-icon>
+                                      Conteúdo do Atendimento
+                                    </div>
+                                    <div class="text-body-1 raw-content-full pa-3 rounded bg-grey-lighten-5">
+                                      {{ attendance.raw_content }}
+                                    </div>
+                                  </div>
+
+                                  <!-- Next Steps -->
+                                  <div 
+                                    v-if="attendance.ai_next_steps && hasValidNextSteps(attendance.ai_next_steps)"
+                                    class="mb-2"
+                                  >
+                                    <div class="text-subtitle-1 font-weight-bold mb-2 d-flex align-center">
+                                      <v-icon size="20" color="success" class="mr-2">mdi-arrow-right-circle</v-icon>
+                                      Próximos Passos
+                                    </div>
+                                    <div 
+                                      class="text-body-1 ai-next-steps-content pa-3 rounded bg-success-lighten-5"
+                                      v-html="formatMarkdown(formatAINextSteps(attendance.ai_next_steps))"
+                                    ></div>
+                                  </div>
+
+                                  <!-- Metadata Footer -->
+                                  <div class="d-flex align-center ga-4 mt-3 pt-3 border-t">
+                                    <div v-if="attendance.duration" class="d-flex align-center text-caption text-medium-emphasis">
+                                      <v-icon size="16" class="mr-1">mdi-timer-outline</v-icon>
+                                      Duração: {{ formatDuration(attendance.duration) }}
+                                    </div>
+                                    <v-spacer></v-spacer>
+                                    <v-btn
+                                      variant="text"
+                                      size="small"
+                                      prepend-icon="mdi-open-in-new"
+                                      @click.stop="goToAttendance(attendance.id)"
+                                    >
+                                      Ver Detalhes
+                                    </v-btn>
+                                  </div>
+                                </div>
                               </div>
-                              <div class="text-caption text-medium-emphasis">
-                                {{ formatDateTime(attendance.started_at) }}
-                              </div>
-                            </div>
+                            </v-card-text>
+                          </v-card>
+                        </template>
+                      </v-expansion-panel-title>
 
-                            <!-- AI Summary Preview -->
-                            <div v-if="attendance.ai_summary" class="mb-3">
-                              <div class="text-subtitle-2 font-weight-medium mb-1">
-                                <v-icon size="16" color="primary" class="mr-1">mdi-robot</v-icon>
-                                Resumo da IA
-                              </div>
-                              <div class="text-body-2 ai-summary-preview"
-                                v-html="formatMarkdown(truncateText(attendance.ai_summary, 200))"></div>
-                            </div>
+                      <v-expansion-panel-text class="pa-0">
+                        <v-card variant="flat" class="attendance-card-expanded">
+                          <v-card-text class="pa-6">
+                            <!-- Full Content View -->
+                            <v-row>
+                              <!-- Main Content -->
+                              <v-col cols="12" md="8">
+                                <!-- Full AI Summary -->
+                                <div v-if="attendance.ai_summary" class="mb-6">
+                                  <div class="text-h6 font-weight-bold mb-3 d-flex align-center">
+                                    <v-icon size="24" color="primary" class="mr-2">mdi-robot</v-icon>
+                                    Resumo Completo da IA
+                                  </div>
+                                  <div 
+                                    class="text-body-1 ai-summary-full pa-4 rounded-lg bg-primary-lighten-5"
+                                    v-html="formatMarkdown(attendance.ai_summary)"
+                                  ></div>
+                                </div>
 
-                            <!-- Next Steps Preview -->
-                            <div v-if="attendance.ai_next_steps && hasValidNextSteps(attendance.ai_next_steps)"
-                              class="mb-2">
-                              <div class="text-subtitle-2 font-weight-medium mb-1">
-                                <v-icon size="16" color="success" class="mr-1">mdi-arrow-right-circle</v-icon>
-                                Próximos Passos
-                              </div>
-                              <div class="text-body-2 ai-next-steps-preview"
-                                v-html="formatMarkdown(truncateText(formatAINextSteps(attendance.ai_next_steps), 150))">
-                              </div>
-                            </div>
+                                <!-- Full Raw Content -->
+                                <div v-if="attendance.raw_content" class="mb-6">
+                                  <div class="text-h6 font-weight-bold mb-3 d-flex align-center">
+                                    <v-icon size="24" color="grey" class="mr-2">mdi-text</v-icon>
+                                    Conteúdo Original
+                                  </div>
+                                  <div class="text-body-1 raw-content-full pa-4 rounded-lg bg-grey-lighten-5">
+                                    {{ attendance.raw_content }}
+                                  </div>
+                                </div>
 
-                            <!-- Raw Content Preview (if no AI summary) -->
-                            <div v-if="!attendance.ai_summary"
-                              class="text-body-2 text-medium-emphasis raw-content-preview">
-                              {{ truncateText(attendance.raw_content, 200) }}
-                            </div>
+                                <!-- Full Next Steps -->
+                                <div 
+                                  v-if="attendance.ai_next_steps && hasValidNextSteps(attendance.ai_next_steps)"
+                                  class="mb-6"
+                                >
+                                  <div class="text-h6 font-weight-bold mb-3 d-flex align-center">
+                                    <v-icon size="24" color="success" class="mr-2">mdi-arrow-right-circle</v-icon>
+                                    Próximos Passos Sugeridos
+                                  </div>
+                                  <div 
+                                    class="text-body-1 ai-next-steps-full pa-4 rounded-lg bg-success-lighten-5"
+                                    v-html="formatMarkdown(formatAINextSteps(attendance.ai_next_steps))"
+                                  ></div>
+                                </div>
+                              </v-col>
 
-                            <!-- Duration -->
-                            <div v-if="attendance.duration" class="text-caption text-medium-emphasis mt-2">
-                              <v-icon size="14" class="mr-1">mdi-clock-outline</v-icon>
-                              Duração: {{ formatDuration(attendance.duration) }}
-                            </div>
-                          </div>
+                              <!-- Sidebar Info -->
+                              <v-col cols="12" md="4">
+                                <v-card variant="outlined" class="mb-4">
+                                  <v-card-title class="text-subtitle-1 font-weight-bold">
+                                    Informações
+                                  </v-card-title>
+                                  <v-card-text>
+                                    <div class="d-flex flex-column ga-3">
+                                      <div>
+                                        <div class="text-caption text-medium-emphasis mb-1">Status</div>
+                                        <v-chip 
+                                          :color="getAttendanceStatusColor(attendance.status)" 
+                                          variant="flat"
+                                          size="small"
+                                        >
+                                          {{ getAttendanceStatusLabel(attendance.status) }}
+                                        </v-chip>
+                                      </div>
+                                      <div>
+                                        <div class="text-caption text-medium-emphasis mb-1">Canal</div>
+                                        <v-chip 
+                                          :color="getChannelColor(attendance.channel)" 
+                                          variant="tonal"
+                                          size="small"
+                                        >
+                                          {{ getChannelLabel(attendance.channel) }}
+                                        </v-chip>
+                                      </div>
+                                      <div v-if="attendance.duration">
+                                        <div class="text-caption text-medium-emphasis mb-1">Duração</div>
+                                        <div class="text-body-2 font-weight-medium">
+                                          {{ formatDuration(attendance.duration) }}
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <div class="text-caption text-medium-emphasis mb-1">Data/Hora</div>
+                                        <div class="text-body-2 font-weight-medium">
+                                          {{ formatDateTime(attendance.started_at) }}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </v-card-text>
+                                </v-card>
 
-                          <!-- Arrow -->
-                          <v-icon color="grey" class="ml-2">mdi-chevron-right</v-icon>
-                        </div>
-                      </v-card-text>
-                    </v-card>
-                  </v-col>
-                </v-row>
+                                <v-btn
+                                  block
+                                  color="primary"
+                                  variant="flat"
+                                  prepend-icon="mdi-open-in-new"
+                                  @click="goToAttendance(attendance.id)"
+                                  size="large"
+                                >
+                                  Ver Detalhes Completos
+                                </v-btn>
+                              </v-col>
+                            </v-row>
+                          </v-card-text>
+                        </v-card>
+                      </v-expansion-panel-text>
+                    </v-expansion-panel>
+                  </v-expansion-panels>
+                </div>
               </div>
             </v-window-item>
 
@@ -1362,6 +1543,7 @@ const aiSummaries = ref<AISummary[]>([])
 const recommendedProperties = ref<Property[]>([])
 const profileBasedProperties = ref<Property[]>([])
 const clientAttendances = ref<Attendance[]>([])
+const expandedAttendances = ref<string[]>([])
 
 // Editable fields (for inline editing)
 const editableFields = ref<Partial<ClientUpdate>>({})
@@ -1947,6 +2129,16 @@ const getAttendanceStatusColor = (status: string): string => {
     PAUSED: 'warning',
   }
   return colors[status] || 'grey'
+}
+
+const getAttendanceStatusIcon = (status: string): string => {
+  const icons: Record<string, string> = {
+    IN_PROGRESS: 'mdi-clock-outline',
+    COMPLETED: 'mdi-check-circle',
+    CANCELLED: 'mdi-cancel',
+    PAUSED: 'mdi-pause-circle',
+  }
+  return icons[status] || 'mdi-circle'
 }
 
 const truncateText = (text: string, maxLength: number): string => {
@@ -2536,6 +2728,181 @@ onMounted(() => {
 .client-header {
   overflow: hidden;
   border: 1px solid rgba(var(--v-border-color), 0.12);
+}
+
+/* Attendances Timeline Styles */
+.attendances-timeline {
+  position: relative;
+}
+
+.attendance-panel {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.attendance-card-header {
+  transition: all 0.3s ease;
+  border-left: 4px solid transparent;
+}
+
+.attendance-card-header:hover {
+  background-color: rgba(var(--v-theme-primary), 0.04);
+  border-left-color: rgb(var(--v-theme-primary));
+}
+
+.attendance-card-header.expanded {
+  border-left-color: rgb(var(--v-theme-primary));
+  background-color: rgba(var(--v-theme-primary), 0.06);
+}
+
+.timeline-indicator {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 56px;
+}
+
+.timeline-avatar {
+  z-index: 2;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 3px solid white;
+}
+
+.timeline-line {
+  width: 2px;
+  flex: 1;
+  min-height: 40px;
+  background: linear-gradient(
+    to bottom,
+    rgb(var(--v-theme-primary)) 0%,
+    rgba(var(--v-theme-primary), 0.3) 100%
+  );
+  margin-top: 8px;
+  border-radius: 2px;
+}
+
+.attendance-card-expanded {
+  background-color: rgba(var(--v-theme-surface), 1);
+}
+
+/* Content Styles */
+.ai-summary-content,
+.ai-next-steps-content,
+.raw-content-full {
+  line-height: 1.8;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+.ai-summary-content {
+  background-color: rgba(var(--v-theme-primary), 0.05);
+  border-left: 4px solid rgb(var(--v-theme-primary));
+}
+
+.ai-next-steps-content {
+  background-color: rgba(var(--v-theme-success), 0.05);
+  border-left: 4px solid rgb(var(--v-theme-success));
+}
+
+.raw-content-full {
+  background-color: rgba(var(--v-theme-grey), 0.05);
+  border-left: 4px solid rgb(var(--v-theme-grey));
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.9em;
+}
+
+.ai-summary-full,
+.ai-next-steps-full {
+  line-height: 1.8;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+.ai-summary-full {
+  background-color: rgba(var(--v-theme-primary), 0.05);
+  border-left: 4px solid rgb(var(--v-theme-primary));
+}
+
+.ai-next-steps-full {
+  background-color: rgba(var(--v-theme-success), 0.05);
+  border-left: 4px solid rgb(var(--v-theme-success));
+}
+
+/* Markdown Styles */
+:deep(.markdown-list) {
+  margin: 12px 0;
+  padding-left: 24px;
+}
+
+:deep(.markdown-list li) {
+  margin: 8px 0;
+  line-height: 1.6;
+}
+
+:deep(.markdown-list ul),
+:deep(.markdown-list ol) {
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+:deep(.markdown-spacer) {
+  height: 12px;
+}
+
+:deep(.markdown-code) {
+  background-color: rgba(var(--v-theme-grey), 0.2);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.9em;
+}
+
+:deep(.markdown-link) {
+  color: rgb(var(--v-theme-primary));
+  text-decoration: none;
+  font-weight: 500;
+}
+
+:deep(.markdown-link:hover) {
+  text-decoration: underline;
+}
+
+:deep(.markdown-h1),
+:deep(.markdown-h2),
+:deep(.markdown-h3) {
+  margin-top: 16px;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+:deep(.markdown-h1) {
+  font-size: 1.5em;
+}
+
+:deep(.markdown-h2) {
+  font-size: 1.3em;
+}
+
+:deep(.markdown-h3) {
+  font-size: 1.1em;
+}
+
+/* Border Top Utility */
+.border-t {
+  border-top: 1px solid rgba(var(--v-border-color), 0.12);
+}
+
+/* Responsive adjustments */
+@media (max-width: 960px) {
+  .timeline-indicator {
+    min-width: 48px;
+  }
+
+  .timeline-avatar {
+    width: 48px !important;
+    height: 48px !important;
+  }
 }
 
 .header-gradient {
