@@ -169,21 +169,23 @@
                         <template #activator="{ props }">
                           <v-icon v-bind="props" color="info" size="small" class="ml-2">mdi-information</v-icon>
                         </template>
-                        <div class="pa-2">
-                          <div class="font-weight-bold mb-2">Lógica de Ciclos:</div>
-                          <div class="text-body-2">
-                            <p class="mb-2">
-                              <strong>Se o cliente já tem um ciclo ATIVO com objetivo similar:</strong><br>
-                              O novo conteúdo será adicionado ao ciclo existente (conversas acumuladas).
-                            </p>
-                            <p class="mb-2">
-                              <strong>Se o objetivo mudou significativamente:</strong><br>
-                              O ciclo anterior será fechado e um novo ciclo será criado.
-                            </p>
-                            <p class="mb-0">
-                              <strong>Se não houver ciclo ativo:</strong><br>
-                              Um novo ciclo será criado automaticamente.
-                            </p>
+                        <template #default>
+                          <div class="pa-2">
+                            <div class="font-weight-bold mb-2">Lógica de Ciclos:</div>
+                            <div class="text-body-2">
+                              <p class="mb-2">
+                                <strong>Se o cliente já tem um ciclo ATIVO com objetivo similar:</strong><br>
+                                O novo conteúdo será adicionado ao ciclo existente (conversas acumuladas).
+                              </p>
+                              <p class="mb-2">
+                                <strong>Se o objetivo mudou significativamente:</strong><br>
+                                O ciclo anterior será fechado e um novo ciclo será criado.
+                              </p>
+                              <p class="mb-0">
+                                <strong>Se não houver ciclo ativo:</strong><br>
+                                Um novo ciclo será criado automaticamente.
+                              </p>
+                            </div>
                           </div>
                         </template>
                       </v-tooltip>
