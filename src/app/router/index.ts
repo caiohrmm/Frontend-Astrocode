@@ -13,6 +13,15 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/register',
+    name: 'register',
+    component: () => import('@/modules/auth/pages/RegisterPage.vue'),
+    meta: {
+      layout: 'auth',
+      requiresAuth: false, // Public route
+    },
+  },
+  {
     path: '/auth/google/callback',
     name: 'oauth-callback',
     component: () => import('@/modules/auth/pages/OAuthCallbackPage.vue'),
@@ -243,8 +252,8 @@ router.beforeEach(async (to, _from, next) => {
     }
   }
   
-  // If user is authenticated and trying to access login, redirect to dashboard
-  if (to.name === 'login' && authStore.isAuthenticated) {
+  // If user is authenticated and trying to access login/register, redirect to dashboard
+  if ((to.name === 'login' || to.name === 'register') && authStore.isAuthenticated) {
     next({ name: 'dashboard' })
     return
   }

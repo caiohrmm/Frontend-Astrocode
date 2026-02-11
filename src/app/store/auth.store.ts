@@ -6,7 +6,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { User } from '@/shared/services/auth.service'
-import { authService, type LoginRequest } from '@/shared/services/auth.service'
+import { authService, type LoginRequest, type RegisterRequest } from '@/shared/services/auth.service'
 
 export const useAuthStore = defineStore('auth', () => {
   // State
@@ -43,6 +43,26 @@ export const useAuthStore = defineStore('auth', () => {
       await fetchCurrentUser()
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Login failed'
+      token.value = null
+      user.value = null
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  async function register(data: RegisterRequest): Promise<void> {
+    isLoading.value = true
+    error.value = null
+
+    try {
+      const tokenResponse = await authService.register(data)
+      token.value = tokenResponse.access_token
+
+      // Fetch user information
+      await fetchCurrentUser()
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Registration failed'
       token.value = null
       user.value = null
       throw err
@@ -117,6 +137,7 @@ export const useAuthStore = defineStore('auth', () => {
     hasRole,
     // Actions
     login,
+    register,
     logout,
     fetchCurrentUser,
     clearError,

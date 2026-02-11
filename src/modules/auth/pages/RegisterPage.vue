@@ -1,6 +1,6 @@
 <template>
   <v-card
-    class="login-card"
+    class="register-card"
     elevation="8"
     rounded="xl"
   >
@@ -11,13 +11,13 @@
           color="primary"
           class="mb-4"
         >
-          mdi-home-city
+          mdi-account-plus
         </v-icon>
         <h1 class="text-h4 font-weight-bold mb-2">
-          Bem-vindo
+          Criar Conta
         </h1>
         <p class="text-body-1 text-medium-emphasis">
-          Faça login para continuar
+          Registre-se para começar
         </p>
       </div>
     </v-card-title>
@@ -37,8 +37,23 @@
 
       <v-form
         ref="formRef"
-        @submit.prevent="handleLogin"
+        @submit.prevent="handleRegister"
       >
+        <v-text-field
+          v-model="fullName"
+          label="Nome Completo"
+          prepend-inner-icon="mdi-account-outline"
+          variant="outlined"
+          density="comfortable"
+          class="mb-4"
+          :disabled="authStore.isLoading"
+          :rules="[rules.required, rules.minLengthName]"
+          :error-messages="fullNameErrors"
+          autocomplete="name"
+          clearable
+          @click:clear="fullName = ''"
+        ></v-text-field>
+
         <v-text-field
           v-model="email"
           label="Email"
@@ -57,7 +72,7 @@
 
         <v-text-field
           v-model="password"
-          :label="'Senha'"
+          label="Senha"
           :type="showPassword ? 'text' : 'password'"
           prepend-inner-icon="mdi-lock-outline"
           variant="outlined"
@@ -66,10 +81,38 @@
           :disabled="authStore.isLoading"
           :rules="[rules.required, rules.minLength]"
           :error-messages="passwordErrors"
-          autocomplete="current-password"
+          autocomplete="new-password"
           :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
           @click:append-inner="showPassword = !showPassword"
         ></v-text-field>
+
+        <v-text-field
+          v-model="confirmPassword"
+          label="Confirmar Senha"
+          :type="showConfirmPassword ? 'text' : 'password'"
+          prepend-inner-icon="mdi-lock-check-outline"
+          variant="outlined"
+          density="comfortable"
+          class="mb-4"
+          :disabled="authStore.isLoading"
+          :rules="[rules.required, rules.passwordMatch]"
+          :error-messages="confirmPasswordErrors"
+          autocomplete="new-password"
+          :append-inner-icon="showConfirmPassword ? 'mdi-eye-off' : 'mdi-eye'"
+          @click:append-inner="showConfirmPassword = !showConfirmPassword"
+        ></v-text-field>
+
+        <v-alert
+          type="info"
+          variant="tonal"
+          density="compact"
+          class="mb-4"
+        >
+          <div class="text-caption">
+            Todos os usuários são registrados como <strong>Atendente</strong> por padrão.
+            Apenas gestores podem alterar cargos posteriormente.
+          </div>
+        </v-alert>
 
         <v-btn
           color="primary"
@@ -81,8 +124,8 @@
           class="mb-4 mt-2"
           elevation="2"
         >
-          <v-icon start>mdi-login</v-icon>
-          Entrar
+          <v-icon start>mdi-account-plus</v-icon>
+          Criar Conta
         </v-btn>
       </v-form>
 
@@ -112,15 +155,15 @@
 
       <div class="text-center mt-6">
         <span class="text-body-2 text-medium-emphasis">
-          Não tem uma conta?
+          Já tem uma conta?
         </span>
         <v-btn
           variant="text"
           size="small"
           class="ml-2"
-          @click="goToRegister"
+          @click="goToLogin"
         >
-          Criar Conta
+          Fazer Login
         </v-btn>
       </div>
     </v-card-text>
@@ -138,9 +181,12 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const formRef = ref<VForm | null>(null)
+const fullName = ref('')
 const email = ref('')
 const password = ref('')
+const confirmPassword = ref('')
 const showPassword = ref(false)
+const showConfirmPassword = ref(false)
 
 const rules = {
   required: (value: string) => {
@@ -156,9 +202,27 @@ const rules = {
   },
   minLength: (value: string) => {
     if (!value) return true
-    return value.length >= 6 || 'Senha deve ter no mínimo 6 caracteres'
+    return value.length >= 8 || 'Senha deve ter no mínimo 8 caracteres'
+  },
+  minLengthName: (value: string) => {
+    if (!value) return true
+    return value.trim().length >= 3 || 'Nome deve ter no mínimo 3 caracteres'
+  },
+  passwordMatch: (value: string) => {
+    if (!value) return true
+    return value === password.value || 'As senhas não coincidem'
   },
 }
+
+const fullNameErrors = computed(() => {
+  if (!fullName.value) return []
+  const requiredRule = rules.required(fullName.value)
+  const minLengthRule = rules.minLengthName(fullName.value)
+  const errors: string[] = []
+  if (requiredRule !== true) errors.push(requiredRule)
+  if (minLengthRule !== true) errors.push(minLengthRule)
+  return errors
+})
 
 const emailErrors = computed(() => {
   if (!email.value) return []
@@ -172,33 +236,45 @@ const passwordErrors = computed(() => {
   return minLengthRule === true ? [] : [minLengthRule]
 })
 
+const confirmPasswordErrors = computed(() => {
+  if (!confirmPassword.value) return []
+  const matchRule = rules.passwordMatch(confirmPassword.value)
+  return matchRule === true ? [] : [matchRule]
+})
+
 const isFormValid = computed(() => {
   return (
+    fullName.value.trim().length >= 3 &&
     email.value.trim().length > 0 &&
-    password.value.length > 0 &&
-    rules.email(email.value) === true &&
-    rules.minLength(password.value) === true
+    password.value.length >= 8 &&
+    confirmPassword.value === password.value &&
+    rules.email(email.value) === true
   )
 })
 
-const handleLogin = async () => {
+const handleRegister = async () => {
   const { valid } = await formRef.value?.validate() ?? { valid: false }
   
   if (!valid) {
     return
   }
 
+  if (password.value !== confirmPassword.value) {
+    return
+  }
+
   try {
-    await authStore.login({
+    await authStore.register({
       email: email.value.trim().toLowerCase(),
       password: password.value,
+      full_name: fullName.value.trim(),
     })
     
     // Redirect to dashboard on success
     router.push({ name: 'dashboard' })
   } catch (error) {
     // Error is already handled by the store
-    console.error('Login failed:', error)
+    console.error('Registration failed:', error)
   }
 }
 
@@ -208,13 +284,13 @@ const handleGoogleLogin = () => {
   window.location.href = googleLoginUrl
 }
 
-const goToRegister = () => {
-  router.push({ name: 'register' })
+const goToLogin = () => {
+  router.push({ name: 'login' })
 }
 </script>
 
 <style scoped>
-.login-card {
+.register-card {
   width: 100%;
   margin: 0 auto;
 }
@@ -234,3 +310,4 @@ const goToRegister = () => {
   opacity: 0.6;
 }
 </style>
+

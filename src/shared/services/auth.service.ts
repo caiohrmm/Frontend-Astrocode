@@ -10,6 +10,12 @@ export interface LoginRequest {
   password: string
 }
 
+export interface RegisterRequest {
+  email: string
+  password: string
+  full_name: string
+}
+
 export interface TokenResponse {
   access_token: string
   token_type: string
@@ -37,6 +43,22 @@ class AuthService {
     const response = await apiClient.post<TokenResponse>(
       '/auth/login',
       credentials
+    )
+    
+    // Store token in API client
+    apiClient.setToken(response.access_token)
+    
+    return response
+  }
+
+  /**
+   * Register a new user (public registration)
+   * All users registered via this endpoint are automatically assigned the 'atendente' role
+   */
+  async register(data: RegisterRequest): Promise<TokenResponse> {
+    const response = await apiClient.post<TokenResponse>(
+      '/auth/public/register',
+      data
     )
     
     // Store token in API client
