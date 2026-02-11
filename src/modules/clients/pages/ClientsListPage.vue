@@ -262,23 +262,16 @@ const urgencyOptions = [
 const hasActiveFilters = computed(() => {
   return !!(
     filters.value.status ||
-    filters.value.urgency ||
-    filters.value.assigned_agent_id
+    filters.value.urgency
   )
 })
 
 const filteredClients = computed(() => {
   let result = [...clients.value]
 
-  // Search filter (name or phone)
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    result = result.filter(
-      client =>
-        client.name.toLowerCase().includes(query) ||
-        client.phone.replace(/\D/g, '').includes(query.replace(/\D/g, ''))
-    )
-  }
+  // Note: Search is now handled by backend, so we only filter by status and urgency here
+  // If searchQuery is empty, we show all loaded clients
+  // If searchQuery has value, backend already filtered by name/phone
 
   // Status filter
   if (filters.value.status) {
@@ -294,10 +287,20 @@ const filteredClients = computed(() => {
 })
 
 // Methods
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
+
 const loadClients = async () => {
   isLoading.value = true
   try {
-    clients.value = await clientsService.getClients({ limit: 1000 }) // Get all for frontend filtering
+    // If there's a search query, use backend search, otherwise load all
+    if (searchQuery.value && searchQuery.value.trim()) {
+      clients.value = await clientsService.getClients({ 
+        limit: 1000,
+        search: searchQuery.value.trim()
+      })
+    } else {
+      clients.value = await clientsService.getClients({ limit: 1000 })
+    }
   } catch (error) {
     console.error('Error loading clients:', error)
     // TODO: Show error notification
@@ -307,7 +310,15 @@ const loadClients = async () => {
 }
 
 const handleSearch = () => {
-  // Search is reactive via computed property
+  // Clear previous timeout
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
+  
+  // Debounce search: wait 500ms after user stops typing
+  searchTimeout = setTimeout(() => {
+    loadClients()
+  }, 500)
 }
 
 const applyFilters = () => {

@@ -129,6 +129,7 @@ export interface ListClientsParams {
   skip?: number
   limit?: number
   lead_source?: LeadSource | null
+  search?: string | null
 }
 
 class ClientsService {
@@ -145,6 +146,9 @@ class ClientsService {
     }
     if (params?.lead_source) {
       queryParams.append('lead_source', params.lead_source)
+    }
+    if (params?.search) {
+      queryParams.append('search', params.search)
     }
 
     const queryString = queryParams.toString()
