@@ -434,9 +434,6 @@ const rules = {
     if (!value) return true
     return value.length <= 100000 || 'Conteúdo não pode exceder 100.000 caracteres'
   },
-    const ended = new Date(value)
-    return ended >= started || 'Data de término deve ser posterior à data de início'
-  },
 }
 
 // Methods
