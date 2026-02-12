@@ -30,8 +30,13 @@
                 <v-btn variant="tonal" color="white" size="small" prepend-icon="mdi-pencil" @click="handleEditClick">
                   Editar
                 </v-btn>
-                <v-btn variant="tonal" color="error" size="small" prepend-icon="mdi-delete"
-                  @click="showDeleteDialog = true">
+                <v-btn 
+                  variant="flat" 
+                  color="error" 
+                  size="small" 
+                  prepend-icon="mdi-delete-outline"
+                  @click="openDeleteDialog"
+                >
                   Excluir
                 </v-btn>
               </div>
@@ -155,73 +160,117 @@
       </v-card>
 
       <!-- Delete Confirmation Dialog -->
-      <v-dialog v-model="showDeleteDialog" max-width="500" persistent>
-        <v-card rounded="lg">
-          <v-card-title class="d-flex align-center pa-4 bg-error">
-            <v-icon color="white" class="mr-3" size="28">mdi-alert-circle</v-icon>
-            <span class="text-white text-h6">Excluir Cliente</span>
+      <v-dialog v-model="showDeleteDialog" max-width="600" persistent>
+        <v-card variant="flat" rounded="xl">
+          <!-- Header -->
+          <v-card-title class="d-flex align-center pa-6 pb-4">
+            <v-avatar color="error" size="48" class="mr-4">
+              <v-icon color="white" size="24">mdi-alert-circle</v-icon>
+            </v-avatar>
+            <div class="flex-grow-1">
+              <div class="text-h6 font-weight-bold">Excluir Cliente</div>
+              <div class="text-caption text-medium-emphasis mt-1">
+                Esta ação é irreversível
+              </div>
+            </div>
+            <v-btn
+              icon
+              variant="text"
+              size="small"
+              @click.stop="showDeleteDialog = false"
+            >
+              <v-icon size="20">mdi-close</v-icon>
+            </v-btn>
           </v-card-title>
 
-          <v-card-text class="pa-6">
-            <div class="text-center mb-4">
-              <v-avatar color="error" size="64" class="mb-3">
-                <span class="text-h5 text-white">{{ getInitials(client.name) }}</span>
+          <v-card-text class="pa-6 pt-2">
+            <!-- Client Info -->
+            <div class="text-center mb-6">
+              <v-avatar color="error" size="72" class="mb-3">
+                <span class="text-h4 text-white font-weight-bold">{{ getInitials(client.name) }}</span>
               </v-avatar>
-              <h3 class="text-h6 font-weight-bold">{{ client.name }}</h3>
+              <h3 class="text-h6 font-weight-bold mb-1">{{ client.name }}</h3>
+              <div class="text-body-2 text-medium-emphasis">
+                {{ client.email || client.phone || 'Cliente sem contato' }}
+              </div>
             </div>
 
-            <v-alert type="warning" variant="tonal" class="mb-4">
-              <div class="font-weight-bold mb-1">Atenção: Esta ação é irreversível!</div>
+            <!-- Warning Alert -->
+            <v-alert 
+              type="warning" 
+              variant="tonal" 
+              density="comfortable"
+              class="mb-6"
+              border="start"
+            >
               <div class="text-body-2">
-                Ao excluir este cliente, <strong>todos os dados relacionados</strong> serão removidos permanentemente:
+                Ao excluir este cliente, <strong>todos os dados relacionados</strong> serão removidos permanentemente do sistema.
               </div>
             </v-alert>
 
-            <v-list density="compact" class="bg-grey-lighten-4 rounded-lg">
-              <v-list-item>
-                <template #prepend>
-                  <v-icon color="error" size="20">mdi-phone</v-icon>
-                </template>
-                <v-list-item-title class="text-body-2">
-                  {{ clientAttendances.length }} atendimento(s) e resumos de IA
-                </v-list-item-title>
-              </v-list-item>
-              <v-list-item>
-                <template #prepend>
-                  <v-icon color="error" size="20">mdi-calendar</v-icon>
-                </template>
-                <v-list-item-title class="text-body-2">
-                  Todas as visitas agendadas
-                </v-list-item-title>
-              </v-list-item>
-              <v-list-item>
-                <template #prepend>
-                  <v-icon color="error" size="20">mdi-timeline</v-icon>
-                </template>
-                <v-list-item-title class="text-body-2">
-                  Histórico completo da jornada
-                </v-list-item-title>
-              </v-list-item>
-              <v-list-item>
-                <template #prepend>
-                  <v-icon color="error" size="20">mdi-robot</v-icon>
-                </template>
-                <v-list-item-title class="text-body-2">
-                  Todos os insights da IA
-                </v-list-item-title>
-              </v-list-item>
-            </v-list>
+            <!-- Data to be deleted -->
+            <div class="mb-4">
+              <h4 class="text-subtitle-2 font-weight-medium text-medium-emphasis mb-3">
+                Dados que serão excluídos:
+              </h4>
+              <v-skeleton-loader v-if="isLoadingDeleteStats" type="list-item-three-line"></v-skeleton-loader>
+              <v-list v-else variant="flat" density="comfortable" class="pa-0">
+                <v-list-item class="px-0 py-2">
+                  <template #prepend>
+                    <v-icon color="error" size="20" class="mr-3">mdi-phone</v-icon>
+                  </template>
+                  <v-list-item-title class="text-body-2">
+                    <span class="font-weight-medium">{{ deleteStats.attendances }}</span> atendimento(s) e resumos de IA
+                  </v-list-item-title>
+                </v-list-item>
+                <v-divider class="my-1" />
+                <v-list-item class="px-0 py-2">
+                  <template #prepend>
+                    <v-icon color="error" size="20" class="mr-3">mdi-calendar</v-icon>
+                  </template>
+                  <v-list-item-title class="text-body-2">
+                    <span class="font-weight-medium">{{ deleteStats.visits }}</span> visita(s) agendada(s)
+                  </v-list-item-title>
+                </v-list-item>
+                <v-divider class="my-1" />
+                <v-list-item class="px-0 py-2">
+                  <template #prepend>
+                    <v-icon color="error" size="20" class="mr-3">mdi-handshake</v-icon>
+                  </template>
+                  <v-list-item-title class="text-body-2">
+                    <span class="font-weight-medium">{{ deleteStats.sales }}</span> venda(s) registrada(s)
+                  </v-list-item-title>
+                </v-list-item>
+                <v-divider class="my-1" />
+                <v-list-item class="px-0 py-2">
+                  <template #prepend>
+                    <v-icon color="error" size="20" class="mr-3">mdi-timeline</v-icon>
+                  </template>
+                  <v-list-item-title class="text-body-2">
+                    Histórico completo da jornada e insights da IA
+                  </v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </div>
           </v-card-text>
 
-          <v-divider></v-divider>
+          <v-divider class="mx-6" />
 
-          <v-card-actions class="pa-4">
-            <v-btn variant="text" @click="showDeleteDialog = false">
+          <v-card-actions class="pa-6">
+            <v-spacer></v-spacer>
+            <v-btn 
+              variant="text" 
+              @click="showDeleteDialog = false"
+            >
               Cancelar
             </v-btn>
-            <v-spacer></v-spacer>
-            <v-btn color="error" variant="flat" prepend-icon="mdi-delete" :loading="isDeleting"
-              @click="handleDeleteClient">
+            <v-btn 
+              color="error" 
+              variant="flat" 
+              prepend-icon="mdi-delete-outline" 
+              :loading="isDeleting"
+              @click="handleDeleteClient"
+            >
               Confirmar Exclusão
             </v-btn>
           </v-card-actions>
@@ -1128,6 +1177,7 @@ import {
   getLossReasonIcon,
 } from '@/shared/services/losses.service'
 import { attendancesService, type Attendance } from '@/shared/services/attendances.service'
+import { visitsService } from '@/shared/services/visits.service'
 import { formatPhone, formatCurrency, parseCurrency } from '@/shared/utils/masks'
 import ClientCreateDialog from '@/shared/components/ClientCreateDialog.vue'
 import ClientJourneyPanel from '@/shared/components/ClientJourneyPanel.vue'
@@ -1150,6 +1200,12 @@ const isDeleting = ref(false)
 const activeTab = ref('overview')
 const showEditDialog = ref(false)
 const showDeleteDialog = ref(false)
+const isLoadingDeleteStats = ref(false)
+const deleteStats = ref({
+  attendances: 0,
+  visits: 0,
+  sales: 0,
+})
 const showSaleDialog = ref(false)
 const isSaleFormValid = ref(false)
 const isCreatingSale = ref(false)
@@ -2044,6 +2100,56 @@ const goBack = () => {
 
 const goToProperty = (propertyId: string) => {
   router.push({ name: 'properties-details', params: { id: propertyId } })
+}
+
+// Open delete dialog and load stats
+const openDeleteDialog = async () => {
+  if (!client.value) return
+  
+  showDeleteDialog.value = true
+  isLoadingDeleteStats.value = true
+  
+  try {
+    // Load attendances count
+    const attendances = await attendancesService.getAttendances({
+      client_id: client.value.id,
+      limit: 1000,
+    })
+    
+    // Load visits count
+    let visitsCount = 0
+    try {
+      const visits = await visitsService.getVisits({ client_id: client.value.id, limit: 1000 })
+      visitsCount = visits?.length || 0
+    } catch (e) {
+      console.warn('Could not load visits:', e)
+    }
+    
+    // Load sales count
+    let salesCount = 0
+    try {
+      const sales = await salesService.listSales({ client_id: client.value.id, limit: 1000 })
+      salesCount = sales?.length || 0
+    } catch (e) {
+      console.warn('Could not load sales:', e)
+    }
+    
+    deleteStats.value = {
+      attendances: attendances?.length || 0,
+      visits: visitsCount,
+      sales: salesCount,
+    }
+  } catch (error) {
+    console.error('Error loading delete stats:', error)
+    // Set defaults if error
+    deleteStats.value = {
+      attendances: clientAttendances.value.length,
+      visits: 0,
+      sales: 0,
+    }
+  } finally {
+    isLoadingDeleteStats.value = false
+  }
 }
 
 // Delete client handler
