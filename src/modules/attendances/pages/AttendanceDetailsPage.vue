@@ -123,22 +123,64 @@
           <!-- Raw Content (Accumulated Conversations) -->
           <v-card elevation="2" class="mb-4" rounded="lg">
             <v-card-title class="pa-4 d-flex align-center">
-              <v-icon class="mr-2">mdi-text</v-icon>
-              <span>Conversas do Ciclo</span>
+              <v-icon class="mr-2" color="primary">mdi-message-text</v-icon>
+              <span>Histórico de Conversas</span>
               <v-spacer></v-spacer>
               <v-chip v-if="attendance.status === 'ACTIVE'" color="success" variant="flat" size="small">
                 <v-icon start size="14">mdi-sync</v-icon>
                 Ciclo Ativo
               </v-chip>
+              <v-chip v-else-if="attendance.status === 'COMPLETED'" color="primary" variant="flat" size="small">
+                <v-icon start size="14">mdi-check-circle</v-icon>
+                Concluído
+              </v-chip>
             </v-card-title>
             <v-card-text class="pa-4">
-              <div class="text-body-1" style="white-space: pre-wrap; word-wrap: break-word;">
-                {{ attendance.raw_content }}
+              <div v-if="parsedConversations.length > 0">
+                <v-timeline align="start" density="compact" side="end" class="conversations-timeline">
+                  <v-timeline-item
+                    v-for="(conversation, index) in parsedConversations"
+                    :key="index"
+                    dot-color="primary"
+                    size="small"
+                  >
+                    <template #icon>
+                      <v-icon size="16" color="white">mdi-message</v-icon>
+                    </template>
+                    <v-card variant="outlined" class="conversation-card">
+                      <v-card-text class="pa-4">
+                        <div class="d-flex align-center justify-space-between mb-2">
+                          <div class="d-flex align-center">
+                            <v-icon size="18" color="primary" class="mr-2">mdi-clock-outline</v-icon>
+                            <span class="text-caption text-medium-emphasis font-weight-medium">
+                              {{ conversation.timestamp || 'Conversa inicial' }}
+                            </span>
+                          </div>
+                          <v-chip size="x-small" variant="tonal" color="primary">
+                            #{{ parsedConversations.length - index }}
+                          </v-chip>
+                        </div>
+                        <div class="text-body-2 conversation-content" style="white-space: pre-wrap; word-wrap: break-word;">
+                          {{ conversation.content }}
+                        </div>
+                      </v-card-text>
+                    </v-card>
+                  </v-timeline-item>
+                </v-timeline>
               </div>
-              <v-alert v-if="attendance.status === 'ACTIVE'" type="info" variant="tonal" density="compact" class="mt-3">
-                <div class="text-caption">
-                  <v-icon size="16" class="mr-1">mdi-information</v-icon>
-                  Você pode adicionar novas conversas a este ciclo usando o botão "Adicionar Conversa" no cabeçalho.
+              <div v-else class="text-center py-8">
+                <v-icon size="48" color="grey-lighten-1">mdi-message-text-outline</v-icon>
+                <div class="text-body-1 text-medium-emphasis mt-2">Nenhuma conversa registrada</div>
+              </div>
+              <v-alert v-if="attendance.status === 'ACTIVE'" type="info" variant="tonal" density="compact" class="mt-4">
+                <div class="d-flex align-center">
+                  <v-icon size="18" class="mr-2">mdi-information</v-icon>
+                  <div>
+                    <div class="text-body-2 font-weight-medium mb-1">Ciclo Ativo</div>
+                    <div class="text-caption">
+                      Você pode adicionar novas conversas a este ciclo usando o botão "Adicionar Conversa" no cabeçalho.
+                    </div>
+                  </div>
                 </div>
               </v-alert>
             </v-card-text>
@@ -148,7 +190,7 @@
           <v-card elevation="2" class="mb-4" rounded="lg">
             <v-card-title class="pa-4 d-flex align-center">
               <v-icon class="mr-2" color="primary">mdi-robot</v-icon>
-              <span>Insights da IA</span>
+              <span>Análise da IA</span>
               <v-spacer></v-spacer>
               <!-- Processing Status Badge -->
               <v-chip
@@ -162,6 +204,17 @@
               </v-chip>
             </v-card-title>
 
+            <!-- Quick Summary from Attendance (if available) -->
+            <v-card-text v-if="attendance.ai_summary && !aiSummary" class="pa-4">
+              <v-alert type="info" variant="tonal" density="comfortable" class="mb-0">
+                <template #prepend>
+                  <v-icon>mdi-robot</v-icon>
+                </template>
+                <div class="text-subtitle-2 font-weight-medium mb-2">Resumo da IA</div>
+                <div class="text-body-2 markdown-content" v-html="formatMarkdown(attendance.ai_summary)"></div>
+              </v-alert>
+            </v-card-text>
+
             <!-- Loading AI Summary -->
             <v-card-text v-if="isLoadingAISummary" class="pa-4">
               <v-skeleton-loader type="paragraph"></v-skeleton-loader>
@@ -169,6 +222,16 @@
 
             <!-- AI Summary Content -->
             <div v-else-if="aiSummary && aiSummary.status === 'COMPLETED'">
+              <!-- Show attendance.ai_summary if it's different from aiSummary.summary_text -->
+              <v-card-text v-if="attendance.ai_summary && attendance.ai_summary !== aiSummary.summary_text" class="pa-4 pt-0">
+                <v-alert type="info" variant="tonal" density="comfortable" class="mb-4">
+                  <template #prepend>
+                    <v-icon>mdi-robot</v-icon>
+                  </template>
+                  <div class="text-subtitle-2 font-weight-medium mb-2">Resumo Atualizado</div>
+                  <div class="text-body-2 markdown-content" v-html="formatMarkdown(attendance.ai_summary)"></div>
+                </v-alert>
+              </v-card-text>
               <!-- AI Summary Text -->
               <v-card-text v-if="aiSummary.summary_text" class="pa-4 pt-0">
                 <div 
@@ -1531,6 +1594,73 @@ const getCounterColor = (value: number, maxLength: number): string => {
   return 'text-medium-emphasis'
 }
 
+// Parse conversations from raw_content
+const parsedConversations = computed(() => {
+  if (!attendance.value?.raw_content) return []
+  
+  const content = attendance.value.raw_content.trim()
+  if (!content) return []
+  
+  const separator = '\n\n---\n\n'
+  
+  // Split by separator
+  const parts = content.split(separator)
+  
+  const conversations: Array<{ timestamp: string | null; content: string }> = []
+  
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i].trim()
+    if (!part) continue
+    
+    // Check if part starts with timestamp pattern [YYYY-MM-DD HH:MM:SS]
+    const timestampMatch = part.match(/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]\s*(.+)$/s)
+    
+    if (timestampMatch) {
+      conversations.push({
+        timestamp: timestampMatch[1],
+        content: timestampMatch[2].trim(),
+      })
+    } else {
+      // Check if it's the first conversation (no timestamp) or a continuation
+      if (i === 0) {
+        // First conversation - might not have timestamp
+        conversations.push({
+          timestamp: null,
+          content: part,
+        })
+      } else {
+        // Subsequent conversation without timestamp - add it anyway
+        conversations.push({
+          timestamp: null,
+          content: part,
+        })
+      }
+    }
+  }
+  
+  // If no separator found, treat entire content as single conversation
+  if (conversations.length === 0 && content) {
+    conversations.push({
+      timestamp: null,
+      content: content,
+    })
+  }
+  
+  // Remove duplicates based on content (prevent showing same conversation twice)
+  const seen = new Set<string>()
+  const uniqueConversations: Array<{ timestamp: string | null; content: string }> = []
+  
+  for (const conv of conversations) {
+    const contentKey = conv.content.trim().toLowerCase()
+    if (!seen.has(contentKey)) {
+      seen.add(contentKey)
+      uniqueConversations.push(conv)
+    }
+  }
+  
+  return uniqueConversations
+})
+
 onMounted(() => {
   loadAttendance()
 })
@@ -1643,6 +1773,24 @@ onMounted(() => {
 
 .ai-next-steps-content :deep(p:last-child) {
   margin-bottom: 0;
+}
+
+/* Conversations Timeline Styles */
+.conversations-timeline {
+  padding: 0;
+}
+
+.conversation-card {
+  transition: all 0.2s ease;
+}
+
+.conversation-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.conversation-content {
+  line-height: 1.6;
+  color: rgba(var(--v-theme-on-surface), 0.87);
 }
 </style>
 
