@@ -77,17 +77,14 @@
                     {{ getStatusLabel(attendance.status) }}
                   </v-chip>
                   <span class="text-caption text-medium-emphasis">
-                    {{ formatDateTime(attendance.started_at) }}
+                    {{ formatDateTime(attendance.created_at) }}
                   </span>
                 </div>
                 <div class="text-body-1 font-weight-medium">
                   {{ attendance.objective || 'Objetivo não definido' }}
                 </div>
-                <div v-if="attendance.ended_at" class="text-caption text-medium-emphasis">
-                  Finalizado em {{ formatDateTime(attendance.ended_at) }}
-                  <span v-if="attendance.duration">
-                    • Duração: {{ formatDuration(attendance.duration) }}
-                  </span>
+                <div v-if="attendance.status === 'COMPLETED' || attendance.status === 'LOST' || attendance.status === 'ABANDONED'" class="text-caption text-medium-emphasis">
+                  Finalizado em {{ formatDateTime(attendance.updated_at) }}
                 </div>
               </div>
 
@@ -249,9 +246,9 @@ const expandedCycles = ref<string[]>([])
 
 // Computed
 const sortedAttendances = computed(() => {
-  // Sort by started_at descending (most recent first)
+  // Sort by created_at descending (most recent first)
   return [...attendances.value].sort(
-    (a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime()
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   )
 })
 
@@ -364,8 +361,10 @@ const getChannelIcon = (channel: AttendanceChannel): string => {
 }
 
 // Formatting helpers
-const formatDateTime = (dateString: string): string => {
+const formatDateTime = (dateString: string | null | undefined): string => {
+  if (!dateString) return 'Data não disponível'
   const date = new Date(dateString)
+  if (isNaN(date.getTime())) return 'Data inválida'
   return new Intl.DateTimeFormat('pt-BR', {
     day: '2-digit',
     month: '2-digit',
@@ -418,7 +417,7 @@ const handleCompleteCycle = async (attendanceId: string) => {
   try {
     await attendancesService.updateAttendance(attendanceId, {
       status: 'COMPLETED',
-      ended_at: new Date().toISOString(),
+      // ended_at removed - use updated_at instead
     })
     // Reload attendances
     await loadAttendances()
