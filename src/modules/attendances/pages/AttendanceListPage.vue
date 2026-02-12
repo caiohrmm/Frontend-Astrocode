@@ -226,127 +226,112 @@
 
     <!-- AI Summary Modal -->
     <v-dialog v-model="showAISummaryModal" max-width="900" scrollable persistent>
-      <v-card v-if="selectedAttendance" rounded="xl" class="ai-summary-modal">
-        <v-card-title class="d-flex align-center pa-6 modal-header">
-          <v-avatar color="success" size="48" class="mr-4">
-            <v-icon color="white" size="28">mdi-robot</v-icon>
-          </v-avatar>
-          <div class="flex-grow-1">
-            <div class="text-h5 font-weight-bold">Análise da IA</div>
-            <div class="text-body-2 text-medium-emphasis mt-1">
-              Atendimento de {{ getClientName(selectedAttendance.client_id) }}
+      <v-card v-if="selectedAttendance" variant="flat" class="ai-summary-modal">
+        <!-- Header -->
+        <v-card-title class="d-flex align-center pa-6 pb-4">
+          <div class="d-flex align-center flex-grow-1">
+            <v-avatar color="success" size="40" class="mr-4">
+              <v-icon color="white" size="22">mdi-robot</v-icon>
+            </v-avatar>
+            <div>
+              <div class="text-h6 font-weight-bold">Análise da IA</div>
+              <div class="text-caption text-medium-emphasis mt-1">
+                Atendimento de {{ getClientName(selectedAttendance.client_id) }}
+              </div>
             </div>
           </div>
           <v-btn
             icon
             variant="text"
             size="small"
-            class="ml-2"
-            @click="closeAISummaryModal"
+            @click.stop="closeAISummaryModal"
           >
-            <v-icon>mdi-close</v-icon>
+            <v-icon size="20">mdi-close</v-icon>
           </v-btn>
         </v-card-title>
 
-        <v-card-text class="pa-6">
+        <v-card-text class="pa-6 pt-2">
           <!-- Summary Content -->
           <div v-if="selectedAttendance.ai_summary" class="mb-8">
-            <div class="d-flex align-center mb-4">
-              <v-icon color="primary" size="24" class="mr-3">mdi-text-box-outline</v-icon>
-              <span class="text-h6 font-weight-bold">Resumo da Análise</span>
-            </div>
-            <div class="markdown-container pa-5">
-              <div 
-                class="text-body-1 markdown-content" 
-                v-html="formatMarkdown(selectedAttendance.ai_summary)"
-              ></div>
-            </div>
+            <h3 class="text-subtitle-2 font-weight-medium text-medium-emphasis mb-3">
+              Resumo da Análise
+            </h3>
+            <div 
+              class="text-body-1 markdown-content" 
+              style="line-height: 1.7; color: rgba(var(--v-theme-on-surface), 0.87);"
+              v-html="formatMarkdown(selectedAttendance.ai_summary)"
+            ></div>
           </div>
 
           <!-- Next Steps -->
           <div v-if="selectedAttendance.ai_next_steps" class="mb-8">
-            <div class="d-flex align-center mb-4">
-              <v-icon color="info" size="24" class="mr-3">mdi-arrow-right-circle</v-icon>
-              <span class="text-h6 font-weight-bold">Próximos Passos Recomendados</span>
-            </div>
-            <v-alert
-              type="info"
-              variant="tonal"
-              density="comfortable"
-              class="mb-0 next-steps-alert"
-            >
-              <div class="ai-next-steps-content" v-html="formatAINextSteps(selectedAttendance.ai_next_steps)"></div>
-            </v-alert>
+            <h3 class="text-subtitle-2 font-weight-medium text-medium-emphasis mb-3">
+              Próximos Passos
+            </h3>
+            <v-list variant="flat" density="comfortable" class="pa-0">
+              <template v-for="(step, index) in parsedNextSteps" :key="index">
+                <v-list-item class="px-0 py-2">
+                  <template #prepend>
+                    <v-icon 
+                      :color="step.isUrgent ? 'error' : 'primary'" 
+                      size="18" 
+                      class="mr-3"
+                    >
+                      {{ step.isUrgent ? 'mdi-alert-circle' : 'mdi-arrow-right' }}
+                    </v-icon>
+                  </template>
+                  <v-list-item-title 
+                    :class="step.isUrgent ? 'font-weight-medium' : 'text-body-2'"
+                    style="line-height: 1.6;"
+                  >
+                    {{ step.text }}
+                  </v-list-item-title>
+                </v-list-item>
+                <v-divider v-if="index < parsedNextSteps.length - 1" class="my-1" />
+              </template>
+            </v-list>
           </div>
 
           <!-- Attendance Info -->
           <div class="attendance-info-section">
-            <div class="text-subtitle-1 font-weight-bold mb-4">
-              <v-icon size="20" class="mr-2">mdi-information-outline</v-icon>
+            <h3 class="text-subtitle-2 font-weight-medium text-medium-emphasis mb-4">
               Informações do Atendimento
-            </div>
-            <v-row dense class="info-cards-row">
-              <v-col cols="12" sm="6">
-                <div class="info-card pa-4">
-                  <div class="d-flex align-center">
-                    <v-icon color="primary" size="24" class="mr-3">mdi-target</v-icon>
-                    <div class="flex-grow-1">
-                      <div class="text-caption text-medium-emphasis mb-1">Objetivo</div>
-                      <div class="text-body-1 font-weight-medium">
-                        {{ selectedAttendance.objective || 'Não definido' }}
-                      </div>
-                    </div>
+            </h3>
+            <v-row dense>
+              <v-col cols="12" sm="6" class="pb-2">
+                <div class="info-field">
+                  <div class="text-caption text-medium-emphasis mb-1">Objetivo</div>
+                  <div class="text-body-2 font-weight-medium">
+                    {{ selectedAttendance.objective || 'Não definido' }}
                   </div>
                 </div>
               </v-col>
-              <v-col cols="12" sm="6">
-                <div class="info-card pa-4">
-                  <div class="d-flex align-center">
-                    <v-icon 
-                      :color="getChannelColor(selectedAttendance.channel)" 
-                      size="24" 
-                      class="mr-3"
-                    >
-                      {{ getChannelIcon(selectedAttendance.channel) }}
-                    </v-icon>
-                    <div class="flex-grow-1">
-                      <div class="text-caption text-medium-emphasis mb-1">Canal</div>
-                      <div class="text-body-1 font-weight-medium">
-                        {{ getChannelLabel(selectedAttendance.channel) }}
-                      </div>
-                    </div>
+              <v-col cols="12" sm="6" class="pb-2">
+                <div class="info-field">
+                  <div class="text-caption text-medium-emphasis mb-1">Canal</div>
+                  <div class="text-body-2 font-weight-medium">
+                    {{ getChannelLabel(selectedAttendance.channel) }}
                   </div>
                 </div>
               </v-col>
-              <v-col cols="12" sm="6">
-                <div class="info-card pa-4">
-                  <div class="d-flex align-center">
-                    <v-icon 
-                      :color="getStatusColor(selectedAttendance.status)" 
-                      size="24" 
-                      class="mr-3"
-                    >
-                      mdi-circle
-                    </v-icon>
-                    <div class="flex-grow-1">
-                      <div class="text-caption text-medium-emphasis mb-1">Status</div>
-                      <div class="text-body-1 font-weight-medium">
-                        {{ getStatusLabel(selectedAttendance.status) }}
-                      </div>
-                    </div>
-                  </div>
+              <v-col cols="12" sm="6" class="pb-2">
+                <div class="info-field">
+                  <div class="text-caption text-medium-emphasis mb-1">Status</div>
+                  <v-chip
+                    :color="getStatusColor(selectedAttendance.status)"
+                    variant="tonal"
+                    size="small"
+                    class="mt-1"
+                  >
+                    {{ getStatusLabel(selectedAttendance.status) }}
+                  </v-chip>
                 </div>
               </v-col>
-              <v-col cols="12" sm="6">
-                <div class="info-card pa-4">
-                  <div class="d-flex align-center">
-                    <v-icon color="grey-darken-1" size="24" class="mr-3">mdi-calendar-clock</v-icon>
-                    <div class="flex-grow-1">
-                      <div class="text-caption text-medium-emphasis mb-1">Criado em</div>
-                      <div class="text-body-1 font-weight-medium">
-                        {{ formatDateTime(selectedAttendance.created_at) }}
-                      </div>
-                    </div>
+              <v-col cols="12" sm="6" class="pb-2">
+                <div class="info-field">
+                  <div class="text-caption text-medium-emphasis mb-1">Criado em</div>
+                  <div class="text-body-2 font-weight-medium">
+                    {{ formatDateTime(selectedAttendance.created_at) }}
                   </div>
                 </div>
               </v-col>
@@ -354,11 +339,12 @@
           </div>
         </v-card-text>
 
-        <v-card-actions class="pa-6 modal-actions">
+        <v-divider class="mx-6" />
+
+        <v-card-actions class="pa-6">
           <v-spacer></v-spacer>
           <v-btn
             variant="text"
-            size="large"
             @click="closeAISummaryModal"
           >
             Fechar
@@ -366,7 +352,6 @@
           <v-btn
             color="primary"
             variant="flat"
-            size="large"
             prepend-icon="mdi-arrow-right"
             @click="goToAttendanceDetails"
           >
@@ -407,6 +392,12 @@ const clients = ref<Client[]>([])
 // AI Summary Modal State
 const showAISummaryModal = ref(false)
 const selectedAttendance = ref<Attendance | null>(null)
+
+// Computed for parsed next steps
+const parsedNextSteps = computed(() => {
+  if (!selectedAttendance.value?.ai_next_steps) return []
+  return parseNextSteps(selectedAttendance.value.ai_next_steps)
+})
 
 // Maps for quick lookup
 const clientsMap = computed(() => {
@@ -751,6 +742,37 @@ const formatMarkdown = (text: string): string => {
   return html
 }
 
+// Parse Next Steps into array for v-list
+const parseNextSteps = (nextSteps: string): Array<{ text: string; isUrgent: boolean }> => {
+  if (!nextSteps) return []
+  
+  const steps: Array<{ text: string; isUrgent: boolean }> = []
+  const lines = nextSteps.split('\n')
+  
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+    
+    // Remove bullet points and numbering
+    let cleanText = trimmed
+      .replace(/^[-*•]\s*/, '')
+      .replace(/^\d+\.\s*/, '')
+      .trim()
+    
+    if (!cleanText) continue
+    
+    // Check if it's urgent (contains urgent keywords)
+    const isUrgent = /urgente|imediata|imediato|24h|hoje|agora/i.test(cleanText)
+    
+    steps.push({
+      text: cleanText,
+      isUrgent,
+    })
+  }
+  
+  return steps
+}
+
 // Format AI Next Steps
 const formatAINextSteps = (nextSteps: string): string => {
   if (!nextSteps) return ''
@@ -906,26 +928,9 @@ onMounted(async () => {
   border-top: 1px solid rgba(255, 255, 255, 0.12);
 }
 
-/* AI Summary Modal Styles */
+/* AI Summary Modal Styles - Modern SaaS Design */
 .ai-summary-modal {
   overflow: hidden;
-}
-
-.modal-header {
-  background: linear-gradient(135deg, rgba(var(--v-theme-success), 0.08) 0%, rgba(var(--v-theme-primary), 0.04) 100%);
-  border-bottom: none;
-}
-
-.markdown-container {
-  background: rgba(var(--v-theme-surface-variant), 0.25);
-  border-radius: 16px;
-  border: none;
-  backdrop-filter: blur(10px);
-}
-
-.next-steps-alert {
-  border-radius: 16px;
-  border: none;
 }
 
 .attendance-info-section {
@@ -933,31 +938,11 @@ onMounted(async () => {
   padding-top: 2rem;
 }
 
-.info-cards-row {
-  margin: 0;
+.info-field {
+  padding-bottom: 0.5rem;
 }
 
-.info-card {
-  background: rgba(var(--v-theme-surface-variant), 0.15);
-  border-radius: 16px;
-  border: none;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  height: 100%;
-  backdrop-filter: blur(10px);
-}
-
-.info-card:hover {
-  background: rgba(var(--v-theme-surface-variant), 0.25);
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-}
-
-.modal-actions {
-  background: rgba(var(--v-theme-surface-variant), 0.08);
-  border-top: none;
-}
-
-/* Markdown Content Styles */
+/* Markdown Content Styles - Clean and Minimal */
 .markdown-content {
   line-height: 1.7;
   color: rgba(var(--v-theme-on-surface), 0.87);
@@ -966,24 +951,22 @@ onMounted(async () => {
 .markdown-content :deep(h1),
 .markdown-content :deep(h2),
 .markdown-content :deep(h3) {
-  color: rgb(var(--v-theme-primary));
+  color: rgba(var(--v-theme-on-surface), 0.87);
   margin-top: 1.5rem;
   margin-bottom: 0.75rem;
+  font-weight: 600;
 }
 
 .markdown-content :deep(h1) {
-  font-size: 1.5rem;
-  font-weight: bold;
+  font-size: 1.25rem;
 }
 
 .markdown-content :deep(h2) {
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-size: 1.125rem;
 }
 
 .markdown-content :deep(h3) {
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: 1rem;
 }
 
 .markdown-content :deep(p) {
@@ -1012,21 +995,20 @@ onMounted(async () => {
 }
 
 .markdown-content :deep(code) {
-  background-color: rgba(var(--v-theme-surface-variant), 0.5);
-  padding: 0.2rem 0.4rem;
+  background-color: rgba(var(--v-theme-surface-variant), 0.3);
+  padding: 0.15rem 0.35rem;
   border-radius: 0.25rem;
   font-family: 'Courier New', monospace;
-  font-size: 0.9em;
-  color: rgb(var(--v-theme-primary));
+  font-size: 0.875em;
+  color: rgba(var(--v-theme-on-surface), 0.87);
 }
 
 .markdown-content :deep(pre) {
-  background-color: rgba(var(--v-theme-surface-variant), 0.3);
+  background-color: rgba(var(--v-theme-surface-variant), 0.2);
   padding: 1rem;
   border-radius: 0.5rem;
   overflow-x: auto;
   margin: 1rem 0;
-  border-left: 4px solid rgb(var(--v-theme-primary));
 }
 
 .markdown-content :deep(pre code) {
@@ -1043,41 +1025,6 @@ onMounted(async () => {
 
 .markdown-content :deep(a:hover) {
   text-decoration: underline;
-}
-
-.markdown-list {
-  list-style-type: disc;
-  padding-left: 1.5rem;
-}
-
-/* AI Next Steps Styles */
-.ai-next-steps-content {
-  line-height: 1.7;
-}
-
-.ai-next-steps-content :deep(.ai-next-steps-list) {
-  margin: 0.75rem 0;
-  padding-left: 1.5rem;
-  list-style-type: disc;
-}
-
-.ai-next-steps-content :deep(.ai-next-steps-list li) {
-  margin: 0.5rem 0;
-  padding-left: 0.25rem;
-  line-height: 1.6;
-}
-
-.ai-next-steps-content :deep(p) {
-  margin: 0.5rem 0;
-  line-height: 1.7;
-}
-
-.ai-next-steps-content :deep(p:first-child) {
-  margin-top: 0;
-}
-
-.ai-next-steps-content :deep(p:last-child) {
-  margin-bottom: 0;
 }
 </style>
 
