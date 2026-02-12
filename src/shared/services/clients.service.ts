@@ -46,7 +46,6 @@ export interface Client {
   current_city_interest: string | null
   first_contact_at: string | null
   last_contact_at: string | null
-  next_follow_up_at: string | null
   summary_notes: string | null
   // State Derivation Tracking (for visibility/transparency)
   last_state_derivation_at: string | null // Timestamp of last automatic state derivation
@@ -99,7 +98,6 @@ export interface ClientCreate {
   current_city_interest?: string | null
   first_contact_at?: string | null
   last_contact_at?: string | null
-  next_follow_up_at?: string | null
   summary_notes?: string | null
 }
 
@@ -122,7 +120,6 @@ export interface ClientUpdate {
   current_city_interest?: string | null
   first_contact_at?: string | null
   last_contact_at?: string | null
-  next_follow_up_at?: string | null
   summary_notes?: string | null
 }
 

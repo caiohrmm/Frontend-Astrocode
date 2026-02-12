@@ -16,7 +16,6 @@ export type DetectedIntent =
   | 'DOCUMENTATION_REQUEST'
   | 'GENERAL_INQUIRY'
   | 'COMPLAINT'
-  | 'FOLLOW_UP'
 
 export type Sentiment = 'POSITIVE' | 'NEUTRAL' | 'NEGATIVE' | 'MIXED'
 

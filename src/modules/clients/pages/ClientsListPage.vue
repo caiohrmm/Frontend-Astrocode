@@ -160,17 +160,6 @@
           <span v-else class="text-medium-emphasis">-</span>
         </template>
 
-        <!-- Next Follow-up Column -->
-        <template #item.next_follow_up_at="{ item }">
-          <span
-            v-if="item.next_follow_up_at"
-            :class="getFollowUpClass(item.next_follow_up_at)"
-            class="text-caption font-weight-medium"
-          >
-            {{ formatDate(item.next_follow_up_at) }}
-          </span>
-          <span v-else class="text-medium-emphasis">-</span>
-        </template>
 
         <!-- Loading State -->
         <template #loading>
@@ -234,7 +223,6 @@ const headers = [
   { title: 'Urgência', key: 'current_urgency_level', sortable: true },
   { title: 'Lead Score', key: 'current_lead_score', sortable: true },
   { title: 'Último Contato', key: 'last_contact_at', sortable: true },
-  { title: 'Próximo Follow-up', key: 'next_follow_up_at', sortable: true },
 ]
 
 // Options
@@ -427,21 +415,6 @@ const formatDate = (dateString: string): string => {
   }).format(date)
 }
 
-const getFollowUpClass = (dateString: string): string => {
-  const date = new Date(dateString)
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const followUpDate = new Date(date)
-  followUpDate.setHours(0, 0, 0, 0)
-
-  const diffTime = followUpDate.getTime() - today.getTime()
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-
-  if (diffDays < 0) return 'text-error' // Past due
-  if (diffDays === 0) return 'text-warning' // Today
-  if (diffDays <= 3) return 'text-orange' // Soon
-  return 'text-success' // Future
-}
 
 onMounted(() => {
   loadClients()

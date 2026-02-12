@@ -1241,7 +1241,6 @@ const getIntentLabel = (intent: DetectedIntent): string => {
     DOCUMENTATION_REQUEST: 'Solicitação de Documentação',
     GENERAL_INQUIRY: 'Consulta Geral',
     COMPLAINT: 'Reclamação',
-    FOLLOW_UP: 'Follow-up',
   }
   return labels[intent] || intent
 }

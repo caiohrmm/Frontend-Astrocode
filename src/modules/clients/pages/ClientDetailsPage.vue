@@ -472,10 +472,6 @@
             <v-icon start>mdi-map-marker-path</v-icon>
             Jornada
           </v-tab>
-          <v-tab value="followup">
-            <v-icon start>mdi-calendar-clock</v-icon>
-            Follow-up
-          </v-tab>
         </v-tabs>
 
         <v-card-text class="pa-6">
@@ -1072,74 +1068,6 @@
             <v-window-item value="journey">
               <ClientJourneyPanel :client-id="clientId" />
             </v-window-item>
-
-            <!-- Tab 5: Follow-up -->
-            <v-window-item value="followup">
-              <v-row>
-                <!-- Próximo Follow-up -->
-                <v-col cols="12" md="6">
-                  <v-card variant="outlined" class="mb-4">
-                    <v-card-title class="d-flex align-center">
-                      <v-icon class="mr-2" color="primary">mdi-calendar-clock</v-icon>
-                      Próximo Follow-up
-                    </v-card-title>
-                    <v-card-text>
-                      <div v-if="client.next_follow_up_at" class="d-flex flex-column ga-3">
-                        <div>
-                          <div class="text-h6 font-weight-bold">
-                            {{ formatDateTime(client.next_follow_up_at) }}
-                          </div>
-                          <div :class="getFollowUpClass(client.next_follow_up_at)"
-                            class="text-caption font-weight-medium mt-2">
-                            {{ getFollowUpStatus(client.next_follow_up_at) }}
-                          </div>
-                        </div>
-                        <v-btn color="primary" prepend-icon="mdi-calendar-plus" @click="showScheduleDialog = true">
-                          Reagendar
-                        </v-btn>
-                      </div>
-                      <div v-else class="d-flex flex-column ga-3">
-                        <v-alert type="warning" variant="tonal">
-                          Nenhum follow-up agendado.
-                        </v-alert>
-                        <v-btn color="primary" prepend-icon="mdi-calendar-plus" @click="showScheduleDialog = true">
-                          Agendar Próximo Contato
-                        </v-btn>
-                      </div>
-                    </v-card-text>
-                  </v-card>
-                </v-col>
-
-                <!-- Histórico de Contatos -->
-                <v-col cols="12" md="6">
-                  <v-card variant="outlined">
-                    <v-card-title class="d-flex align-center">
-                      <v-icon class="mr-2" color="primary">mdi-history</v-icon>
-                      Histórico de Contatos
-                    </v-card-title>
-                    <v-card-text>
-                      <div v-if="client.first_contact_at || client.last_contact_at" class="d-flex flex-column ga-3">
-                        <div v-if="client.first_contact_at">
-                          <div class="text-caption text-medium-emphasis">Primeiro Contato</div>
-                          <div class="text-body-1 font-weight-medium">
-                            {{ formatDateTime(client.first_contact_at) }}
-                          </div>
-                        </div>
-                        <div v-if="client.last_contact_at">
-                          <div class="text-caption text-medium-emphasis">Último Contato</div>
-                          <div class="text-body-1 font-weight-medium">
-                            {{ formatDateTime(client.last_contact_at) }}
-                          </div>
-                        </div>
-                      </div>
-                      <v-alert v-else type="info" variant="tonal">
-                        Nenhum histórico de contato disponível.
-                      </v-alert>
-                    </v-card-text>
-                  </v-card>
-                </v-col>
-              </v-row>
-            </v-window-item>
           </v-window>
         </v-card-text>
       </v-card>
@@ -1207,7 +1135,6 @@ const isLoadingAIInsights = ref(false)
 const isLoadingAttendances = ref(false)
 const isDeleting = ref(false)
 const activeTab = ref('overview')
-const showScheduleDialog = ref(false)
 const showEditDialog = ref(false)
 const showDeleteDialog = ref(false)
 const showSaleDialog = ref(false)
@@ -1434,7 +1361,6 @@ const aggregatedInsights = computed(() => {
       allNextSteps.push('Confirmar visita com antecedência')
       allNextSteps.push('Preparar documentação do imóvel para apresentação')
     } else if (c.current_status === 'PROPOSAL_SENT') {
-      allNextSteps.push('Fazer follow-up sobre a proposta enviada')
       allNextSteps.push('Esclarecer dúvidas sobre valores e condições')
     } else if (c.current_status === 'NEGOTIATING') {
       allNextSteps.push('Negociar termos e condições finais')
@@ -1773,38 +1699,6 @@ const formatDateTime = (dateString: string): string => {
   }).format(date)
 }
 
-const getFollowUpClass = (dateString: string): string => {
-  const date = new Date(dateString)
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const followUpDate = new Date(date)
-  followUpDate.setHours(0, 0, 0, 0)
-
-  const diffTime = followUpDate.getTime() - today.getTime()
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-
-  if (diffDays < 0) return 'text-error'
-  if (diffDays === 0) return 'text-warning'
-  if (diffDays <= 3) return 'text-orange'
-  return 'text-success'
-}
-
-const getFollowUpStatus = (dateString: string): string => {
-  const date = new Date(dateString)
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const followUpDate = new Date(date)
-  followUpDate.setHours(0, 0, 0, 0)
-
-  const diffTime = followUpDate.getTime() - today.getTime()
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-
-  if (diffDays < 0) return `Atrasado há ${Math.abs(diffDays)} dia(s)`
-  if (diffDays === 0) return 'Hoje'
-  if (diffDays === 1) return 'Amanhã'
-  if (diffDays <= 7) return `Em ${diffDays} dias`
-  return `Em ${diffDays} dias`
-}
 
 // Attendance helpers
 const getChannelLabel = (channel: string): string => {
@@ -2391,7 +2285,6 @@ const getIntentColor = (intent: DetectedIntent): string => {
     DOCUMENTATION_REQUEST: 'purple',
     GENERAL_INQUIRY: 'cyan',
     COMPLAINT: 'error',
-    FOLLOW_UP: 'orange',
   }
   return colors[intent] || 'grey'
 }
@@ -2405,7 +2298,6 @@ const getIntentIcon = (intent: DetectedIntent): string => {
     DOCUMENTATION_REQUEST: 'mdi-file-document',
     GENERAL_INQUIRY: 'mdi-help-circle',
     COMPLAINT: 'mdi-alert',
-    FOLLOW_UP: 'mdi-phone',
   }
   return icons[intent] || 'mdi-help-circle'
 }
@@ -2419,7 +2311,6 @@ const getIntentLabel = (intent: DetectedIntent): string => {
     DOCUMENTATION_REQUEST: 'Solicitação de Documentação',
     GENERAL_INQUIRY: 'Consulta Geral',
     COMPLAINT: 'Reclamação',
-    FOLLOW_UP: 'Follow-up',
   }
   return labels[intent] || intent
 }

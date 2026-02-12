@@ -25,8 +25,6 @@ export type TimelineEventType =
   | 'PROPOSAL_ACCEPTED'
   | 'PROPOSAL_REJECTED'
   | 'PRICE_NEGOTIATION'
-  | 'FOLLOW_UP_SCHEDULED'
-  | 'FOLLOW_UP_COMPLETED'
   | 'NOTE_ADDED'
   | 'DOCUMENT_UPLOADED'
   | 'CONTACT_ATTEMPT'
@@ -190,8 +188,6 @@ export const getEventTypeLabel = (eventType: TimelineEventType): string => {
     PROPOSAL_ACCEPTED: 'Proposta aceita',
     PROPOSAL_REJECTED: 'Proposta rejeitada',
     PRICE_NEGOTIATION: 'Negociação de preço',
-    FOLLOW_UP_SCHEDULED: 'Follow-up agendado',
-    FOLLOW_UP_COMPLETED: 'Follow-up concluído',
     NOTE_ADDED: 'Nota adicionada',
     DOCUMENT_UPLOADED: 'Documento enviado',
     CONTACT_ATTEMPT: 'Tentativa de contato',
@@ -219,8 +215,6 @@ export const getEventTypeIcon = (eventType: TimelineEventType): string => {
     PROPOSAL_ACCEPTED: 'mdi-handshake',
     PROPOSAL_REJECTED: 'mdi-close-circle',
     PRICE_NEGOTIATION: 'mdi-currency-usd',
-    FOLLOW_UP_SCHEDULED: 'mdi-clock-outline',
-    FOLLOW_UP_COMPLETED: 'mdi-check',
     NOTE_ADDED: 'mdi-note-text',
     DOCUMENT_UPLOADED: 'mdi-file-upload',
     CONTACT_ATTEMPT: 'mdi-phone-outgoing',
@@ -248,8 +242,6 @@ export const getEventTypeColor = (eventType: TimelineEventType): string => {
     PROPOSAL_ACCEPTED: 'success',
     PROPOSAL_REJECTED: 'error',
     PRICE_NEGOTIATION: 'warning',
-    FOLLOW_UP_SCHEDULED: 'info',
-    FOLLOW_UP_COMPLETED: 'success',
     NOTE_ADDED: 'grey',
     DOCUMENT_UPLOADED: 'grey',
     CONTACT_ATTEMPT: 'info',
