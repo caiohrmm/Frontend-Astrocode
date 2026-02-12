@@ -652,148 +652,210 @@
             <!-- Tab 3: Insights da IA -->
             <v-window-item value="insights">
               <!-- Loading State -->
-              <div v-if="isLoadingAIInsights" class="d-flex justify-center pa-8">
-                <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
+              <div v-if="isLoadingAIInsights" class="d-flex justify-center pa-12">
+                <v-progress-circular indeterminate color="primary" size="64" width="4"></v-progress-circular>
               </div>
 
               <!-- Content -->
-              <div v-else>
+              <div v-else class="insights-container">
                 <v-row>
                   <!-- Resumo do Cliente -->
                   <v-col cols="12">
-                    <v-card variant="outlined" class="mb-4">
-                      <v-card-title class="d-flex align-center">
-                        <v-icon class="mr-2" color="primary">mdi-account-circle</v-icon>
-                        Resumo do Cliente
-                        <v-spacer></v-spacer>
-                        <v-chip v-if="aiSummaries.length > 0" color="primary" variant="flat" size="small">
+                    <div class="insight-card insight-card-summary">
+                      <div class="insight-card-header">
+                        <div class="d-flex align-center">
+                          <v-avatar color="primary" size="40" class="mr-3">
+                            <v-icon color="white" size="22">mdi-account-circle</v-icon>
+                          </v-avatar>
+                          <div>
+                            <h3 class="text-h6 font-weight-bold mb-1">Resumo do Cliente</h3>
+                            <div class="text-caption text-medium-emphasis">
+                              Análise consolidada pela IA
+                            </div>
+                          </div>
+                        </div>
+                        <v-chip v-if="aiSummaries.length > 0" color="primary" variant="flat" size="small" class="ml-auto">
+                          <v-icon start size="14">mdi-check-circle</v-icon>
                           {{ aiSummaries.length }} atendimento(s) analisado(s)
                         </v-chip>
-                      </v-card-title>
-                      <v-card-text>
-                        <div v-if="aggregatedInsights.clientSummary" class="text-body-1 mb-4"
-                          v-html="formatMarkdown(aggregatedInsights.clientSummary)"></div>
-                        <div v-else-if="client.summary_notes" class="text-body-1"
-                          v-html="formatMarkdown(client.summary_notes)"></div>
-                        <v-alert v-else type="info" variant="tonal">
-                          Nenhum resumo disponível. O resumo será gerado automaticamente pela IA com base nos
-                          atendimentos.
+                      </div>
+                      <div class="insight-card-content">
+                        <div v-if="aggregatedInsights.clientSummary" 
+                          class="ai-summary-markdown markdown-content"
+                          v-html="formatMarkdown(aggregatedInsights.clientSummary)">
+                        </div>
+                        <div v-else-if="client.summary_notes" 
+                          class="ai-summary-markdown markdown-content"
+                          v-html="formatMarkdown(client.summary_notes)">
+                        </div>
+                        <v-alert v-else type="info" variant="tonal" density="comfortable" class="mt-0">
+                          <v-icon start size="18">mdi-information</v-icon>
+                          <span class="text-body-2">Nenhum resumo disponível. O resumo será gerado automaticamente pela IA com base nos atendimentos.</span>
                         </v-alert>
-                      </v-card-text>
-                    </v-card>
+                      </div>
+                    </div>
                   </v-col>
 
                   <!-- Análise de Sentimento -->
                   <v-col cols="12" md="6">
-                    <v-card variant="outlined" class="mb-4">
-                      <v-card-title class="d-flex align-center">
-                        <v-icon class="mr-2" color="primary">mdi-emoticon</v-icon>
-                        Análise de Sentimento
-                      </v-card-title>
-                      <v-card-text>
-                        <div v-if="aggregatedInsights.sentimentAnalysis" class="d-flex flex-column ga-3">
-                          <div class="text-center">
-                            <v-icon :color="getSentimentColor(aggregatedInsights.sentimentAnalysis.dominant)" size="64"
-                              class="mb-2">
+                    <div class="insight-card insight-card-sentiment">
+                      <div class="insight-card-header">
+                        <div class="d-flex align-center">
+                          <v-avatar 
+                            :color="aggregatedInsights.sentimentAnalysis ? getSentimentColor(aggregatedInsights.sentimentAnalysis.dominant) : 'grey'" 
+                            size="40" 
+                            class="mr-3"
+                          >
+                            <v-icon color="white" size="22">
+                              {{ aggregatedInsights.sentimentAnalysis ? getSentimentIcon(aggregatedInsights.sentimentAnalysis.dominant) : 'mdi-emoticon' }}
+                            </v-icon>
+                          </v-avatar>
+                          <div>
+                            <h3 class="text-h6 font-weight-bold mb-1">Análise de Sentimento</h3>
+                            <div class="text-caption text-medium-emphasis">
+                              Predominante e distribuição
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="insight-card-content">
+                        <div v-if="aggregatedInsights.sentimentAnalysis" class="sentiment-analysis">
+                          <div class="sentiment-dominant text-center mb-6">
+                            <v-icon 
+                              :color="getSentimentColor(aggregatedInsights.sentimentAnalysis.dominant)" 
+                              size="72"
+                              class="mb-3 sentiment-icon"
+                            >
                               {{ getSentimentIcon(aggregatedInsights.sentimentAnalysis.dominant) }}
                             </v-icon>
-                            <div class="text-h6 font-weight-bold mb-1">
+                            <div class="text-h5 font-weight-bold mb-1">
                               {{ getSentimentLabel(aggregatedInsights.sentimentAnalysis.dominant) }}
                             </div>
                             <div class="text-caption text-medium-emphasis">
                               Sentimento predominante
                             </div>
                           </div>
-                          <v-divider></v-divider>
-                          <div class="d-flex flex-column ga-2">
-                            <div v-for="(count, sentiment) in aggregatedInsights.sentimentAnalysis.distribution"
-                              :key="sentiment" class="d-flex align-center justify-space-between">
-                              <div class="d-flex align-center ga-2">
+                          <div class="sentiment-distribution">
+                            <div 
+                              v-for="(count, sentiment) in aggregatedInsights.sentimentAnalysis.distribution"
+                              :key="sentiment" 
+                              class="sentiment-item"
+                            >
+                              <div class="d-flex align-center ga-3 mb-2">
                                 <v-icon :color="getSentimentColor(sentiment)" size="20">
                                   {{ getSentimentIcon(sentiment) }}
                                 </v-icon>
-                                <span class="text-body-2">{{ getSentimentLabel(sentiment) }}</span>
+                                <span class="text-body-2 flex-grow-1">{{ getSentimentLabel(sentiment) }}</span>
+                                <v-chip size="small" variant="flat" :color="getSentimentColor(sentiment)">
+                                  {{ count }}
+                                </v-chip>
                               </div>
-                              <v-chip size="small" variant="flat">
-                                {{ count }}
-                              </v-chip>
                             </div>
                           </div>
                         </div>
-                        <v-alert v-else type="info" variant="tonal">
-                          Análise de sentimento será gerada após os primeiros atendimentos serem processados.
+                        <v-alert v-else type="info" variant="tonal" density="comfortable" class="mt-0">
+                          <v-icon start size="18">mdi-information</v-icon>
+                          <span class="text-body-2">Análise de sentimento será gerada após os primeiros atendimentos serem processados.</span>
                         </v-alert>
-                      </v-card-text>
-                    </v-card>
+                      </div>
+                    </div>
                   </v-col>
 
                   <!-- Intenções Detectadas -->
                   <v-col cols="12" md="6">
-                    <v-card variant="outlined" class="mb-4">
-                      <v-card-title class="d-flex align-center">
-                        <v-icon class="mr-2" color="primary">mdi-lightbulb-on</v-icon>
-                        Intenções Detectadas
-                      </v-card-title>
-                      <v-card-text>
-                        <div v-if="aggregatedInsights.intents && aggregatedInsights.intents.length > 0"
-                          class="d-flex flex-column ga-2">
-                          <v-chip v-for="intent in aggregatedInsights.intents" :key="intent.intent"
-                            :color="getIntentColor(intent.intent)" variant="flat" class="mb-1">
-                            <v-icon start size="16">{{ getIntentIcon(intent.intent) }}</v-icon>
+                    <div class="insight-card insight-card-intents">
+                      <div class="insight-card-header">
+                        <div class="d-flex align-center">
+                          <v-avatar color="info" size="40" class="mr-3">
+                            <v-icon color="white" size="22">mdi-lightbulb-on</v-icon>
+                          </v-avatar>
+                          <div>
+                            <h3 class="text-h6 font-weight-bold mb-1">Intenções Detectadas</h3>
+                            <div class="text-caption text-medium-emphasis">
+                              Padrões identificados pela IA
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="insight-card-content">
+                        <div v-if="aggregatedInsights.intents && aggregatedInsights.intents.length > 0" class="intents-list">
+                          <v-chip 
+                            v-for="intent in aggregatedInsights.intents" 
+                            :key="intent.intent"
+                            :color="getIntentColor(intent.intent)" 
+                            variant="flat" 
+                            size="default"
+                            class="intent-chip mb-2"
+                          >
+                            <v-icon start size="18">{{ getIntentIcon(intent.intent) }}</v-icon>
                             {{ getIntentLabel(intent.intent) }}
-                            <v-chip size="x-small" variant="text" class="ml-2">
+                            <v-chip 
+                              size="x-small" 
+                              variant="elevated" 
+                              color="white"
+                              class="ml-2"
+                            >
                               {{ intent.count }}x
                             </v-chip>
                           </v-chip>
                         </div>
-                        <v-alert v-else type="info" variant="tonal">
-                          Intenções serão detectadas após os atendimentos serem processados pela IA.
+                        <v-alert v-else type="info" variant="tonal" density="comfortable" class="mt-0">
+                          <v-icon start size="18">mdi-information</v-icon>
+                          <span class="text-body-2">Intenções serão detectadas após os atendimentos serem processados pela IA.</span>
                         </v-alert>
-                      </v-card-text>
-                    </v-card>
+                      </div>
+                    </div>
                   </v-col>
 
                   <!-- Perfil de Interesse -->
                   <v-col cols="12" md="6">
-                    <v-card variant="outlined" class="mb-4">
-                      <v-card-title class="d-flex align-center">
-                        <v-icon class="mr-2" color="primary">mdi-heart</v-icon>
-                        Perfil de Interesse
-                      </v-card-title>
-                      <v-card-text>
-                        <div v-if="hasInterestProfile" class="d-flex flex-column ga-3">
-                          <div v-if="client.current_interest_type" class="d-flex align-center ga-2">
-                            <v-icon color="primary">mdi-handshake</v-icon>
-                            <div>
-                              <div class="text-caption text-medium-emphasis">Tipo de Interesse</div>
+                    <div class="insight-card insight-card-profile">
+                      <div class="insight-card-header">
+                        <div class="d-flex align-center">
+                          <v-avatar color="success" size="40" class="mr-3">
+                            <v-icon color="white" size="22">mdi-heart</v-icon>
+                          </v-avatar>
+                          <div>
+                            <h3 class="text-h6 font-weight-bold mb-1">Perfil de Interesse</h3>
+                            <div class="text-caption text-medium-emphasis">
+                              Preferências identificadas
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="insight-card-content">
+                        <div v-if="hasInterestProfile" class="interest-profile-list">
+                          <div v-if="client.current_interest_type" class="profile-item">
+                            <v-icon color="primary" size="24" class="mr-3">mdi-handshake</v-icon>
+                            <div class="flex-grow-1">
+                              <div class="text-caption text-medium-emphasis mb-1">Tipo de Interesse</div>
                               <div class="text-body-1 font-weight-medium">
                                 {{ getInterestTypeLabel(client.current_interest_type) }}
                               </div>
                             </div>
                           </div>
-                          <div v-if="client.current_property_type" class="d-flex align-center ga-2">
-                            <v-icon color="primary">mdi-home-variant</v-icon>
-                            <div>
-                              <div class="text-caption text-medium-emphasis">Tipo de Imóvel</div>
+                          <div v-if="client.current_property_type" class="profile-item">
+                            <v-icon color="primary" size="24" class="mr-3">mdi-home-variant</v-icon>
+                            <div class="flex-grow-1">
+                              <div class="text-caption text-medium-emphasis mb-1">Tipo de Imóvel</div>
                               <div class="text-body-1 font-weight-medium">
                                 {{ getPropertyTypeLabel(client.current_property_type) }}
                               </div>
                             </div>
                           </div>
-                          <div v-if="client.current_city_interest" class="d-flex align-center ga-2">
-                            <v-icon color="primary">mdi-map-marker</v-icon>
-                            <div>
-                              <div class="text-caption text-medium-emphasis">Cidade de Interesse</div>
+                          <div v-if="client.current_city_interest" class="profile-item">
+                            <v-icon color="primary" size="24" class="mr-3">mdi-map-marker</v-icon>
+                            <div class="flex-grow-1">
+                              <div class="text-caption text-medium-emphasis mb-1">Cidade de Interesse</div>
                               <div class="text-body-1 font-weight-medium">
                                 {{ client.current_city_interest }}
                               </div>
                             </div>
                           </div>
-                          <div v-if="client.current_budget_min || client.current_budget_max"
-                            class="d-flex align-center ga-2">
-                            <v-icon color="primary">mdi-currency-usd</v-icon>
-                            <div>
-                              <div class="text-caption text-medium-emphasis">Orçamento</div>
+                          <div v-if="client.current_budget_min || client.current_budget_max" class="profile-item">
+                            <v-icon color="primary" size="24" class="mr-3">mdi-currency-usd</v-icon>
+                            <div class="flex-grow-1">
+                              <div class="text-caption text-medium-emphasis mb-1">Orçamento</div>
                               <div class="text-body-1 font-weight-medium">
                                 {{ formatBudgetRange(
                                   client.current_budget_min ? parseFloat(client.current_budget_min) : null,
@@ -803,192 +865,249 @@
                             </div>
                           </div>
                         </div>
-                        <v-alert v-else type="info" variant="tonal">
-                          Perfil de interesse ainda não definido.
+                        <v-alert v-else type="info" variant="tonal" density="comfortable" class="mt-0">
+                          <v-icon start size="18">mdi-information</v-icon>
+                          <span class="text-body-2">Perfil de interesse ainda não definido.</span>
                         </v-alert>
-                      </v-card-text>
-                    </v-card>
+                      </div>
+                    </div>
                   </v-col>
 
                   <!-- Potencial de Conversão -->
                   <v-col cols="12" md="6">
-                    <v-card variant="outlined" class="mb-4">
-                      <v-card-title class="d-flex align-center">
-                        <v-icon class="mr-2" color="primary">mdi-chart-line</v-icon>
-                        Potencial de Conversão
-                      </v-card-title>
-                      <v-card-text>
-                        <div v-if="client.current_lead_score !== null" class="d-flex flex-column ga-3">
+                    <div class="insight-card insight-card-conversion">
+                      <div class="insight-card-header">
+                        <div class="d-flex align-center">
+                          <v-avatar color="warning" size="40" class="mr-3">
+                            <v-icon color="white" size="22">mdi-chart-line</v-icon>
+                          </v-avatar>
                           <div>
-                            <div class="text-caption text-medium-emphasis mb-2">Lead Score</div>
-                            <v-progress-linear :model-value="client.current_lead_score"
-                              :color="getLeadScoreColor(client.current_lead_score)" height="32"
-                              rounded></v-progress-linear>
-                            <div class="text-center mt-2">
+                            <h3 class="text-h6 font-weight-bold mb-1">Potencial de Conversão</h3>
+                            <div class="text-caption text-medium-emphasis">
+                              Lead Score e probabilidade
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="insight-card-content">
+                        <div v-if="client.current_lead_score !== null" class="conversion-content">
+                          <div class="lead-score-display mb-4">
+                            <div class="text-caption text-medium-emphasis mb-3">Lead Score</div>
+                            <div class="score-circle-container">
+                              <v-progress-circular
+                                :model-value="client.current_lead_score"
+                                :color="getLeadScoreColor(client.current_lead_score)"
+                                size="120"
+                                width="8"
+                                class="mb-3"
+                              >
+                                <span class="text-h5 font-weight-bold">{{ client.current_lead_score }}</span>
+                              </v-progress-circular>
+                            </div>
+                            <div class="text-center">
                               <span class="text-h6 font-weight-bold">
                                 {{ client.current_lead_score }}/100
                               </span>
                             </div>
                           </div>
-                          <v-alert :type="getLeadScoreAlertType(client.current_lead_score)" variant="tonal">
+                          <v-alert 
+                            :type="getLeadScoreAlertType(client.current_lead_score)" 
+                            variant="tonal"
+                            density="comfortable"
+                            class="mb-3"
+                          >
                             {{ getLeadScoreMessage(client.current_lead_score) }}
                           </v-alert>
-                          <div v-if="aggregatedInsights.averageLeadScore !== null"
-                            class="text-caption text-medium-emphasis">
-                            Score médio sugerido pela IA: {{ aggregatedInsights.averageLeadScore }}/100
+                          <div v-if="aggregatedInsights.averageLeadScore !== null" class="text-caption text-medium-emphasis mb-2">
+                            Score médio sugerido pela IA: <strong>{{ aggregatedInsights.averageLeadScore }}/100</strong>
                           </div>
-                          <v-alert type="info" variant="tonal" density="compact" class="mt-2">
+                          <v-alert type="info" variant="tonal" density="compact" class="mt-0">
                             <v-icon start size="16">mdi-robot</v-icon>
                             <span class="text-caption">Este score é calculado e atualizado automaticamente pela IA com base nas interações do cliente.</span>
                           </v-alert>
                         </div>
-                        <v-alert v-else type="info" variant="tonal">
-                          <v-icon start>mdi-robot</v-icon>
-                          Lead score será calculado pela IA após a primeira análise de atendimento.
+                        <v-alert v-else type="info" variant="tonal" density="comfortable" class="mt-0">
+                          <v-icon start size="18">mdi-robot</v-icon>
+                          <span class="text-body-2">Lead score será calculado pela IA após a primeira análise de atendimento.</span>
                         </v-alert>
-                      </v-card-text>
-                    </v-card>
+                      </div>
+                    </div>
                   </v-col>
 
                   <!-- Propriedades Recomendadas pela IA -->
                   <v-col cols="12" v-if="recommendedProperties.length > 0">
-                    <v-card variant="outlined" class="mb-4">
-                      <v-card-title class="d-flex align-center">
-                        <v-icon class="mr-2" color="success">mdi-home-heart</v-icon>
-                        Propriedades Recomendadas pela IA
-                        <v-spacer></v-spacer>
-                        <v-chip color="success" variant="flat" size="small">
+                    <div class="insight-card insight-card-properties">
+                      <div class="insight-card-header">
+                        <div class="d-flex align-center">
+                          <v-avatar color="success" size="40" class="mr-3">
+                            <v-icon color="white" size="22">mdi-home-heart</v-icon>
+                          </v-avatar>
+                          <div>
+                            <h3 class="text-h6 font-weight-bold mb-1">Propriedades Recomendadas</h3>
+                            <div class="text-caption text-medium-emphasis">
+                              Baseado no perfil do cliente
+                            </div>
+                          </div>
+                        </div>
+                        <v-chip color="success" variant="flat" size="small" class="ml-auto">
                           {{ recommendedProperties.length }} recomendada(s)
                         </v-chip>
-                      </v-card-title>
-                      <v-card-text>
+                      </div>
+                      <div class="insight-card-content">
                         <v-row dense>
                           <v-col v-for="property in recommendedProperties" :key="property.id" cols="12" sm="6" md="4">
-                            <v-card variant="outlined" class="h-100 property-card" @click="goToProperty(property.id)">
-                              <v-card-text class="pa-3">
-                                <div class="d-flex align-center mb-2">
-                                  <v-avatar v-if="property.main_image_url" size="56" class="mr-3" rounded="lg">
-                                    <v-img :src="property.main_image_url" cover></v-img>
-                                  </v-avatar>
-                                  <v-avatar v-else color="primary" size="56" class="mr-3" rounded="lg">
-                                    <v-icon color="white">mdi-home</v-icon>
-                                  </v-avatar>
-                                  <div class="flex-grow-1">
-                                    <div class="text-body-2 font-weight-medium mb-1">
-                                      {{ property.title }}
-                                    </div>
-                                    <div class="text-caption text-medium-emphasis">
-                                      {{ property.code }}
-                                    </div>
+                            <div class="property-card-modern" @click="goToProperty(property.id)">
+                              <div class="d-flex align-center">
+                                <v-avatar v-if="property.main_image_url" size="64" class="mr-3" rounded="lg">
+                                  <v-img :src="property.main_image_url" cover></v-img>
+                                </v-avatar>
+                                <v-avatar v-else color="primary" size="64" class="mr-3" rounded="lg">
+                                  <v-icon color="white" size="28">mdi-home</v-icon>
+                                </v-avatar>
+                                <div class="flex-grow-1">
+                                  <div class="text-body-1 font-weight-medium mb-1">
+                                    {{ property.title }}
+                                  </div>
+                                  <div class="text-caption text-medium-emphasis mb-2">
+                                    {{ property.code }}
+                                  </div>
+                                  <v-chip 
+                                    :color="getPropertyStatusColor(property.status)" 
+                                    variant="flat" 
+                                    size="x-small"
+                                    class="mr-2"
+                                  >
+                                    {{ getPropertyStatusLabel(property.status) }}
+                                  </v-chip>
+                                  <div class="text-caption text-medium-emphasis mt-2">
+                                    <v-icon size="14" class="mr-1">mdi-map-marker</v-icon>
+                                    {{ property.city }}, {{ property.state }}
                                   </div>
                                 </div>
-                                <v-chip :color="getPropertyStatusColor(property.status)" variant="flat" size="x-small"
-                                  class="mb-2">
-                                  {{ getPropertyStatusLabel(property.status) }}
-                                </v-chip>
-                                <div class="text-caption text-medium-emphasis">
-                                  <v-icon size="14" class="mr-1">mdi-map-marker</v-icon>
-                                  {{ property.city }}, {{ property.state }}
-                                </div>
-                              </v-card-text>
-                            </v-card>
+                              </div>
+                            </div>
                           </v-col>
                         </v-row>
-                      </v-card-text>
-                    </v-card>
+                      </div>
+                    </div>
                   </v-col>
 
                   <!-- Propriedades Baseadas no Perfil (quando não há recomendações da IA) -->
                   <v-col cols="12" v-else-if="profileBasedProperties.length > 0">
-                    <v-card variant="outlined" class="mb-4">
-                      <v-card-title class="d-flex align-center">
-                        <v-icon class="mr-2" color="info">mdi-home-search</v-icon>
-                        Propriedades que podem interessar
-                        <v-spacer></v-spacer>
-                        <v-chip color="info" variant="tonal" size="small">
+                    <div class="insight-card insight-card-properties">
+                      <div class="insight-card-header">
+                        <div class="d-flex align-center">
+                          <v-avatar color="info" size="40" class="mr-3">
+                            <v-icon color="white" size="22">mdi-home-search</v-icon>
+                          </v-avatar>
+                          <div>
+                            <h3 class="text-h6 font-weight-bold mb-1">Propriedades que podem interessar</h3>
+                            <div class="text-caption text-medium-emphasis">
+                              Baseado no perfil do cliente
+                            </div>
+                          </div>
+                        </div>
+                        <v-chip color="info" variant="flat" size="small" class="ml-auto">
                           Baseado no perfil
                         </v-chip>
-                      </v-card-title>
-                      <v-card-text>
-                        <v-alert type="info" variant="tonal" class="mb-4" density="compact">
-                          <v-icon start size="16">mdi-lightbulb</v-icon>
-                          Estas propriedades foram selecionadas com base no perfil de interesse do cliente.
-                          Conforme atendimentos forem processados, a IA fará recomendações mais precisas.
+                      </div>
+                      <div class="insight-card-content">
+                        <v-alert type="info" variant="tonal" class="mb-4" density="comfortable">
+                          <v-icon start size="18">mdi-lightbulb</v-icon>
+                          <span class="text-body-2">Estas propriedades foram selecionadas com base no perfil de interesse do cliente. Conforme atendimentos forem processados, a IA fará recomendações mais precisas.</span>
                         </v-alert>
                         <v-row dense>
                           <v-col v-for="property in profileBasedProperties" :key="property.id" cols="12" sm="6" md="4">
-                            <v-card variant="outlined" class="h-100 property-card" @click="goToProperty(property.id)">
-                              <v-card-text class="pa-3">
-                                <div class="d-flex align-center mb-2">
-                                  <v-avatar v-if="property.main_image_url" size="56" class="mr-3" rounded="lg">
-                                    <v-img :src="property.main_image_url" cover></v-img>
-                                  </v-avatar>
-                                  <v-avatar v-else color="info" size="56" class="mr-3" rounded="lg">
-                                    <v-icon color="white">mdi-home</v-icon>
-                                  </v-avatar>
-                                  <div class="flex-grow-1">
-                                    <div class="text-body-2 font-weight-medium mb-1">
-                                      {{ property.title }}
-                                    </div>
-                                    <div class="text-caption text-medium-emphasis">
-                                      {{ property.code }}
-                                    </div>
+                            <div class="property-card-modern" @click="goToProperty(property.id)">
+                              <div class="d-flex align-center">
+                                <v-avatar v-if="property.main_image_url" size="64" class="mr-3" rounded="lg">
+                                  <v-img :src="property.main_image_url" cover></v-img>
+                                </v-avatar>
+                                <v-avatar v-else color="info" size="64" class="mr-3" rounded="lg">
+                                  <v-icon color="white" size="28">mdi-home</v-icon>
+                                </v-avatar>
+                                <div class="flex-grow-1">
+                                  <div class="text-body-1 font-weight-medium mb-1">
+                                    {{ property.title }}
+                                  </div>
+                                  <div class="text-caption text-medium-emphasis mb-2">
+                                    {{ property.code }}
+                                  </div>
+                                  <v-chip 
+                                    :color="getPropertyStatusColor(property.status)" 
+                                    variant="flat" 
+                                    size="x-small"
+                                    class="mr-2"
+                                  >
+                                    {{ getPropertyStatusLabel(property.status) }}
+                                  </v-chip>
+                                  <div class="text-caption text-medium-emphasis mt-2">
+                                    <v-icon size="14" class="mr-1">mdi-map-marker</v-icon>
+                                    {{ property.city }}, {{ property.state }}
                                   </div>
                                 </div>
-                                <v-chip :color="getPropertyStatusColor(property.status)" variant="flat" size="x-small"
-                                  class="mb-2">
-                                  {{ getPropertyStatusLabel(property.status) }}
-                                </v-chip>
-                                <div class="text-caption text-medium-emphasis">
-                                  <v-icon size="14" class="mr-1">mdi-map-marker</v-icon>
-                                  {{ property.city }}, {{ property.state }}
-                                </div>
-                              </v-card-text>
-                            </v-card>
+                              </div>
+                            </div>
                           </v-col>
                         </v-row>
-                      </v-card-text>
-                    </v-card>
+                      </div>
+                    </div>
                   </v-col>
 
                   <!-- Mensagem quando não há propriedades -->
                   <v-col cols="12" v-else-if="hasInterestProfile">
-                    <v-card variant="outlined" class="mb-4">
-                      <v-card-title class="d-flex align-center">
-                        <v-icon class="mr-2" color="grey">mdi-home-search</v-icon>
-                        Propriedades Recomendadas
-                      </v-card-title>
-                      <v-card-text>
-                        <v-alert type="info" variant="tonal">
-                          <v-icon start>mdi-information</v-icon>
-                          Nenhuma propriedade encontrada que corresponda ao perfil de interesse do cliente.
-                          Cadastre mais propriedades ou ajuste o perfil de interesse.
+                    <div class="insight-card insight-card-properties">
+                      <div class="insight-card-header">
+                        <div class="d-flex align-center">
+                          <v-avatar color="grey" size="40" class="mr-3">
+                            <v-icon color="white" size="22">mdi-home-search</v-icon>
+                          </v-avatar>
+                          <div>
+                            <h3 class="text-h6 font-weight-bold mb-1">Propriedades Recomendadas</h3>
+                            <div class="text-caption text-medium-emphasis">
+                              Baseado no perfil do cliente
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="insight-card-content">
+                        <v-alert type="info" variant="tonal" density="comfortable" class="mt-0">
+                          <v-icon start size="18">mdi-information</v-icon>
+                          <span class="text-body-2">Nenhuma propriedade encontrada que corresponda ao perfil de interesse do cliente. Cadastre mais propriedades ou ajuste o perfil de interesse.</span>
                         </v-alert>
-                      </v-card-text>
-                    </v-card>
+                      </div>
+                    </div>
                   </v-col>
 
                   <!-- Histórico de Insights -->
                   <v-col cols="12" v-if="aiSummaries.length > 0">
-                    <v-card variant="outlined" class="mb-4">
-                      <v-card-title class="d-flex align-center">
-                        <v-icon class="mr-2" color="primary">mdi-history</v-icon>
-                        Histórico de Insights
-                        <v-spacer></v-spacer>
-                        <v-chip color="primary" variant="flat" size="small">
+                    <div class="insight-card insight-card-history">
+                      <div class="insight-card-header">
+                        <div class="d-flex align-center">
+                          <v-avatar color="info" size="40" class="mr-3">
+                            <v-icon color="white" size="22">mdi-history</v-icon>
+                          </v-avatar>
+                          <div>
+                            <h3 class="text-h6 font-weight-bold mb-1">Histórico de Insights</h3>
+                            <div class="text-caption text-medium-emphasis">
+                              Análises anteriores da IA
+                            </div>
+                          </div>
+                        </div>
+                        <v-chip color="info" variant="flat" size="small" class="ml-auto">
                           {{ aiSummaries.length }} análise(s)
                         </v-chip>
-                      </v-card-title>
-                      <v-card-text>
-                        <v-expansion-panels variant="accordion">
-                          <v-expansion-panel v-for="summary in aiSummaries" :key="summary.id">
+                      </div>
+                      <div class="insight-card-content">
+                        <v-expansion-panels variant="accordion" class="insights-history-panels">
+                          <v-expansion-panel v-for="summary in aiSummaries" :key="summary.id" class="history-panel">
                             <v-expansion-panel-title>
                               <div class="d-flex align-center w-100 pr-4">
                                 <v-icon :color="getAIStatusColor(summary.status)" class="mr-3" size="24">
                                   {{ getAIStatusIcon(summary.status) }}
                                 </v-icon>
                                 <div class="flex-grow-1">
-                                  <div class="d-flex align-center justify-space-between">
+                                  <div class="d-flex align-center justify-space-between mb-1">
                                     <div class="text-body-2 font-weight-medium">
                                       {{ formatDateTime(summary.created_at) }}
                                     </div>
@@ -1005,122 +1124,147 @@
                                       </v-chip>
                                     </div>
                                   </div>
-                                  <div class="text-caption text-medium-emphasis mt-1">
+                                  <div class="text-caption text-medium-emphasis">
                                     {{ truncateText(summary.summary_text.replace(/[#*_\-]/g, ''), 80) }}
                                   </div>
                                 </div>
                               </div>
                             </v-expansion-panel-title>
                             <v-expansion-panel-text>
-                              <!-- Summary Text with Markdown -->
-                              <div class="mb-4">
-                                <div class="text-subtitle-2 font-weight-medium mb-2 d-flex align-center">
-                                  <v-icon size="16" color="primary" class="mr-1">mdi-text-box</v-icon>
-                                  Resumo
+                              <div class="history-panel-content">
+                                <!-- Summary Text with Markdown -->
+                                <div class="mb-4">
+                                  <div class="text-subtitle-2 font-weight-medium mb-3 d-flex align-center">
+                                    <v-icon size="18" color="primary" class="mr-2">mdi-text-box</v-icon>
+                                    Resumo
+                                  </div>
+                                  <div class="markdown-content ai-summary-markdown"
+                                    v-html="formatMarkdown(summary.summary_text)"></div>
                                 </div>
-                                <div class="markdown-content ai-summary-content"
-                                  v-html="formatMarkdown(summary.summary_text)"></div>
-                              </div>
 
-                              <!-- Key Points -->
-                              <div v-if="summary.key_points && Object.keys(summary.key_points).length > 0" class="mb-4">
-                                <div class="text-subtitle-2 font-weight-medium mb-2 d-flex align-center">
-                                  <v-icon size="16" color="success" class="mr-1">mdi-format-list-bulleted</v-icon>
-                                  Pontos-chave
+                                <!-- Key Points -->
+                                <div v-if="summary.key_points && Object.keys(summary.key_points).length > 0" class="mb-4">
+                                  <div class="text-subtitle-2 font-weight-medium mb-3 d-flex align-center">
+                                    <v-icon size="18" color="success" class="mr-2">mdi-format-list-bulleted</v-icon>
+                                    Pontos-chave
+                                  </div>
+                                  <div class="d-flex flex-wrap ga-2">
+                                    <template v-if="summary.key_points.topics">
+                                      <v-chip v-for="topic in summary.key_points.topics" :key="topic" size="small"
+                                        variant="flat" color="primary">
+                                        {{ topic }}
+                                      </v-chip>
+                                    </template>
+                                    <template v-if="summary.key_points.requirements">
+                                      <v-chip v-for="req in summary.key_points.requirements" :key="req" size="small"
+                                        variant="flat" color="info">
+                                        {{ req }}
+                                      </v-chip>
+                                    </template>
+                                  </div>
                                 </div>
-                                <div class="d-flex flex-wrap ga-2">
-                                  <template v-if="summary.key_points.topics">
-                                    <v-chip v-for="topic in summary.key_points.topics" :key="topic" size="small"
-                                      variant="tonal" color="primary">
-                                      {{ topic }}
-                                    </v-chip>
-                                  </template>
-                                  <template v-if="summary.key_points.requirements">
-                                    <v-chip v-for="req in summary.key_points.requirements" :key="req" size="small"
-                                      variant="tonal" color="info">
-                                      {{ req }}
-                                    </v-chip>
-                                  </template>
-                                </div>
-                              </div>
 
-                              <!-- AI Analysis -->
-                              <div class="d-flex flex-wrap ga-2">
-                                <v-chip v-if="summary.detected_intent" :color="getIntentColor(summary.detected_intent)"
-                                  variant="flat" size="small">
-                                  <v-icon start size="14">{{ getIntentIcon(summary.detected_intent) }}</v-icon>
-                                  {{ getIntentLabel(summary.detected_intent) }}
-                                </v-chip>
-                                <v-chip v-if="summary.interest_type_detected" color="teal" variant="flat" size="small">
-                                  <v-icon start size="14">mdi-handshake</v-icon>
-                                  {{ getInterestTypeLabel(summary.interest_type_detected as InterestType) }}
-                                </v-chip>
-                                <v-chip v-if="summary.urgency_level_detected"
-                                  :color="getUrgencyColor(summary.urgency_level_detected as UrgencyLevel)"
-                                  variant="flat" size="small">
-                                  <v-icon start size="14">mdi-alert-circle</v-icon>
-                                  Urgência: {{ getUrgencyLabel(summary.urgency_level_detected as UrgencyLevel) }}
-                                </v-chip>
-                                <v-chip v-if="summary.budget_min_detected || summary.budget_max_detected" color="amber"
-                                  variant="flat" size="small">
-                                  <v-icon start size="14">mdi-currency-usd</v-icon>
-                                  {{ formatBudgetDetected(summary.budget_min_detected, summary.budget_max_detected) }}
-                                </v-chip>
-                              </div>
-
-                              <!-- Recommended Properties -->
-                              <div v-if="summary.recommended_properties && summary.recommended_properties.length > 0"
-                                class="mt-4">
-                                <div class="text-subtitle-2 font-weight-medium mb-2 d-flex align-center">
-                                  <v-icon size="16" color="info" class="mr-1">mdi-home-search</v-icon>
-                                  Propriedades Recomendadas
+                                <!-- AI Analysis -->
+                                <div class="d-flex flex-wrap ga-2 mb-4">
+                                  <v-chip v-if="summary.detected_intent" :color="getIntentColor(summary.detected_intent)"
+                                    variant="flat" size="small">
+                                    <v-icon start size="14">{{ getIntentIcon(summary.detected_intent) }}</v-icon>
+                                    {{ getIntentLabel(summary.detected_intent) }}
+                                  </v-chip>
+                                  <v-chip v-if="summary.interest_type_detected" color="teal" variant="flat" size="small">
+                                    <v-icon start size="14">mdi-handshake</v-icon>
+                                    {{ getInterestTypeLabel(summary.interest_type_detected as InterestType) }}
+                                  </v-chip>
+                                  <v-chip v-if="summary.urgency_level_detected"
+                                    :color="getUrgencyColor(summary.urgency_level_detected as UrgencyLevel)"
+                                    variant="flat" size="small">
+                                    <v-icon start size="14">mdi-alert-circle</v-icon>
+                                    Urgência: {{ getUrgencyLabel(summary.urgency_level_detected as UrgencyLevel) }}
+                                  </v-chip>
+                                  <v-chip v-if="summary.budget_min_detected || summary.budget_max_detected" color="amber"
+                                    variant="flat" size="small">
+                                    <v-icon start size="14">mdi-currency-usd</v-icon>
+                                    {{ formatBudgetDetected(summary.budget_min_detected, summary.budget_max_detected) }}
+                                  </v-chip>
                                 </div>
-                                <div class="text-caption text-medium-emphasis">
-                                  {{ summary.recommended_properties.length }} propriedade(s) sugerida(s)
-                                </div>
-                              </div>
 
-                              <!-- Model Info -->
-                              <div v-if="summary.model_used" class="mt-4 text-caption text-medium-emphasis">
-                                <v-icon size="12" class="mr-1">mdi-robot</v-icon>
-                                Modelo: {{ summary.model_used }} (v{{ summary.prompt_version }})
-                                <span v-if="summary.confidence_score">
-                                  • Confiança: {{ Math.round(summary.confidence_score * 100) }}%
-                                </span>
+                                <!-- Recommended Properties -->
+                                <div v-if="summary.recommended_properties && summary.recommended_properties.length > 0"
+                                  class="mb-4">
+                                  <div class="text-subtitle-2 font-weight-medium mb-2 d-flex align-center">
+                                    <v-icon size="18" color="info" class="mr-2">mdi-home-search</v-icon>
+                                    Propriedades Recomendadas
+                                  </div>
+                                  <div class="text-caption text-medium-emphasis">
+                                    {{ summary.recommended_properties.length }} propriedade(s) sugerida(s)
+                                  </div>
+                                </div>
+
+                                <!-- Model Info -->
+                                <div v-if="summary.model_used" class="mt-4 pt-3 border-t-model-info text-caption text-medium-emphasis">
+                                  <v-icon size="14" class="mr-1">mdi-robot</v-icon>
+                                  Modelo: {{ summary.model_used }} (v{{ summary.prompt_version }})
+                                  <span v-if="summary.confidence_score">
+                                    • Confiança: {{ Math.round(summary.confidence_score * 100) }}%
+                                  </span>
+                                </div>
                               </div>
                             </v-expansion-panel-text>
                           </v-expansion-panel>
                         </v-expansion-panels>
-                      </v-card-text>
-                    </v-card>
+                      </div>
+                    </div>
                   </v-col>
 
                   <!-- Sugestão de Próximos Passos -->
                   <v-col cols="12">
-                    <v-card variant="outlined">
-                      <v-card-title class="d-flex align-center">
-                        <v-icon class="mr-2" color="primary">mdi-arrow-right-circle</v-icon>
-                        Sugestão de Próximos Passos
-                      </v-card-title>
-                      <v-card-text>
-                        <div v-if="aggregatedInsights.nextSteps && aggregatedInsights.nextSteps.length > 0">
-                          <v-list density="comfortable">
-                            <v-list-item v-for="(step, index) in aggregatedInsights.nextSteps" :key="index">
-                              <template #prepend>
-                                <v-avatar color="primary" size="32">
-                                  <span class="text-white">{{ index + 1 }}</span>
-                                </v-avatar>
-                              </template>
-                              <v-list-item-title>{{ step }}</v-list-item-title>
-                            </v-list-item>
+                    <div class="insight-card insight-card-next-steps">
+                      <div class="insight-card-header">
+                        <div class="d-flex align-center">
+                          <v-avatar color="primary" size="40" class="mr-3">
+                            <v-icon color="white" size="22">mdi-arrow-right-circle</v-icon>
+                          </v-avatar>
+                          <div>
+                            <h3 class="text-h6 font-weight-bold mb-1">Sugestão de Próximos Passos</h3>
+                            <div class="text-caption text-medium-emphasis">
+                              Ações recomendadas pela IA
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="insight-card-content">
+                        <div v-if="aggregatedInsights.nextSteps && aggregatedInsights.nextSteps.length > 0" class="next-steps-list">
+                          <v-list variant="flat" density="comfortable" class="pa-0">
+                            <template v-for="(step, index) in aggregatedInsights.nextSteps" :key="index">
+                              <v-list-item class="next-step-item px-0 py-3">
+                                <template #prepend>
+                                  <v-avatar 
+                                    :color="index < 3 ? 'primary' : 'grey'" 
+                                    size="36"
+                                    class="mr-3"
+                                  >
+                                    <span class="text-white font-weight-bold">{{ index + 1 }}</span>
+                                  </v-avatar>
+                                </template>
+                                <v-list-item-title class="text-body-1">
+                                  {{ step }}
+                                </v-list-item-title>
+                                <template #append v-if="index < 3">
+                                  <v-chip size="x-small" variant="flat" color="primary">
+                                    Prioridade
+                                  </v-chip>
+                                </template>
+                              </v-list-item>
+                              <v-divider v-if="index < aggregatedInsights.nextSteps.length - 1" class="my-1" />
+                            </template>
                           </v-list>
                         </div>
-                        <v-alert v-else type="info" variant="tonal">
-                          As sugestões de próximos passos serão geradas automaticamente pela IA com base no histórico de
-                          atendimentos e perfil do cliente.
+                        <v-alert v-else type="info" variant="tonal" density="comfortable" class="mt-0">
+                          <v-icon start size="18">mdi-information</v-icon>
+                          <span class="text-body-2">As sugestões de próximos passos serão geradas automaticamente pela IA com base no histórico de atendimentos e perfil do cliente.</span>
                         </v-alert>
-                      </v-card-text>
-                    </v-card>
+                      </div>
+                    </div>
                   </v-col>
                 </v-row>
               </div>
@@ -2808,5 +2952,321 @@ onMounted(() => {
 
 :deep(.ai-summary-content .markdown-list) {
   margin-left: 1.25rem;
+}
+
+/* Insights da IA - Modern Design */
+.insights-container {
+  padding: 0;
+}
+
+.insight-card {
+  background: rgba(var(--v-theme-surface), 1);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.insight-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, 
+    rgba(var(--v-theme-primary), 0.8) 0%,
+    rgba(var(--v-theme-primary), 0.4) 50%,
+    transparent 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.insight-card:hover::before {
+  opacity: 1;
+}
+
+.insight-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.insight-card-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(var(--v-theme-surface-variant), 0.3);
+}
+
+.insight-card-content {
+  padding-top: 0;
+}
+
+/* Summary Card */
+.insight-card-summary {
+  background: linear-gradient(135deg, 
+    rgba(var(--v-theme-primary), 0.03) 0%,
+    rgba(var(--v-theme-surface), 1) 100%);
+}
+
+/* Sentiment Card */
+.insight-card-sentiment .sentiment-dominant {
+  padding: 20px 0;
+}
+
+.sentiment-icon {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.9;
+  }
+}
+
+.sentiment-distribution {
+  padding-top: 16px;
+}
+
+.sentiment-item {
+  padding: 8px 0;
+  transition: all 0.2s ease;
+  border-radius: 8px;
+}
+
+.sentiment-item:hover {
+  background: rgba(var(--v-theme-surface-variant), 0.1);
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+/* Intents Card */
+.intents-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.intent-chip {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.intent-chip:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Profile Card */
+.interest-profile-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.profile-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(var(--v-theme-surface-variant), 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.profile-item:hover {
+  background: rgba(var(--v-theme-surface-variant), 0.2);
+  transform: translateX(4px);
+}
+
+/* Conversion Card */
+.conversion-content {
+  padding: 8px 0;
+}
+
+.lead-score-display {
+  text-align: center;
+}
+
+.score-circle-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 16px 0;
+}
+
+/* Properties Card */
+.insight-card-properties {
+  background: linear-gradient(135deg, 
+    rgba(var(--v-theme-success), 0.03) 0%,
+    rgba(var(--v-theme-surface), 1) 100%);
+}
+
+.property-card-modern {
+  padding: 16px;
+  border-radius: 12px;
+  background: rgba(var(--v-theme-surface-variant), 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+
+.property-card-modern:hover {
+  background: rgba(var(--v-theme-surface-variant), 0.2);
+  border-color: rgba(var(--v-theme-primary), 0.3);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* Markdown Content in Insights */
+.ai-summary-markdown {
+  line-height: 1.8;
+  color: rgba(var(--v-theme-on-surface), 0.87);
+}
+
+.ai-summary-markdown :deep(h1),
+.ai-summary-markdown :deep(h2),
+.ai-summary-markdown :deep(h3) {
+  color: rgba(var(--v-theme-on-surface), 0.87);
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+}
+
+.ai-summary-markdown :deep(h1) {
+  font-size: 1.25rem;
+}
+
+.ai-summary-markdown :deep(h2) {
+  font-size: 1.125rem;
+}
+
+.ai-summary-markdown :deep(h3) {
+  font-size: 1rem;
+}
+
+.ai-summary-markdown :deep(p) {
+  margin: 0.75rem 0;
+  line-height: 1.8;
+}
+
+.ai-summary-markdown :deep(ul),
+.ai-summary-markdown :deep(ol) {
+  margin: 0.75rem 0;
+  padding-left: 1.5rem;
+}
+
+.ai-summary-markdown :deep(li) {
+  margin: 0.5rem 0;
+  line-height: 1.7;
+}
+
+.ai-summary-markdown :deep(strong) {
+  font-weight: 600;
+  color: rgba(var(--v-theme-on-surface), 0.95);
+}
+
+.ai-summary-markdown :deep(em) {
+  font-style: italic;
+}
+
+.ai-summary-markdown :deep(code) {
+  background-color: rgba(var(--v-theme-surface-variant), 0.3);
+  padding: 0.15rem 0.35rem;
+  border-radius: 0.25rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.875em;
+}
+
+.ai-summary-markdown :deep(pre) {
+  background-color: rgba(var(--v-theme-surface-variant), 0.2);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.ai-summary-markdown :deep(a) {
+  color: rgb(var(--v-theme-primary));
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.ai-summary-markdown :deep(a:hover) {
+  text-decoration: underline;
+}
+
+/* History Card */
+.insight-card-history {
+  background: linear-gradient(135deg, 
+    rgba(var(--v-theme-info), 0.03) 0%,
+    rgba(var(--v-theme-surface), 1) 100%);
+}
+
+.insights-history-panels {
+  background: transparent;
+}
+
+.history-panel {
+  background: rgba(var(--v-theme-surface-variant), 0.1);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.history-panel:hover {
+  background: rgba(var(--v-theme-surface-variant), 0.15);
+}
+
+.history-panel-content {
+  padding: 8px 0;
+}
+
+.border-t-model-info {
+  border-top: 1px solid rgba(var(--v-theme-surface-variant), 0.3);
+}
+
+/* Next Steps Card */
+.insight-card-next-steps {
+  background: linear-gradient(135deg, 
+    rgba(var(--v-theme-primary), 0.03) 0%,
+    rgba(var(--v-theme-surface), 1) 100%);
+}
+
+.next-steps-list {
+  padding: 0;
+}
+
+.next-step-item {
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  margin-bottom: 4px;
+}
+
+.next-step-item:hover {
+  background: rgba(var(--v-theme-surface-variant), 0.1);
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+/* Responsive */
+@media (max-width: 960px) {
+  .insight-card {
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  
+  .insight-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
 }
 </style>
