@@ -638,15 +638,14 @@
             hint="Descreva o conteúdo da nova conversa"
             persistent-hint
             counter
-            :counter-value="newConversationLength"
             :maxlength="100000"
             :rules="[rules.required, rules.minLength, rules.maxLength]"
             :error-messages="newConversationErrorMessages"
             :error="newConversationErrorMessages.length > 0"
           >
             <template #counter="{ value, maxLength }">
-              <span :class="getCounterColor(value, maxLength)">
-                {{ formatCounter(value, maxLength) }}
+              <span :class="getCounterColor(value ?? 0, maxLength ?? 100000)">
+                {{ formatCounter(value ?? 0, maxLength ?? 100000) }}
               </span>
             </template>
           </v-textarea>
@@ -1548,12 +1547,16 @@ const formatAINextSteps = (nextSteps: string): string => {
 
 // Counter formatting
 const formatCounter = (value: number, maxLength: number): string => {
-  return `${value.toLocaleString('pt-BR')} / ${maxLength.toLocaleString('pt-BR')}`
+  const val = value ?? 0
+  const max = maxLength ?? 100000
+  return `${val.toLocaleString('pt-BR')} / ${max.toLocaleString('pt-BR')}`
 }
 
 const getCounterColor = (value: number, maxLength: number): string => {
-  if (value > maxLength) return 'text-error'
-  if (value > maxLength * 0.9) return 'text-warning'
+  const val = value ?? 0
+  const max = maxLength ?? 100000
+  if (val > max) return 'text-error'
+  if (val > max * 0.9) return 'text-warning'
   return 'text-medium-emphasis'
 }
 
