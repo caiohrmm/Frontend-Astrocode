@@ -103,7 +103,7 @@
             <div>
               <div class="font-weight-medium">{{ getClientName(item.client_id) }}</div>
               <div class="text-caption text-medium-emphasis">
-                {{ formatDateTime(item.started_at) }}
+                {{ formatDateTime(item.created_at) }}
               </div>
             </div>
           </div>
@@ -170,20 +170,11 @@
           </div>
         </template>
 
-        <!-- Duration Column -->
-        <template #item.duration="{ item }">
-          <v-chip v-if="item.duration !== null" variant="tonal" size="small" color="info">
-            <v-icon start size="14">mdi-clock-outline</v-icon>
-            {{ formatDuration(item.duration) }}
-          </v-chip>
-          <span v-else class="text-medium-emphasis">-</span>
-        </template>
-
-        <!-- Started At Column -->
-        <template #item.started_at="{ item }">
+        <!-- Created At Column -->
+        <template #item.created_at="{ item }">
           <div class="text-caption">
             <v-icon size="14" class="mr-1">mdi-calendar</v-icon>
-            {{ formatDateTime(item.started_at) }}
+            {{ formatDateTime(item.created_at) }}
           </div>
         </template>
 
@@ -296,8 +287,7 @@ const headers = [
   { title: 'Canal', key: 'channel', sortable: true },
   { title: 'Status', key: 'status', sortable: true },
   { title: 'Agente', key: 'agent_id', sortable: true },
-  { title: 'Duração', key: 'duration', sortable: true },
-  { title: 'Iniciado em', key: 'started_at', sortable: true },
+  { title: 'Criado em', key: 'created_at', sortable: true },
   { title: 'Resumo IA', key: 'ai_summary', sortable: false },
 ]
 
@@ -370,7 +360,7 @@ const filteredAttendances = computed(() => {
   }
 
   // Sort by most recent first
-  result.sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime())
+  result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
   return result
 })
@@ -528,10 +518,6 @@ const formatDateTime = (dateString: string): string => {
   }).format(date)
 }
 
-const formatDuration = (seconds: number): string => {
-  if (seconds < 60) {
-    return `${seconds}s`
-  }
   const minutes = Math.floor(seconds / 60)
   const remainingSeconds = seconds % 60
   if (minutes < 60) {

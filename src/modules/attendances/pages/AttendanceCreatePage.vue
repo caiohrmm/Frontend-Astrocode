@@ -135,22 +135,6 @@
                   </v-select>
                 </v-col>
 
-                <!-- Data/Hora de Início * -->
-                <v-col cols="12" md="6">
-                  <v-text-field v-model="formData.started_at" label="Data/Hora de Início *" type="datetime-local"
-                    variant="outlined" :rules="[rules.required]" prepend-inner-icon="mdi-calendar-clock"
-                    hint="Quando o atendimento começou" persistent-hint></v-text-field>
-                </v-col>
-
-                <!-- Data/Hora de Término (Opcional) -->
-                <v-col cols="12" md="6">
-                  <v-text-field v-model="formData.ended_at" label="Data/Hora de Término (Opcional)" type="datetime-local"
-                    variant="outlined" prepend-inner-icon="mdi-calendar-check"
-                    :rules="[rules.dateValidation]"
-                    hint="Quando o atendimento terminou (deve ser posterior à data de início)"
-                    persistent-hint></v-text-field>
-                </v-col>
-
                 <!-- Objective (Optional) -->
                 <v-col cols="12">
                   <v-text-field
@@ -381,8 +365,6 @@ const formData = ref<AttendanceCreate>({
   property_id: null,
   objective: null, // Optional: will be auto-detected
   channel: 'WHATSAPP',
-  started_at: new Date().toISOString().slice(0, 16), // Current date/time in local format
-  ended_at: null,
   raw_content: '',
   status: 'ACTIVE',
   scheduled_visit_at: null,
@@ -452,10 +434,6 @@ const rules = {
     if (!value) return true
     return value.length <= 100000 || 'Conteúdo não pode exceder 100.000 caracteres'
   },
-  dateValidation: (value: string) => {
-    if (!value) return true // Optional field
-    if (!formData.value.started_at) return true // Can't validate if started_at is not set
-    const started = new Date(formData.value.started_at)
     const ended = new Date(value)
     return ended >= started || 'Data de término deve ser posterior à data de início'
   },
@@ -613,8 +591,6 @@ const loadAttendance = async () => {
       property_id: attendance.property_id || null,
       objective: attendance.objective || null,
       channel: attendance.channel,
-      started_at: convertISOToLocalDateTime(attendance.started_at) || '',
-      ended_at: convertISOToLocalDateTime(attendance.ended_at),
       raw_content: attendance.raw_content,
       status: attendance.status,
       scheduled_visit_at: convertISOToLocalDateTime(attendance.scheduled_visit_at),
@@ -659,10 +635,6 @@ const handleSave = async () => {
         property_id: formData.value.property_id || null,
         objective: formData.value.objective || null,
         channel: formData.value.channel,
-        started_at: convertLocalDateTimeToISO(formData.value.started_at),
-        ended_at: formData.value.ended_at
-          ? convertLocalDateTimeToISO(formData.value.ended_at)
-          : null,
         raw_content: formData.value.raw_content.trim(),
         status: formData.value.status,
         scheduled_visit_at: formData.value.scheduled_visit_at
@@ -687,10 +659,6 @@ const handleSave = async () => {
         property_id: formData.value.property_id || null,
         objective: formData.value.objective || null, // Optional: backend will auto-detect if not provided
         channel: formData.value.channel,
-        started_at: convertLocalDateTimeToISO(formData.value.started_at),
-        ended_at: formData.value.ended_at
-          ? convertLocalDateTimeToISO(formData.value.ended_at)
-          : null,
         raw_content: formData.value.raw_content.trim(),
         status: formData.value.status,
         scheduled_visit_at: formData.value.scheduled_visit_at

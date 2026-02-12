@@ -29,7 +29,7 @@
           <div class="flex-grow-1">
             <div class="text-h5 font-weight-bold">Detalhes do Atendimento</div>
             <div class="text-caption text-medium-emphasis">
-              {{ formatDateTime(attendance.started_at) }}
+              Criado em {{ formatDateTime(attendance.created_at) }}
             </div>
           </div>
           <v-spacer></v-spacer>
@@ -95,18 +95,6 @@
           </div>
         </v-card-title>
 
-        <!-- Duration -->
-        <v-card-subtitle v-if="attendance.duration" class="pa-4 pt-0">
-          <div class="d-flex align-center ga-2">
-            <v-icon size="18">mdi-clock-outline</v-icon>
-            <span class="text-body-2 font-weight-medium">
-              Duração: {{ formatDuration(attendance.duration) }}
-            </span>
-            <span v-if="attendance.ended_at" class="text-caption text-medium-emphasis">
-              ({{ formatDateTime(attendance.ended_at) }})
-            </span>
-          </div>
-        </v-card-subtitle>
       </v-card>
 
       <!-- Main Content -->
@@ -582,17 +570,17 @@
               <v-list density="compact">
                 <v-list-item>
                   <template #prepend>
-                    <v-icon>mdi-calendar-start</v-icon>
+                    <v-icon>mdi-calendar-plus</v-icon>
                   </template>
-                  <v-list-item-title>Iniciado em</v-list-item-title>
-                  <v-list-item-subtitle>{{ formatDateTime(attendance.started_at) }}</v-list-item-subtitle>
+                  <v-list-item-title>Criado em</v-list-item-title>
+                  <v-list-item-subtitle>{{ formatDateTime(attendance.created_at) }}</v-list-item-subtitle>
                 </v-list-item>
-                <v-list-item v-if="attendance.ended_at">
+                <v-list-item>
                   <template #prepend>
-                    <v-icon>mdi-calendar-end</v-icon>
+                    <v-icon>mdi-calendar-edit</v-icon>
                   </template>
-                  <v-list-item-title>Finalizado em</v-list-item-title>
-                  <v-list-item-subtitle>{{ formatDateTime(attendance.ended_at) }}</v-list-item-subtitle>
+                  <v-list-item-title>Atualizado em</v-list-item-title>
+                  <v-list-item-subtitle>{{ formatDateTime(attendance.updated_at) }}</v-list-item-subtitle>
                 </v-list-item>
                 <v-list-item>
                   <template #prepend>
@@ -929,7 +917,6 @@ const handleCompleteAttendance = async () => {
     // This will trigger AI processing on the backend
     const updatedAttendance = await attendancesService.updateAttendance(attendance.value.id, {
       status: 'COMPLETED',
-      ended_at: attendance.value.ended_at || new Date().toISOString(),
     })
 
     attendance.value = updatedAttendance
@@ -975,7 +962,6 @@ const handleAddConversation = async () => {
       property_id: attendance.value.property_id,
       objective: attendance.value.objective, // Keep same objective
       channel: attendance.value.channel,
-      started_at: attendance.value.started_at, // Keep original start time
       raw_content: newConversationContent.value.trim(), // New conversation content
       status: 'ACTIVE' as const,
     }
@@ -1083,20 +1069,6 @@ const formatDateTime = (dateString: string): string => {
   })
 }
 
-const formatDuration = (seconds: number): string => {
-  if (!seconds) return '0s'
-  const hours = Math.floor(seconds / 3600)
-  const minutes = Math.floor((seconds % 3600) / 60)
-  const secs = seconds % 60
-
-  if (hours > 0) {
-    return `${hours}h ${minutes}m ${secs}s`
-  }
-  if (minutes > 0) {
-    return `${minutes}m ${secs}s`
-  }
-  return `${secs}s`
-}
 
 const getInitials = (name: string): string => {
   const parts = name.trim().split(' ')

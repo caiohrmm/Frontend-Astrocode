@@ -31,9 +31,6 @@ export interface Attendance {
   property_id: string | null
   objective: string | null // Clear objective of this interaction cycle
   channel: AttendanceChannel
-  started_at: string
-  ended_at: string | null
-  duration: number | null
   raw_content: string // Accumulated conversations within the same cycle
   ai_summary: string | null
   ai_next_steps: string | null
@@ -55,8 +52,6 @@ export interface AttendanceCreate {
   property_id?: string | null
   objective?: string | null // Optional: will be auto-detected from raw_content if not provided
   channel: AttendanceChannel
-  started_at: string
-  ended_at?: string | null
   raw_content: string // New conversation content (will be accumulated if updating existing cycle)
   ai_summary?: string | null
   ai_next_steps?: string | null
@@ -74,8 +69,6 @@ export interface AttendanceUpdate {
   property_id?: string | null
   objective?: string | null // Updating objective may trigger new cycle creation
   channel?: AttendanceChannel | null
-  started_at?: string | null
-  ended_at?: string | null
   raw_content?: string | null // New content will be appended to existing cycle
   ai_summary?: string | null
   ai_next_steps?: string | null
@@ -95,8 +88,6 @@ export interface ListAttendancesParams {
   property_id?: string | null
   channel?: AttendanceChannel | null
   status?: AttendanceStatus | null
-  started_from?: string | null
-  started_to?: string | null
 }
 
 class AttendancesService {
