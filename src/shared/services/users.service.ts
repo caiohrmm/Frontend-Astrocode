@@ -60,18 +60,18 @@ class UsersService {
 
   /**
    * Get users with corretor role (for agent assignment)
-   * Note: This requires manager role, but we'll filter on frontend
+   * This endpoint is accessible to any authenticated user
    */
   async getCorretores(): Promise<User[]> {
     try {
-      const allUsers = await this.listUsers(0, 1000)
-      return allUsers.filter(user => 
-        user.roles.some(role => role.name === 'corretor')
-      )
+      console.log('Fetching corretores from /users/corretores')
+      const data = await apiClient.get<User[]>('/users/corretores')
+      console.log('Received corretores:', data)
+      return data || []
     } catch (error) {
-      // If user doesn't have manager role, return empty array
-      console.warn('Could not fetch corretores:', error)
-      return []
+      console.error('Could not fetch corretores:', error)
+      // Re-throw to let the caller handle it
+      throw error
     }
   }
 }

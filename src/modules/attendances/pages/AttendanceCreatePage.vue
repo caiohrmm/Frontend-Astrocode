@@ -411,19 +411,29 @@ const statusOptions = [
 ]
 
 const agentOptions = computed(() => {
+  if (!agents.value || agents.value.length === 0) {
+    console.log('No agents available for options')
+    return []
+  }
+  
   // Remove duplicates by ID
   const uniqueAgents = Array.from(
     new Map(agents.value.map(agent => [agent.id, agent])).values()
   )
+  
   // Map to options and remove duplicates by value as well
   const options = uniqueAgents.map(agent => ({
-    title: agent.full_name,
+    title: agent.full_name || `User ${agent.id}`,
     value: agent.id,
   }))
+  
   // Final deduplication by value to ensure no duplicates in the list
-  return Array.from(
+  const finalOptions = Array.from(
     new Map(options.map(option => [option.value, option])).values()
   )
+  
+  console.log('Agent options computed:', finalOptions.length, 'options')
+  return finalOptions
 })
 
 // Validation Rules
@@ -456,15 +466,31 @@ const loadAgents = async () => {
   if (isLoadingAgents.value) return // Prevent multiple simultaneous loads
   isLoadingAgents.value = true
   try {
+    console.log('Loading corretores...')
     const data = await usersService.getCorretores()
+    console.log('Raw data from API:', data)
+    
+    if (!data || !Array.isArray(data)) {
+      console.warn('Invalid data received from API:', data)
+      agents.value = []
+      return
+    }
+    
+    if (data.length === 0) {
+      console.warn('No corretores found in the system')
+      agents.value = []
+      return
+    }
+    
     // Remove duplicates by ID before setting
     const uniqueAgents = Array.from(
       new Map(data.map(agent => [agent.id, agent])).values()
     )
     agents.value = uniqueAgents
-    console.log('Loaded agents:', uniqueAgents.length, 'unique agents')
+    console.log('Loaded agents:', uniqueAgents.length, 'unique agents', uniqueAgents)
   } catch (error) {
     console.error('Error loading agents:', error)
+    agents.value = []
   } finally {
     isLoadingAgents.value = false
   }
