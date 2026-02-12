@@ -170,8 +170,8 @@ export const journeyService = new JourneyService()
 // Helper functions for UI
 export const getEventTypeLabel = (eventType: TimelineEventType): string => {
   const labels: Record<TimelineEventType, string> = {
-    CLIENT_CREATED: 'Cliente criado',
-    CLIENT_UPDATED: 'Cliente atualizado',
+    CLIENT_CREATED: 'Cliente cadastrado',
+    CLIENT_UPDATED: 'Dados do cliente atualizados',
     STATUS_CHANGED: 'Status alterado',
     AGENT_ASSIGNED: 'Corretor atribuído',
     ATTENDANCE_STARTED: 'Atendimento iniciado',
@@ -181,9 +181,9 @@ export const getEventTypeLabel = (eventType: TimelineEventType): string => {
     VISIT_COMPLETED: 'Visita concluída',
     VISIT_CANCELLED: 'Visita cancelada',
     VISIT_NO_SHOW: 'Cliente não compareceu',
-    AI_INSIGHT_GENERATED: 'Insight de IA gerado',
-    AI_SUGGESTION_APPLIED: 'Sugestão de IA aplicada',
-    AI_PROPERTY_RECOMMENDED: 'Imóvel recomendado pela IA',
+    AI_INSIGHT_GENERATED: 'Análise gerada',
+    AI_SUGGESTION_APPLIED: 'Atualização automática aplicada',
+    AI_PROPERTY_RECOMMENDED: 'Imóvel recomendado',
     PROPOSAL_SENT: 'Proposta enviada',
     PROPOSAL_ACCEPTED: 'Proposta aceita',
     PROPOSAL_REJECTED: 'Proposta rejeitada',
