@@ -110,7 +110,8 @@ export interface ClientUpdate {
   email?: string | null
   lead_source?: LeadSource | null
   current_status?: ClientStatus | null
-  current_lead_score?: number | null
+  // current_lead_score is controlled exclusively by AI - do not include in updates
+  // current_lead_score?: number | null
   current_urgency_level?: UrgencyLevel | null
   assigned_agent_id?: string | null
   current_interest_type?: InterestType | null
@@ -174,9 +175,15 @@ class ClientsService {
 
   /**
    * Update a client
+   * Note: Lead score is controlled exclusively by AI and will be removed from update data
    */
   async updateClient(clientId: string, clientData: ClientUpdate): Promise<Client> {
-    return apiClient.put<Client>(`/clients/${clientId}`, clientData)
+    // Remove lead_score from update data - it's controlled exclusively by AI
+    const { current_lead_score, ...updateData } = clientData as any
+    if (current_lead_score !== undefined) {
+      console.warn('Lead score is controlled exclusively by AI and was removed from update request')
+    }
+    return apiClient.put<Client>(`/clients/${clientId}`, updateData)
   }
 
   /**

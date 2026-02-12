@@ -102,7 +102,15 @@
                   :color="getLeadScoreColor(client.current_lead_score || 0)">
                   <span class="text-body-1 font-weight-bold">{{ client.current_lead_score || 0 }}</span>
                 </v-progress-circular>
-                <span class="text-caption text-medium-emphasis mt-2">Lead Score</span>
+                <div class="d-flex align-center justify-center mt-2">
+                  <span class="text-caption text-medium-emphasis">Lead Score</span>
+                  <v-tooltip location="top">
+                    <template #activator="{ props }">
+                      <v-icon v-bind="props" size="14" color="primary" class="ml-1">mdi-information</v-icon>
+                    </template>
+                    <span class="text-caption">Calculado e atualizado automaticamente pela IA</span>
+                  </v-tooltip>
+                </div>
               </div>
             </v-col>
 
@@ -780,9 +788,14 @@
                             class="text-caption text-medium-emphasis">
                             Score médio sugerido pela IA: {{ aggregatedInsights.averageLeadScore }}/100
                           </div>
+                          <v-alert type="info" variant="tonal" density="compact" class="mt-2">
+                            <v-icon start size="16">mdi-robot</v-icon>
+                            <span class="text-caption">Este score é calculado e atualizado automaticamente pela IA com base nas interações do cliente.</span>
+                          </v-alert>
                         </div>
                         <v-alert v-else type="info" variant="tonal">
-                          Lead score ainda não calculado.
+                          <v-icon start>mdi-robot</v-icon>
+                          Lead score será calculado pela IA após a primeira análise de atendimento.
                         </v-alert>
                       </v-card-text>
                     </v-card>
@@ -1551,6 +1564,12 @@ watch(activeTab, (newTab) => {
 
 const handleFieldUpdate = async (field: keyof ClientUpdate, value: any) => {
   if (!client.value) return
+
+  // Lead score is controlled exclusively by AI - prevent manual updates
+  if (field === 'current_lead_score') {
+    console.warn('Lead score is controlled exclusively by AI and cannot be manually updated')
+    return
+  }
 
   try {
     const updateData: ClientUpdate = {
