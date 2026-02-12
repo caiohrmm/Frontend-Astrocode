@@ -103,116 +103,170 @@
           </template>
 
           <template #text>
-            <v-card variant="outlined" class="mt-2">
-              <v-card-text>
-                <!-- Cycle Details -->
-                <v-row>
-                  <!-- Objective -->
-                  <v-col cols="12" v-if="attendance.objective">
-                    <div class="mb-2">
-                      <div class="text-caption text-medium-emphasis mb-1">Objetivo do Ciclo</div>
-                      <div class="text-body-1 font-weight-medium">{{ attendance.objective }}</div>
-                    </div>
-                  </v-col>
+            <div class="cycle-details pa-6">
+              <!-- Objective - Main Title -->
+              <div v-if="attendance.objective" class="mb-6">
+                <h3 class="text-h6 font-weight-medium mb-2">
+                  {{ attendance.objective }}
+                </h3>
+              </div>
 
-                  <!-- Channel & Agent -->
+              <!-- Attendance Info Grid -->
+              <div class="mb-6">
+                <h4 class="text-subtitle-2 font-weight-medium text-medium-emphasis mb-3">
+                  Informações do Atendimento
+                </h4>
+                <v-row dense>
                   <v-col cols="12" sm="6">
-                    <div class="mb-2">
+                    <div class="info-field">
                       <div class="text-caption text-medium-emphasis mb-1">Canal</div>
                       <v-chip
                         :color="getChannelColor(attendance.channel)"
                         variant="flat"
                         size="small"
                       >
-                        <v-icon start size="14">{{ getChannelIcon(attendance.channel) }}</v-icon>
+                        <v-icon start size="16">{{ getChannelIcon(attendance.channel) }}</v-icon>
                         {{ getChannelLabel(attendance.channel) }}
                       </v-chip>
                     </div>
                   </v-col>
-
                   <v-col cols="12" sm="6">
-                    <div class="mb-2">
-                      <div class="text-caption text-medium-emphasis mb-1">Agente</div>
-                      <div class="text-body-2">{{ getAgentName(attendance.agent_id) }}</div>
-                    </div>
-                  </v-col>
-
-                  <!-- Conversations Content -->
-                  <v-col cols="12">
-                    <v-divider class="my-2"></v-divider>
-                    <div class="mb-2">
-                      <div class="text-caption text-medium-emphasis mb-2">
-                        <v-icon size="14" class="mr-1">mdi-message-text</v-icon>
-                        Conversas do Ciclo
-                      </div>
-                      <div
-                        class="text-body-2 conversations-content"
-                        style="white-space: pre-wrap; word-wrap: break-word;"
-                      >
-                        {{ attendance.raw_content }}
+                    <div class="info-field">
+                      <div class="text-caption text-medium-emphasis mb-1">Agente Responsável</div>
+                      <div class="text-body-2 font-weight-medium">
+                        {{ getAgentName(attendance.agent_id) }}
                       </div>
                     </div>
                   </v-col>
-
-                  <!-- AI Summary -->
-                  <v-col cols="12" v-if="attendance.ai_summary">
-                    <v-divider class="my-2"></v-divider>
-                    <div class="mb-2">
-                      <div class="text-caption text-medium-emphasis mb-2">
-                        <v-icon size="14" class="mr-1" color="primary">mdi-robot</v-icon>
-                        Resumo da IA
+                  <v-col cols="12" sm="6">
+                    <div class="info-field">
+                      <div class="text-caption text-medium-emphasis mb-1">Criado em</div>
+                      <div class="text-body-2 font-weight-medium">
+                        {{ formatDateTime(attendance.created_at) }}
                       </div>
-                      <div class="text-body-2">{{ attendance.ai_summary }}</div>
                     </div>
                   </v-col>
-
-                  <!-- AI Next Steps -->
-                  <v-col cols="12" v-if="attendance.ai_next_steps">
-                    <v-divider class="my-2"></v-divider>
-                    <v-alert type="info" variant="tonal" density="compact">
-                      <div class="text-subtitle-2 font-weight-medium mb-1">Próximos Passos Sugeridos</div>
-                      <div class="text-body-2">{{ attendance.ai_next_steps }}</div>
-                    </v-alert>
-                  </v-col>
-
-                  <!-- Actions -->
-                  <v-col cols="12">
-                    <v-divider class="my-2"></v-divider>
-                    <div class="d-flex ga-2">
-                      <v-btn
-                        color="primary"
-                        variant="outlined"
-                        size="small"
-                        prepend-icon="mdi-eye"
-                        @click="handleViewDetails(attendance.id)"
-                      >
-                        Ver Detalhes
-                      </v-btn>
-                      <v-btn
-                        v-if="attendance.status === 'ACTIVE'"
-                        color="success"
-                        variant="outlined"
-                        size="small"
-                        prepend-icon="mdi-message-plus"
-                        @click="handleAddConversation(attendance.id)"
-                      >
-                        Adicionar Conversa
-                      </v-btn>
-                      <v-btn
-                        v-if="attendance.status === 'ACTIVE'"
-                        color="primary"
-                        variant="outlined"
-                        size="small"
-                        prepend-icon="mdi-check-circle"
-                        @click="handleCompleteCycle(attendance.id)"
-                      >
-                        Finalizar Ciclo
-                      </v-btn>
+                  <v-col cols="12" sm="6" v-if="attendance.status !== 'ACTIVE'">
+                    <div class="info-field">
+                      <div class="text-caption text-medium-emphasis mb-1">Finalizado em</div>
+                      <div class="text-body-2 font-weight-medium">
+                        {{ formatDateTime(attendance.updated_at) }}
+                      </div>
                     </div>
                   </v-col>
                 </v-row>
-              </v-card-text>
-            </v-card>
+              </div>
+
+              <!-- Conversations Timeline -->
+              <div v-if="attendance.raw_content" class="mb-6">
+                <h4 class="text-subtitle-2 font-weight-medium text-medium-emphasis mb-3">
+                  <v-icon size="18" class="mr-2">mdi-message-text-outline</v-icon>
+                  Conversas do Ciclo
+                </h4>
+                <div class="conversations-timeline">
+                  <template v-for="(conversation, index) in parseConversations(attendance.raw_content)" :key="index">
+                    <div class="conversation-item">
+                      <div class="d-flex align-start">
+                        <v-icon size="16" color="primary" class="mr-3 mt-1">mdi-circle-small</v-icon>
+                        <div class="flex-grow-1">
+                          <div class="text-caption text-disabled mb-1">
+                            {{ conversation.timestamp }}
+                          </div>
+                          <div class="text-body-2 conversation-text">
+                            {{ conversation.content }}
+                          </div>
+                        </div>
+                      </div>
+                      <v-divider v-if="index < parseConversations(attendance.raw_content).length - 1" class="my-3" />
+                    </div>
+                  </template>
+                </div>
+              </div>
+
+              <!-- AI Summary -->
+              <div v-if="attendance.ai_summary" class="mb-6">
+                <h4 class="text-subtitle-2 font-weight-medium text-medium-emphasis mb-3">
+                  <v-icon size="18" class="mr-2" color="primary">mdi-robot</v-icon>
+                  Resumo da IA
+                </h4>
+                <div 
+                  class="ai-summary-content markdown-content" 
+                  v-html="formatMarkdown(attendance.ai_summary)"
+                ></div>
+              </div>
+
+              <!-- AI Next Steps -->
+              <div v-if="attendance.ai_next_steps" class="mb-6">
+                <h4 class="text-subtitle-2 font-weight-medium text-medium-emphasis mb-3">
+                  <v-icon size="18" class="mr-2" color="info">mdi-arrow-right-circle</v-icon>
+                  Próximos Passos
+                </h4>
+                <v-list variant="flat" density="comfortable" class="pa-0">
+                  <template v-for="(step, index) in parseNextSteps(attendance.ai_next_steps)" :key="index">
+                    <v-list-item class="px-0 py-2">
+                      <template #prepend>
+                        <v-icon 
+                          :color="step.isUrgent ? 'error' : step.isHighPriority ? 'warning' : 'primary'" 
+                          size="18" 
+                          class="mr-3"
+                        >
+                          {{ step.isUrgent ? 'mdi-alert-circle' : step.isHighPriority ? 'mdi-clock-alert' : 'mdi-arrow-right' }}
+                        </v-icon>
+                      </template>
+                      <v-list-item-title class="d-flex align-center flex-wrap ga-2">
+                        <span :class="step.isUrgent ? 'font-weight-medium' : 'text-body-2'">
+                          {{ step.text }}
+                        </span>
+                        <v-chip
+                          v-if="step.priority"
+                          :color="getPriorityColor(step.priority)"
+                          variant="tonal"
+                          size="x-small"
+                          class="ml-2"
+                        >
+                          {{ step.priority }}
+                        </v-chip>
+                      </v-list-item-title>
+                    </v-list-item>
+                    <v-divider v-if="index < parseNextSteps(attendance.ai_next_steps).length - 1" class="my-1" />
+                  </template>
+                </v-list>
+              </div>
+
+              <!-- Actions -->
+              <v-divider class="my-4" />
+              <div class="d-flex ga-2 flex-wrap">
+                <v-btn
+                  color="primary"
+                  variant="text"
+                  size="small"
+                  prepend-icon="mdi-eye"
+                  @click="handleViewDetails(attendance.id)"
+                >
+                  Ver Detalhes
+                </v-btn>
+                <v-btn
+                  v-if="attendance.status === 'ACTIVE'"
+                  color="success"
+                  variant="text"
+                  size="small"
+                  prepend-icon="mdi-message-plus"
+                  @click="handleAddConversation(attendance.id)"
+                >
+                  Adicionar Conversa
+                </v-btn>
+                <v-btn
+                  v-if="attendance.status === 'ACTIVE'"
+                  color="primary"
+                  variant="text"
+                  size="small"
+                  prepend-icon="mdi-check-circle"
+                  @click="handleCompleteCycle(attendance.id)"
+                >
+                  Finalizar Ciclo
+                </v-btn>
+              </div>
+            </div>
           </template>
         </v-expansion-panel>
       </v-expansion-panels>
@@ -388,6 +442,220 @@ const formatDuration = (seconds: number): string => {
   return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`
 }
 
+// Parse conversations from raw_content
+const parseConversations = (rawContent: string): Array<{ timestamp: string; content: string }> => {
+  if (!rawContent) return []
+  
+  const conversations: Array<{ timestamp: string; content: string }> = []
+  const lines = rawContent.split('\n')
+  
+  let currentConversation: { timestamp: string; content: string } | null = null
+  
+  for (const line of lines) {
+    // Check for timestamp patterns:
+    // [YYYY-MM-DD HH:MM:SS]
+    // [YYYY-MM-DD HH:MM]
+    // --- [timestamp]
+    const timestampMatch = line.match(/\[(\d{4}-\d{2}-\d{2}[\s\d:]+)\]/) || 
+                          line.match(/---\s*\[(\d{4}-\d{2}-\d{2}[\s\d:]+)\]/)
+    
+    if (timestampMatch) {
+      // Save previous conversation if exists
+      if (currentConversation && currentConversation.content.trim()) {
+        conversations.push(currentConversation)
+      }
+      
+      // Create new conversation
+      try {
+        const timestamp = new Date(timestampMatch[1])
+        const formattedTimestamp = isNaN(timestamp.getTime()) 
+          ? timestampMatch[1] 
+          : formatDateTime(timestamp.toISOString())
+        
+        currentConversation = {
+          timestamp: formattedTimestamp,
+          content: line.replace(timestampMatch[0], '').trim(),
+        }
+      } catch (e) {
+        // If date parsing fails, use the raw timestamp
+        currentConversation = {
+          timestamp: timestampMatch[1],
+          content: line.replace(timestampMatch[0], '').trim(),
+        }
+      }
+    } else if (currentConversation) {
+      // Append to current conversation
+      const trimmedLine = line.trim()
+      if (trimmedLine) {
+        currentConversation.content += (currentConversation.content ? '\n' : '') + trimmedLine
+      }
+    }
+  }
+  
+  // Add last conversation
+  if (currentConversation && currentConversation.content.trim()) {
+    conversations.push(currentConversation)
+  }
+  
+  // If no conversations were parsed (no timestamps found), return the whole content as one
+  if (conversations.length === 0) {
+    conversations.push({
+      timestamp: 'Conversa',
+      content: rawContent.trim(),
+    })
+  }
+  
+  return conversations
+}
+
+// Parse next steps
+const parseNextSteps = (nextSteps: string): Array<{ text: string; priority: string | null; isUrgent: boolean; isHighPriority: boolean }> => {
+  if (!nextSteps) return []
+  
+  const steps: Array<{ text: string; priority: string | null; isUrgent: boolean; isHighPriority: boolean }> = []
+  const lines = nextSteps.split('\n')
+  
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+    
+    // Remove bullet points and numbering
+    let cleanText = trimmed
+      .replace(/^[-*•]\s*/, '')
+      .replace(/^\d+\.\s*/, '')
+      .trim()
+    
+    if (!cleanText) continue
+    
+    // Extract priority from text (check for patterns like "Alta prioridade - Contatar em até 24h")
+    let priority: string | null = null
+    let isUrgent = false
+    let isHighPriority = false
+    
+    // Check for explicit priority patterns
+    const urgentMatch = cleanText.match(/(?:URGENTE|urgente|Imediata|imediata|imediato|24h|hoje|agora)/i)
+    const highMatch = cleanText.match(/(?:Alta prioridade|Alta|alta)/i)
+    const mediumMatch = cleanText.match(/(?:Média prioridade|Média|média)/i)
+    const lowMatch = cleanText.match(/(?:Baixa prioridade|Baixa|baixa)/i)
+    
+    if (urgentMatch) {
+      priority = 'Urgente'
+      isUrgent = true
+      // Remove priority text from content
+      cleanText = cleanText
+        .replace(/\(?\s*urgente\s*\)?/gi, '')
+        .replace(/\(?\s*imediata\s*\)?/gi, '')
+        .replace(/\(?\s*imediato\s*\)?/gi, '')
+        .replace(/\(?\s*24h\s*\)?/gi, '')
+        .trim()
+    } else if (highMatch) {
+      priority = 'Alta'
+      isHighPriority = true
+      cleanText = cleanText.replace(/\(?\s*alta prioridade\s*\)?/gi, '').trim()
+    } else if (mediumMatch) {
+      priority = 'Média'
+      cleanText = cleanText.replace(/\(?\s*média prioridade\s*\)?/gi, '').trim()
+    } else if (lowMatch) {
+      priority = 'Baixa'
+      cleanText = cleanText.replace(/\(?\s*baixa prioridade\s*\)?/gi, '').trim()
+    }
+    
+    // Clean up any remaining separators
+    cleanText = cleanText.replace(/^[-–—]\s*/, '').trim()
+    
+    steps.push({
+      text: cleanText,
+      priority,
+      isUrgent,
+      isHighPriority,
+    })
+  }
+  
+  return steps
+}
+
+// Get priority color
+const getPriorityColor = (priority: string): string => {
+  const colors: Record<string, string> = {
+    'Urgente': 'error',
+    'Alta': 'warning',
+    'Média': 'info',
+    'Baixa': 'grey',
+  }
+  return colors[priority] || 'grey'
+}
+
+// Format markdown
+const formatMarkdown = (text: string): string => {
+  if (!text) return ''
+  
+  let html = text
+  
+  // Code blocks first (to avoid processing markdown inside code)
+  html = html.replace(/```([\s\S]*?)```/g, '<pre class="markdown-pre"><code>$1</code></pre>')
+  
+  // Headers
+  html = html.replace(/^### (.*$)/gim, '<h3 class="text-subtitle-1 font-weight-bold mt-4 mb-2">$1</h3>')
+  html = html.replace(/^## (.*$)/gim, '<h2 class="text-h6 font-weight-bold mt-4 mb-2">$1</h2>')
+  html = html.replace(/^# (.*$)/gim, '<h1 class="text-h5 font-weight-bold mt-4 mb-3">$1</h1>')
+  
+  // Bold
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong class="font-weight-medium">$1</strong>')
+  html = html.replace(/__(.+?)__/g, '<strong class="font-weight-medium">$1</strong>')
+  
+  // Italic (avoid conflicts with bold)
+  html = html.replace(/(?<!\*)\*(?!\*)([^*]+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>')
+  html = html.replace(/(?<!_)_(?!_)([^_]+?)(?<!_)_(?!_)/g, '<em>$1</em>')
+  
+  // Inline code
+  html = html.replace(/`([^`]+)`/g, '<code class="markdown-code">$1</code>')
+  
+  // Links
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-primary">$1</a>')
+  
+  // Lists - process line by line
+  const lines = html.split('\n')
+  const processedLines: string[] = []
+  let inList = false
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]
+    const unorderedMatch = line.match(/^[\*\-] (.+)$/)
+    const orderedMatch = line.match(/^\d+\. (.+)$/)
+    
+    if (unorderedMatch || orderedMatch) {
+      if (!inList) {
+        processedLines.push('<ul class="markdown-list">')
+        inList = true
+      }
+      processedLines.push(`<li>${unorderedMatch ? unorderedMatch[1] : orderedMatch![1]}</li>`)
+    } else {
+      if (inList) {
+        processedLines.push('</ul>')
+        inList = false
+      }
+      processedLines.push(line)
+    }
+  }
+  
+  if (inList) {
+    processedLines.push('</ul>')
+  }
+  
+  html = processedLines.join('\n')
+  
+  // Line breaks - double newline becomes paragraph break
+  html = html.replace(/\n\n+/g, '</p><p class="mb-2">')
+  html = html.replace(/\n/g, '<br>')
+  
+  // Wrap in paragraph if not already wrapped
+  if (!html.trim().startsWith('<')) {
+    html = '<p class="mb-2">' + html + '</p>'
+  }
+  
+  return html
+}
+
 // Actions
 const handleCreateAttendance = () => {
   router.push({
@@ -470,12 +738,115 @@ onMounted(async () => {
   margin-bottom: 8px;
 }
 
-.conversations-content {
-  max-height: 300px;
-  overflow-y: auto;
-  padding: 12px;
-  background-color: rgba(var(--v-theme-surface), 0.5);
-  border-radius: 4px;
+.cycle-details {
+  background: transparent;
+}
+
+.info-field {
+  padding-bottom: 0.5rem;
+}
+
+.conversations-timeline {
+  position: relative;
+}
+
+.conversation-item {
+  position: relative;
+}
+
+.conversation-text {
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* Markdown Content Styles */
+.markdown-content {
+  line-height: 1.7;
+  color: rgba(var(--v-theme-on-surface), 0.87);
+}
+
+.markdown-content :deep(h1),
+.markdown-content :deep(h2),
+.markdown-content :deep(h3) {
+  color: rgba(var(--v-theme-on-surface), 0.87);
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+}
+
+.markdown-content :deep(h1) {
+  font-size: 1.25rem;
+}
+
+.markdown-content :deep(h2) {
+  font-size: 1.125rem;
+}
+
+.markdown-content :deep(h3) {
+  font-size: 1rem;
+}
+
+.markdown-content :deep(p) {
+  margin: 0.75rem 0;
+  line-height: 1.7;
+}
+
+.markdown-content :deep(ul),
+.markdown-content :deep(ol) {
+  margin: 0.75rem 0;
+  padding-left: 1.5rem;
+}
+
+.markdown-content :deep(li) {
+  margin: 0.5rem 0;
+  line-height: 1.6;
+}
+
+.markdown-content :deep(strong) {
+  font-weight: 600;
+  color: rgba(var(--v-theme-on-surface), 0.95);
+}
+
+.markdown-content :deep(em) {
+  font-style: italic;
+}
+
+.markdown-content :deep(code) {
+  background-color: rgba(var(--v-theme-surface-variant), 0.3);
+  padding: 0.15rem 0.35rem;
+  border-radius: 0.25rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.875em;
+  color: rgba(var(--v-theme-on-surface), 0.87);
+}
+
+.markdown-content :deep(pre) {
+  background-color: rgba(var(--v-theme-surface-variant), 0.2);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.markdown-content :deep(pre code) {
+  background-color: transparent;
+  padding: 0;
+  color: inherit;
+}
+
+.markdown-content :deep(a) {
+  color: rgb(var(--v-theme-primary));
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.markdown-content :deep(a:hover) {
+  text-decoration: underline;
+}
+
+.ai-summary-content {
+  padding: 0;
 }
 </style>
 
