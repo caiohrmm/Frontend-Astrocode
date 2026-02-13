@@ -1603,7 +1603,18 @@ const loadClient = async () => {
   isLoading.value = true
   try {
     const clientId = route.params.id as string
+    console.log('[DEBUG] Loading client:', clientId)
     client.value = await clientsService.getClientById(clientId)
+    console.log('[DEBUG] Client loaded:', {
+      id: client.value?.id,
+      name: client.value?.name,
+      current_lead_score: client.value?.current_lead_score,
+      current_interest_type: client.value?.current_interest_type,
+      current_property_type: client.value?.current_property_type,
+      current_city_interest: client.value?.current_city_interest,
+      current_budget_min: client.value?.current_budget_min,
+      current_budget_max: client.value?.current_budget_max,
+    })
 
     // Initialize editable fields
     editableFields.value = {
@@ -1716,8 +1727,19 @@ const loadAIInsights = async () => {
 
   isLoadingAIInsights.value = true
   try {
+    console.log('[DEBUG] Loading AI insights for client:', client.value.id)
+    
     // Load all AI summaries for this client
     aiSummaries.value = await aiSummariesService.getSummariesByClientId(client.value.id)
+    console.log('[DEBUG] AI summaries loaded:', {
+      count: aiSummaries.value.length,
+      summaries: aiSummaries.value.map(s => ({
+        id: s.id,
+        lead_score_suggested: s.lead_score_suggested,
+        recommended_properties: s.recommended_properties,
+        status: s.status,
+      })),
+    })
 
     // Collect all recommended property IDs
     const propertyIds = new Set<string>()
@@ -1726,6 +1748,7 @@ const loadAIInsights = async () => {
         summary.recommended_properties.forEach(id => propertyIds.add(id))
       }
     })
+    console.log('[DEBUG] Property IDs from AI summaries:', Array.from(propertyIds))
 
     // Load recommended properties from AI
     if (propertyIds.size > 0) {
@@ -1739,11 +1762,45 @@ const loadAIInsights = async () => {
           result.status === 'fulfilled' && result.value !== null
         )
         .map(result => result.value)
+      console.log('[DEBUG] Properties loaded from AI summaries:', recommendedProperties.value.length)
     }
 
-    // If no AI recommendations, try to find based on profile
-    if (recommendedProperties.value.length === 0) {
-      await loadProfileBasedProperties()
+    // If no AI recommendations, try to get from API endpoint
+    if (recommendedProperties.value.length === 0 && client.value) {
+      console.log('[DEBUG] No AI recommendations, trying API endpoint for client:', client.value.id)
+      try {
+        console.log('[DEBUG] Calling clientsService.getRecommendedProperties...')
+        const apiRecommended = await clientsService.getRecommendedProperties(client.value.id, 6)
+        console.log('[DEBUG] API recommended properties received:', {
+          count: apiRecommended.length,
+          isArray: Array.isArray(apiRecommended),
+          properties: apiRecommended.map(p => ({
+            id: p.id,
+            code: p.code,
+            city: p.city,
+            property_type: p.property_type,
+            business_type: p.business_type,
+            price: p.price,
+            status: p.status,
+          })),
+        })
+        if (apiRecommended && apiRecommended.length > 0) {
+          console.log('[DEBUG] Setting recommendedProperties.value to:', apiRecommended.length, 'properties')
+          recommendedProperties.value = apiRecommended
+          console.log('[DEBUG] recommendedProperties.value after assignment:', recommendedProperties.value.length)
+        } else {
+          console.log('[DEBUG] No API recommendations (empty array), falling back to profile-based')
+          // Fallback to profile-based properties
+          await loadProfileBasedProperties()
+        }
+      } catch (error) {
+        console.error('[DEBUG] Error loading recommended properties from API:', error)
+        console.error('[DEBUG] Error details:', error instanceof Error ? error.message : String(error))
+        // Fallback to profile-based properties
+        await loadProfileBasedProperties()
+      }
+    } else {
+      console.log('[DEBUG] Using AI recommended properties:', recommendedProperties.value.length)
     }
   } catch (error) {
     console.error('Error loading AI insights:', error)
@@ -1761,6 +1818,14 @@ watch(activeTab, (newTab) => {
     loadClientAttendances()
   }
 })
+
+// Watch AI summaries to reload client when they change (to get updated lead score)
+watch(aiSummaries, async (newSummaries) => {
+  if (newSummaries.length > 0 && client.value) {
+    // Reload client to get updated lead score from AI
+    await loadClient()
+  }
+}, { deep: true })
 
 const handleFieldUpdate = async (field: keyof ClientUpdate, value: any) => {
   if (!client.value) return

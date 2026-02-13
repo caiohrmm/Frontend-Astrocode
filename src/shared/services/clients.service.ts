@@ -206,6 +206,13 @@ class ClientsService {
   async applyClassification(clientId: string, classification: LeadClassificationResult): Promise<Client> {
     return apiClient.post<Client>(`/clients/${clientId}/apply-classification`, classification)
   }
+
+  /**
+   * Get recommended properties for a client based on their preferences
+   */
+  async getRecommendedProperties(clientId: string, limit: number = 5): Promise<any[]> {
+    return apiClient.get<any[]>(`/clients/${clientId}/recommended-properties?limit=${limit}`)
+  }
 }
 
 export const clientsService = new ClientsService()
