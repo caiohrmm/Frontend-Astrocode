@@ -371,14 +371,18 @@
               <!-- Valor -->
               <v-col cols="12" sm="6">
                 <v-text-field
-                  v-model.number="newSale.sale_value"
+                  v-model="saleValueFormatted"
                   label="Valor *"
                   prepend-inner-icon="mdi-currency-usd"
                   variant="outlined"
                   density="comfortable"
-                  type="number"
                   prefix="R$"
-                  :rules="[(v: number | null) => (v !== null && v > 0) || 'Valor deve ser maior que zero']"
+                  :rules="[(v: string) => {
+                    const parsed = parseCurrencyInputRealTime(v || '');
+                    return (parsed !== null && parsed > 0) || 'Valor deve ser maior que zero';
+                  }]"
+                  @input="handleSaleValueInput($event)"
+                  @blur="handleSaleValueBlur()"
                 ></v-text-field>
               </v-col>
 
@@ -418,13 +422,17 @@
                       </v-col>
                       <v-col cols="12" sm="4">
                         <v-text-field
-                          v-model.number="payment.value"
+                          :model-value="getPaymentValueFormatted(index)"
                           label="Valor"
                           variant="outlined"
                           density="compact"
-                          type="number"
                           prefix="R$"
-                          :rules="[(v: number | null) => (v !== null && v > 0) || 'Valor deve ser maior que zero']"
+                          :rules="[(v: string) => {
+                            const parsed = parseCurrencyInputRealTime(v || '');
+                            return (parsed !== null && parsed > 0) || 'Valor deve ser maior que zero';
+                          }]"
+                          @input="handlePaymentValueInput($event, index)"
+                          @blur="handlePaymentValueBlur(index)"
                         ></v-text-field>
                       </v-col>
                       <v-col cols="12" sm="3">
@@ -837,7 +845,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import {
   salesService,
   type Sale,
@@ -852,13 +860,12 @@ import {
   getSaleStatusColor,
   getSaleStatusIcon,
   getPaymentMethodLabel,
-  formatCurrency,
 } from '@/shared/services/sales.service'
 import { clientsService, type Client } from '@/shared/services/clients.service'
 import { propertiesService, type Property } from '@/shared/services/properties.service'
 import { usersService, type User } from '@/shared/services/users.service'
 import SearchSelectDialog from '@/shared/components/SearchSelectDialog.vue'
-import { formatPhone } from '@/shared/utils/masks'
+import { formatPhone, formatCurrency, formatCurrencyInputRealTime, parseCurrencyInputRealTime } from '@/shared/utils/masks'
 
 // State
 const sales = ref<Sale[]>([])
@@ -910,6 +917,10 @@ const newSale = ref<Partial<SaleCreate>>({
 const paymentMethods = ref<PaymentMethodItem[]>([
   { method: PaymentMethod.CASH, value: 0, description: '' }
 ])
+
+// Formatted values for real-time currency input
+const saleValueFormatted = ref('')
+const paymentValueFormatted = ref<Record<number, string>>({})
 
 // Selected sale
 const selectedSale = ref<Sale | null>(null)
@@ -1198,19 +1209,34 @@ const closeCreateDialog = () => {
   paymentMethods.value = [
     { method: PaymentMethod.CASH, value: 0, description: '' }
   ]
+  saleValueFormatted.value = ''
+  paymentValueFormatted.value = {}
 }
 
 const addPaymentMethod = () => {
+  const newIndex = paymentMethods.value.length
   paymentMethods.value.push({
     method: PaymentMethod.CASH,
     value: 0,
     description: '',
   })
+  // Initialize formatted value for new payment method
+  paymentValueFormatted.value[newIndex] = ''
 }
 
 const removePaymentMethod = (index: number) => {
   if (paymentMethods.value.length > 1) {
     paymentMethods.value.splice(index, 1)
+    // Remove formatted value for removed payment method
+    delete paymentValueFormatted.value[index]
+    // Reindex remaining formatted values
+    const newFormatted: Record<number, string> = {}
+    paymentMethods.value.forEach((pm, i) => {
+      if (paymentValueFormatted.value[i]) {
+        newFormatted[i] = paymentValueFormatted.value[i]
+      }
+    })
+    paymentValueFormatted.value = newFormatted
   }
 }
 
@@ -1265,6 +1291,125 @@ const formatMarkdown = (text: string): string => {
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
     .replace(/\n/g, '<br>')
 }
+
+// Real-time currency input handlers
+const handleSaleValueInput = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const inputValue = target.value
+  
+  // Remove all formatting to get raw digits
+  const rawDigits = inputValue.replace(/\D/g, '')
+  
+  if (rawDigits === '') {
+    saleValueFormatted.value = ''
+    newSale.value.sale_value = undefined
+    return
+  }
+  
+  // Format in real-time
+  const formatted = formatCurrencyInputRealTime(rawDigits)
+  saleValueFormatted.value = formatted
+  
+  // Update formData immediately
+  const parsed = parseCurrencyInputRealTime(formatted)
+  if (parsed !== null) {
+    newSale.value.sale_value = parsed
+  }
+  
+  // Place cursor at the end
+  nextTick(() => {
+    target.setSelectionRange(formatted.length, formatted.length)
+  })
+}
+
+const handleSaleValueBlur = () => {
+  const parsed = parseCurrencyInputRealTime(saleValueFormatted.value)
+  if (parsed !== null) {
+    newSale.value.sale_value = parsed
+    saleValueFormatted.value = formatCurrency(parsed)
+  } else {
+    saleValueFormatted.value = ''
+    newSale.value.sale_value = undefined
+  }
+}
+
+const getPaymentValueFormatted = (index: number): string => {
+  if (!paymentValueFormatted.value[index]) {
+    const value = paymentMethods.value[index]?.value || 0
+    if (value > 0) {
+      paymentValueFormatted.value[index] = formatCurrency(value)
+    } else {
+      paymentValueFormatted.value[index] = ''
+    }
+  }
+  return paymentValueFormatted.value[index] || ''
+}
+
+const handlePaymentValueInput = (event: Event, index: number) => {
+  const target = event.target as HTMLInputElement
+  const inputValue = target.value
+  
+  // Remove all formatting to get raw digits
+  const rawDigits = inputValue.replace(/\D/g, '')
+  
+  if (rawDigits === '') {
+    paymentValueFormatted.value[index] = ''
+    if (paymentMethods.value[index]) {
+      paymentMethods.value[index].value = 0
+    }
+    return
+  }
+  
+  // Format in real-time
+  const formatted = formatCurrencyInputRealTime(rawDigits)
+  paymentValueFormatted.value[index] = formatted
+  
+  // Update formData immediately
+  const parsed = parseCurrencyInputRealTime(formatted)
+  if (parsed !== null && paymentMethods.value[index]) {
+    paymentMethods.value[index].value = parsed
+  }
+  
+  // Place cursor at the end
+  nextTick(() => {
+    target.setSelectionRange(formatted.length, formatted.length)
+  })
+}
+
+const handlePaymentValueBlur = (index: number) => {
+  const formatted = paymentValueFormatted.value[index] || ''
+  const parsed = parseCurrencyInputRealTime(formatted)
+  if (parsed !== null && paymentMethods.value[index]) {
+    paymentMethods.value[index].value = parsed
+    paymentValueFormatted.value[index] = formatCurrency(parsed)
+  } else {
+    paymentValueFormatted.value[index] = ''
+    if (paymentMethods.value[index]) {
+      paymentMethods.value[index].value = 0
+    }
+  }
+}
+
+// Watch for dialog opening to initialize formatted values
+watch(showCreateDialog, (isOpen) => {
+  if (isOpen) {
+    // Initialize sale value formatted if there's a value
+    if (newSale.value.sale_value) {
+      saleValueFormatted.value = formatCurrency(newSale.value.sale_value)
+    } else {
+      saleValueFormatted.value = ''
+    }
+    
+    // Initialize payment methods formatted values
+    paymentMethods.value.forEach((pm, index) => {
+      if (pm.value && pm.value > 0) {
+        paymentValueFormatted.value[index] = formatCurrency(pm.value)
+      } else {
+        paymentValueFormatted.value[index] = ''
+      }
+    })
+  }
+})
 
 // Lifecycle
 onMounted(() => {
