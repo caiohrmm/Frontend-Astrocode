@@ -279,34 +279,77 @@
 
               <!-- Cliente -->
               <v-col cols="12">
-                <v-autocomplete
+                <SearchSelectDialog
                   v-model="newSale.client_id"
-                  :items="clients"
-                  item-title="name"
-                  item-value="id"
                   label="Cliente *"
-                  prepend-inner-icon="mdi-account"
-                  variant="outlined"
-                  density="comfortable"
+                  dialog-title="Buscar Cliente"
+                  icon="mdi-account"
+                  icon-color="primary"
+                  item-icon="mdi-account"
+                  placeholder="Clique para buscar cliente..."
+                  hint="Selecione o cliente da venda"
+                  :persistent-hint="true"
                   :rules="[(v: string | null) => !!v || 'Cliente é obrigatório']"
-                  :loading="isLoadingClients"
-                ></v-autocomplete>
+                  :items="clientSearchItems"
+                  :total-items="clientsTotalItems"
+                  :items-per-page="clientsPerPage"
+                  :is-loading="isLoadingClients"
+                  display-field="name"
+                  @search="handleClientSearch"
+                  @select="handleClientSelect"
+                >
+                  <template #item-prepend="{ item }">
+                    <v-avatar color="primary" size="40" class="mr-3">
+                      <span class="text-caption text-white">
+                        {{ getInitials(item.name || '') }}
+                      </span>
+                    </v-avatar>
+                  </template>
+                  <template #item-title="{ item }">
+                    {{ item.name }}
+                  </template>
+                  <template #item-subtitle="{ item }">
+                    <span v-if="item.phone">{{ formatPhone(item.phone) }}</span>
+                    <span v-else-if="item.email">{{ item.email }}</span>
+                  </template>
+                </SearchSelectDialog>
               </v-col>
 
               <!-- Imóvel -->
               <v-col cols="12">
-                <v-autocomplete
+                <SearchSelectDialog
                   v-model="newSale.property_id"
-                  :items="properties"
-                  item-title="title"
-                  item-value="id"
-                  label="Imóvel (opcional)"
-                  prepend-inner-icon="mdi-home"
-                  variant="outlined"
-                  density="comfortable"
-                  clearable
-                  :loading="isLoadingProperties"
-                ></v-autocomplete>
+                  label="Imóvel (Opcional)"
+                  dialog-title="Buscar Propriedade"
+                  icon="mdi-home"
+                  icon-color="success"
+                  item-icon="mdi-home"
+                  placeholder="Clique para buscar propriedade..."
+                  hint="Selecione a propriedade relacionada, se aplicável"
+                  :persistent-hint="true"
+                  :clearable="true"
+                  :items="propertySearchItems"
+                  :total-items="propertiesTotalItems"
+                  :items-per-page="propertiesPerPage"
+                  :is-loading="isLoadingProperties"
+                  display-field="title"
+                  @search="handlePropertySearch"
+                  @select="handlePropertySelect"
+                >
+                  <template #item-prepend="{ item }">
+                    <v-avatar color="success" size="40" class="mr-3" rounded="lg">
+                      <v-img v-if="item.main_image_url" :src="item.main_image_url" cover></v-img>
+                      <v-icon v-else color="white">mdi-home</v-icon>
+                    </v-avatar>
+                  </template>
+                  <template #item-title="{ item }">
+                    {{ item.title }}
+                  </template>
+                  <template #item-subtitle="{ item }">
+                    <span>Código: {{ item.code }}</span>
+                    <span v-if="item.city" class="ml-2">• {{ item.city }}</span>
+                  </template>
+                </SearchSelectDialog>
               </v-col>
 
               <!-- Corretor -->
@@ -814,11 +857,11 @@ import {
 import { clientsService, type Client } from '@/shared/services/clients.service'
 import { propertiesService, type Property } from '@/shared/services/properties.service'
 import { usersService, type User } from '@/shared/services/users.service'
+import SearchSelectDialog from '@/shared/components/SearchSelectDialog.vue'
+import { formatPhone } from '@/shared/utils/masks'
 
 // State
 const sales = ref<Sale[]>([])
-const clients = ref<Client[]>([])
-const properties = ref<Property[]>([])
 const corretores = ref<User[]>([])
 const stats = ref<SaleStats>({
   total_sales: 0,
@@ -837,6 +880,16 @@ const isLoading = ref(false)
 const isLoadingClients = ref(false)
 const isLoadingProperties = ref(false)
 const isLoadingCorretores = ref(false)
+
+// Search state for clients
+const clientSearchItems = ref<any[]>([])
+const clientsTotalItems = ref(0)
+const clientsPerPage = 10
+
+// Search state for properties
+const propertySearchItems = ref<any[]>([])
+const propertiesTotalItems = ref(0)
+const propertiesPerPage = 10
 const isCreating = ref(false)
 const isCompleting = ref(false)
 const isCancelling = ref(false)
@@ -953,25 +1006,105 @@ const loadSales = async () => {
   }
 }
 
-const loadClients = async () => {
+// Handle client search from SearchSelectDialog
+const handleClientSearch = async (query: string, page: number) => {
   isLoadingClients.value = true
   try {
-    clients.value = await clientsService.getClients()
+    // Fetch all clients (backend doesn't support pagination/search filtering yet)
+    const data = await clientsService.getClients({ limit: 1000 })
+    
+    // Filter by search query client-side
+    let filtered = data
+    if (query && query.trim()) {
+      const lowerQuery = query.toLowerCase().trim()
+      filtered = data.filter(client =>
+        client.name.toLowerCase().includes(lowerQuery) ||
+        (client.email && client.email.toLowerCase().includes(lowerQuery)) ||
+        (client.phone && client.phone.includes(lowerQuery))
+      )
+    }
+    
+    // Apply pagination client-side
+    const startIndex = (page - 1) * clientsPerPage
+    const endIndex = startIndex + clientsPerPage
+    const paginatedItems = filtered.slice(startIndex, endIndex)
+    
+    // Map to search items format
+    clientSearchItems.value = paginatedItems.map(client => ({
+      id: client.id,
+      name: client.name,
+      email: client.email,
+      phone: client.phone,
+      title: client.name,
+      subtitle: client.phone || client.email,
+    }))
+    
+    clientsTotalItems.value = filtered.length
   } catch (error) {
-    console.error('Error loading clients:', error)
+    console.error('Error searching clients:', error)
+    clientSearchItems.value = []
+    clientsTotalItems.value = 0
   } finally {
     isLoadingClients.value = false
   }
 }
 
-const loadProperties = async () => {
+// Handle client selection
+const handleClientSelect = (item: any) => {
+  if (item) {
+    console.log('Client selected:', item)
+  }
+}
+
+// Handle property search from SearchSelectDialog
+const handlePropertySearch = async (query: string, page: number) => {
   isLoadingProperties.value = true
   try {
-    properties.value = await propertiesService.listProperties()
+    // Fetch all properties (backend doesn't support pagination/search filtering yet)
+    const data = await propertiesService.listProperties({ limit: 1000 })
+    
+    // Filter by search query client-side
+    let filtered = data
+    if (query && query.trim()) {
+      const lowerQuery = query.toLowerCase().trim()
+      filtered = data.filter(property =>
+        property.title.toLowerCase().includes(lowerQuery) ||
+        property.code.toLowerCase().includes(lowerQuery) ||
+        (property.city && property.city.toLowerCase().includes(lowerQuery)) ||
+        (property.neighborhood && property.neighborhood.toLowerCase().includes(lowerQuery))
+      )
+    }
+    
+    // Apply pagination client-side
+    const startIndex = (page - 1) * propertiesPerPage
+    const endIndex = startIndex + propertiesPerPage
+    const paginatedItems = filtered.slice(startIndex, endIndex)
+    
+    // Map to search items format
+    propertySearchItems.value = paginatedItems.map(property => ({
+      id: property.id,
+      title: property.title,
+      code: property.code,
+      city: property.city,
+      neighborhood: property.neighborhood,
+      main_image_url: property.main_image_url,
+      subtitle: `${property.code} ${property.city ? '• ' + property.city : ''}`,
+    }))
+    
+    propertiesTotalItems.value = filtered.length
   } catch (error) {
-    console.error('Error loading properties:', error)
+    console.error('Error searching properties:', error)
+    propertySearchItems.value = []
+    propertiesTotalItems.value = 0
   } finally {
     isLoadingProperties.value = false
+  }
+}
+
+// Handle property selection
+const handlePropertySelect = (item: any) => {
+  if (item) {
+    console.log('Property selected:', item)
   }
 }
 
@@ -1092,12 +1225,11 @@ const showSnackbar = (message: string, color: string) => {
 // Helpers
 const getInitials = (name: string | null): string => {
   if (!name) return '?'
-  return name
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .substring(0, 2)
-    .toUpperCase()
+  const parts = name.trim().split(' ')
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+  }
+  return name.substring(0, 2).toUpperCase()
 }
 
 const formatDate = (dateStr: string): string => {
@@ -1137,8 +1269,6 @@ const formatMarkdown = (text: string): string => {
 // Lifecycle
 onMounted(() => {
   loadSales()
-  loadClients()
-  loadProperties()
   loadCorretores()
 })
 </script>
