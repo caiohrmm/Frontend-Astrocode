@@ -43,6 +43,49 @@ export function formatCurrencyInput(value: string): string {
 }
 
 /**
+ * Format currency input in real-time (like banking apps)
+ * Formats as the user types: "1234567" -> "12.345,67"
+ * Treats input as natural number entry, last 2 digits are cents
+ * @param value - String being typed (can be formatted or raw)
+ * @returns Formatted currency string in real-time (without R$ prefix)
+ */
+export function formatCurrencyInputRealTime(value: string): string {
+  if (!value) return ''
+  
+  // Remove all non-digits to get raw number
+  const digits = value.replace(/\D/g, '')
+  
+  if (digits === '') return ''
+  
+  // Convert to number treating last 2 digits as cents
+  // Example: "1234567" -> 12345.67 (user typed 1234567, we interpret as 12345,67)
+  const numValue = parseInt(digits, 10) / 100
+  
+  // Format with Brazilian currency format (without currency symbol)
+  return new Intl.NumberFormat('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(numValue)
+}
+
+/**
+ * Parse real-time formatted currency input back to number
+ * Handles the formatted string and converts back to number
+ * @param value - Formatted currency string (e.g., "12.345,67")
+ * @returns Number value or null
+ */
+export function parseCurrencyInputRealTime(value: string): number | null {
+  if (!value) return null
+  
+  // Remove all formatting (dots, commas, spaces, R$, etc)
+  // Dots are thousand separators, comma is decimal separator
+  const cleaned = value.replace(/[R$\s.]/g, '').replace(',', '.')
+  const parsed = parseFloat(cleaned)
+  
+  return isNaN(parsed) ? null : parsed
+}
+
+/**
  * Check if a string looks like a phone number (contains mostly digits)
  * @param value - String to check
  * @returns True if it looks like a phone number

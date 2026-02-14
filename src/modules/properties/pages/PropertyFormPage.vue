@@ -440,7 +440,7 @@
                 class="mb-4"
               >
                 <div class="d-flex align-center">
-                  <v-icon class="mr-2">mdi-information</v-icon>
+                  
                   Os campos exibidos dependem do tipo de negócio selecionado na aba Geral.
                 </div>
               </v-alert>
@@ -458,8 +458,9 @@
                     prefix="R$"
                     hint="Valor de venda do imóvel"
                     persistent-hint
-                    @input="priceFormatted = formatCurrencyInput(priceFormatted)"
-                    @blur="formData.price = parseCurrency(priceFormatted) || null; priceFormatted = formData.price ? formatCurrency(formData.price) : ''"
+                    data-field="price"
+                    @input="handlePriceInput($event, 'price')"
+                    @blur="handlePriceBlur('price')"
                   ></v-text-field>
                 </v-col>
                 <v-col
@@ -475,8 +476,9 @@
                     prefix="R$"
                     hint="Valor mensal do aluguel"
                     persistent-hint
-                    @input="rentPriceFormatted = formatCurrencyInput(rentPriceFormatted)"
-                    @blur="formData.rent_price = parseCurrency(rentPriceFormatted) || null; rentPriceFormatted = formData.rent_price ? formatCurrency(formData.rent_price) : ''"
+                    data-field="rent_price"
+                    @input="handlePriceInput($event, 'rent_price')"
+                    @blur="handlePriceBlur('rent_price')"
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12" md="6">
@@ -488,8 +490,9 @@
                     prefix="R$"
                     hint="Taxa de condomínio mensal"
                     persistent-hint
-                    @input="condoFeeFormatted = formatCurrencyInput(condoFeeFormatted)"
-                    @blur="formData.condo_fee = parseCurrency(condoFeeFormatted) || null; condoFeeFormatted = formData.condo_fee ? formatCurrency(formData.condo_fee) : ''"
+                    data-field="condo_fee"
+                    @input="handlePriceInput($event, 'condo_fee')"
+                    @blur="handlePriceBlur('condo_fee')"
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12" md="6">
@@ -501,8 +504,9 @@
                     prefix="R$"
                     hint="Imposto predial anual"
                     persistent-hint
-                    @input="iptuFormatted = formatCurrencyInput(iptuFormatted)"
-                    @blur="formData.iptu = parseCurrency(iptuFormatted) || null; iptuFormatted = formData.iptu ? formatCurrency(formData.iptu) : ''"
+                    data-field="iptu"
+                    @input="handlePriceInput($event, 'iptu')"
+                    @blur="handlePriceBlur('iptu')"
                   ></v-text-field>
                 </v-col>
               </v-row>
@@ -758,13 +762,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { VForm } from 'vuetify/components'
 import { propertiesService, type Property, type PropertyCreate, type PropertyUpdate, type AddressData } from '@/shared/services/properties.service'
 import { usersService, type User } from '@/shared/services/users.service'
 import { clientsService, type Client } from '@/shared/services/clients.service'
-import { formatCurrency, parseCurrency, formatCurrencyInput, formatPhone, parsePhone } from '@/shared/utils/masks'
+import { formatCurrency, parseCurrency, formatCurrencyInput, formatCurrencyInputRealTime, parseCurrencyInputRealTime, formatPhone, parsePhone } from '@/shared/utils/masks'
 import PropertyImageUpload from '@/shared/components/PropertyImageUpload.vue'
 
 // Extended client type with match score
@@ -1571,6 +1575,120 @@ const handleGeocodeAddress = async () => {
     // TODO: Show error notification
   } finally {
     isGeocoding.value = false
+  }
+}
+
+// Handle real-time currency input formatting (like banking apps)
+const handlePriceInput = (event: Event, field: 'price' | 'rent_price' | 'condo_fee' | 'iptu') => {
+  const target = event.target as HTMLInputElement
+  const inputValue = target.value
+  
+  // Store cursor position before formatting
+  const cursorPosition = target.selectionStart || 0
+  
+  // Remove all formatting to get raw digits
+  const rawDigits = inputValue.replace(/\D/g, '')
+  
+  if (rawDigits === '') {
+    // Clear the field
+    switch (field) {
+      case 'price':
+        priceFormatted.value = ''
+        formData.value.price = null
+        break
+      case 'rent_price':
+        rentPriceFormatted.value = ''
+        formData.value.rent_price = null
+        break
+      case 'condo_fee':
+        condoFeeFormatted.value = ''
+        formData.value.condo_fee = null
+        break
+      case 'iptu':
+        iptuFormatted.value = ''
+        formData.value.iptu = null
+        break
+    }
+    return
+  }
+  
+  // Format in real-time
+  const formatted = formatCurrencyInputRealTime(rawDigits)
+  
+  // Update the appropriate field
+  switch (field) {
+    case 'price':
+      priceFormatted.value = formatted
+      break
+    case 'rent_price':
+      rentPriceFormatted.value = formatted
+      break
+    case 'condo_fee':
+      condoFeeFormatted.value = formatted
+      break
+    case 'iptu':
+      iptuFormatted.value = formatted
+      break
+  }
+  
+  // Update formData immediately (for real-time updates)
+  const parsed = parseCurrencyInputRealTime(formatted)
+  if (parsed !== null) {
+    switch (field) {
+      case 'price':
+        formData.value.price = parsed
+        break
+      case 'rent_price':
+        formData.value.rent_price = parsed
+        break
+      case 'condo_fee':
+        formData.value.condo_fee = parsed
+        break
+      case 'iptu':
+        formData.value.iptu = parsed
+        break
+    }
+  }
+  
+  // Restore cursor position after formatting (next tick to ensure DOM is updated)
+  // For better UX like banking apps, place cursor at the end when typing
+  nextTick(() => {
+    // Place cursor at the end of the formatted value (common in banking apps)
+    // This provides a better typing experience - user continues typing from the end
+    target.setSelectionRange(formatted.length, formatted.length)
+  })
+}
+
+// Handle blur event to ensure final formatting
+const handlePriceBlur = (field: 'price' | 'rent_price' | 'condo_fee' | 'iptu') => {
+  let formattedValue: string
+  let parsedValue: number | null
+  
+  switch (field) {
+    case 'price':
+      formattedValue = priceFormatted.value
+      parsedValue = parseCurrencyInputRealTime(formattedValue)
+      formData.value.price = parsedValue
+      priceFormatted.value = parsedValue ? formatCurrency(parsedValue) : ''
+      break
+    case 'rent_price':
+      formattedValue = rentPriceFormatted.value
+      parsedValue = parseCurrencyInputRealTime(formattedValue)
+      formData.value.rent_price = parsedValue
+      rentPriceFormatted.value = parsedValue ? formatCurrency(parsedValue) : ''
+      break
+    case 'condo_fee':
+      formattedValue = condoFeeFormatted.value
+      parsedValue = parseCurrencyInputRealTime(formattedValue)
+      formData.value.condo_fee = parsedValue
+      condoFeeFormatted.value = parsedValue ? formatCurrency(parsedValue) : ''
+      break
+    case 'iptu':
+      formattedValue = iptuFormatted.value
+      parsedValue = parseCurrencyInputRealTime(formattedValue)
+      formData.value.iptu = parsedValue
+      iptuFormatted.value = parsedValue ? formatCurrency(parsedValue) : ''
+      break
   }
 }
 
