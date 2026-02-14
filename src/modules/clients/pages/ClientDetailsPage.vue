@@ -739,7 +739,7 @@
                           Campos Controlados pela IA
                         </div>
                         <div class="text-body-2 text-medium-emphasis">
-                          Os campos <strong>Tipo de Interesse</strong>, <strong>Tipo de Imóvel</strong>, 
+                          Os campos <strong>Status</strong>, <strong>Tipo de Interesse</strong>, <strong>Tipo de Imóvel</strong>, 
                           <strong>Cidade de Interesse</strong>, <strong>Orçamento</strong> e <strong>Urgência</strong> 
                           são atualizados automaticamente pela IA com base na análise dos atendimentos. 
                           Eles não podem ser editados manualmente para manter a consistência e precisão dos dados.
@@ -1964,9 +1964,6 @@ const handleFieldUpdate = async (field: keyof ClientUpdate, value: any) => {
   }
 }
 
-const handleStatusChange = async (newStatus: ClientStatus) => {
-  if (!client.value) return
-  
 // Status is now AI-controlled, no manual update handler needed
 
 const handleBudgetMinUpdate = async () => {
