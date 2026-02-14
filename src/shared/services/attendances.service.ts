@@ -22,6 +22,20 @@ export interface ClientStatusUpdate {
 }
 
 /**
+ * Detected visit information from AI analysis
+ */
+export interface DetectedVisitInfo {
+  detected: boolean
+  scheduled_at?: string | null
+  date?: string | null
+  time?: string | null
+  confidence?: number | null
+  extracted_text?: string | null
+  property_id?: string | null
+  notes?: string | null
+}
+
+/**
  * Attendance interface matching backend AttendanceResponse schema
  */
 export interface Attendance {
@@ -41,6 +55,7 @@ export interface Attendance {
   updated_at: string
   cycle_action?: CycleAction | null // Action taken: NEW_CYCLE_CREATED, CYCLE_UPDATED, or PREVIOUS_CYCLE_CLOSED
   previous_cycle_id?: string | null // ID of the previous cycle that was closed (if any)
+  detected_visit?: DetectedVisitInfo | null // Visit intent detected by AI from raw_content
 }
 
 /**

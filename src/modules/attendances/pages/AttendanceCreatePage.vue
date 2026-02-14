@@ -243,6 +243,17 @@
       @skipped="handleSuggestionsSkipped"
     />
 
+    <!-- Visit Detection Dialog -->
+    <VisitDetectionDialog
+      v-model="showVisitDialog"
+      :visit-info="detectedVisit"
+      :client-id="formData.client_id"
+      :agent-id="formData.agent_id"
+      :property-id="formData.property_id"
+      @confirmed="handleVisitConfirmed"
+      @cancelled="handleVisitCancelled"
+    />
+
     <!-- Snackbar for cycle action feedback -->
     <v-snackbar
       v-model="snackbar"
@@ -278,6 +289,7 @@ import { aiSummariesService, type AISummary } from '@/shared/services/aiSummarie
 import { formatPhone } from '@/shared/utils/masks'
 import SearchSelectDialog from '@/shared/components/SearchSelectDialog.vue'
 import ClientUpdateSuggestionsDialog from '@/shared/components/ClientUpdateSuggestionsDialog.vue'
+import VisitDetectionDialog from '@/shared/components/VisitDetectionDialog.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -298,6 +310,11 @@ const showSuggestionsDialog = ref(false)
 const suggestionsClient = ref<Client | null>(null)
 const suggestionsAISummary = ref<AISummary | null>(null)
 const savedAttendanceId = ref<string | null>(null)
+
+// Visit Detection Dialog state
+const showVisitDialog = ref(false)
+const detectedVisit = ref<any | null>(null)
+const savedAttendanceForVisit = ref<{ id: string; client_id: string } | null>(null)
 
 // Raw content validation
 const rawContentLength = computed(() => formData.value.raw_content?.length || 0)
@@ -631,7 +648,15 @@ const handleSave = async () => {
           : null,
       }
 
-      await attendancesService.updateAttendance(route.params.id as string, updateData)
+      const updated = await attendancesService.updateAttendance(route.params.id as string, updateData)
+      
+      // Check if visit was detected
+      if (updated.detected_visit && updated.detected_visit.detected) {
+        detectedVisit.value = updated.detected_visit
+        savedAttendanceForVisit.value = { id: route.params.id as string, client_id: formData.value.client_id }
+        showVisitDialog.value = true
+        return // Don't redirect yet, wait for user to handle visit dialog
+      }
       
       // If attendance is completed, check for AI suggestions
       if (updateData.status === 'COMPLETED') {
@@ -678,6 +703,14 @@ const handleSave = async () => {
           'Conversa adicionada ao ciclo atual com sucesso!',
           'mdi-message-plus'
         )
+      }
+      
+      // Check if visit was detected
+      if (created.detected_visit && created.detected_visit.detected) {
+        detectedVisit.value = created.detected_visit
+        savedAttendanceForVisit.value = { id: created.id, client_id: created.client_id }
+        showVisitDialog.value = true
+        return // Don't redirect yet, wait for user to handle visit dialog
       }
       
       // If attendance is completed, check for AI suggestions
@@ -756,6 +789,25 @@ const checkIfHasSuggestions = (client: Client, summary: AISummary): boolean => {
 const handleSuggestionsApplied = () => {
   if (savedAttendanceId.value) {
     router.push({ name: 'attendances-details', params: { id: savedAttendanceId.value } })
+  }
+}
+
+// Handle visit detection dialog events
+const handleVisitConfirmed = () => {
+  // Visit was created, user will be redirected to visit form
+  // Optionally redirect to attendance details after
+  if (savedAttendanceForVisit.value) {
+    // Small delay to allow visit form to load
+    setTimeout(() => {
+      router.push({ name: 'attendances-details', params: { id: savedAttendanceForVisit.value!.id } })
+    }, 1000)
+  }
+}
+
+const handleVisitCancelled = () => {
+  // User cancelled visit creation, redirect to attendance details
+  if (savedAttendanceForVisit.value) {
+    router.push({ name: 'attendances-details', params: { id: savedAttendanceForVisit.value.id } })
   }
 }
 
