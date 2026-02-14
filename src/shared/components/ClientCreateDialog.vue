@@ -41,44 +41,13 @@
             </v-col>
 
             <!-- Lead Source -->
-            <v-col cols="12" md="6">
+            <v-col cols="12">
               <v-select v-model="formData.lead_source" :items="leadSourceOptions" label="Origem do Lead *"
                 variant="outlined" :rules="[rules.required]" prepend-inner-icon="mdi-source-branch"
                 hint="Como o cliente chegou até você" persistent-hint></v-select>
             </v-col>
-
-            <!-- AI Classification Toggle -->
-            <v-col cols="12" md="6" class="d-flex align-center">
-              <v-switch v-model="formData.use_ai_classification" label="Classificar com IA" color="primary" hide-details
-                class="mt-0">
-                <template v-slot:label>
-                  <div class="d-flex align-center">
-                    <v-icon start size="20" color="primary">mdi-robot</v-icon>
-                    <span>Classificar com IA</span>
-                  </div>
-                </template>
-              </v-switch>
-            </v-col>
-
-            <!-- Initial Message (for AI) -->
-            <v-col cols="12" v-if="formData.use_ai_classification && !isEditMode">
-              <v-textarea v-model="formData.initial_message" label="Mensagem inicial do cliente" variant="outlined"
-                rows="3" auto-grow prepend-inner-icon="mdi-message-text" persistent-placeholder
-                hint="Cole aqui a primeira mensagem do cliente para a IA analisar" persistent-hint />
-
-            </v-col>
           </v-row>
         </v-form>
-
-        <!-- AI Info Alert -->
-        <v-alert v-if="formData.use_ai_classification && !isEditMode" type="info" variant="tonal" density="compact"
-          class="mt-4">
-          <template v-slot:text>
-            A IA irá analisar as informações e definir automaticamente:
-            <strong>Lead Score</strong>, <strong>Urgência</strong>, <strong>Tipo de Interesse</strong> e <strong>Ações
-              Recomendadas</strong>.
-          </template>
-        </v-alert>
       </v-card-text>
 
       <v-divider></v-divider>
@@ -149,8 +118,6 @@ const formData = ref<ClientCreate>({
   phone: '',
   email: '',
   lead_source: 'WHATSAPP',
-  use_ai_classification: true,
-  initial_message: '',
 })
 
 const phoneFormatted = ref('')
@@ -205,8 +172,6 @@ const resetForm = () => {
     phone: '',
     email: '',
     lead_source: 'WHATSAPP',
-    use_ai_classification: true,
-    initial_message: '',
   }
   phoneFormatted.value = ''
   formRef.value?.resetValidation()
@@ -270,11 +235,11 @@ const handleSave = async () => {
         clientData as ClientUpdate
       )
     } else {
-      // Create new client with AI classification
+      // Create new client with AI classification (always enabled)
       const createData: ClientCreate = {
         ...clientData as ClientCreate,
-        use_ai_classification: formData.value.use_ai_classification,
-        initial_message: formData.value.initial_message?.trim() || null,
+        use_ai_classification: true,
+        initial_message: null,
       }
       savedClient = await clientsService.createClient(createData)
     }
