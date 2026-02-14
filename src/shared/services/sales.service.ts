@@ -28,6 +28,12 @@ export enum PaymentMethod {
 }
 
 // Interfaces
+export interface PaymentMethodItem {
+  method: PaymentMethod
+  value: number
+  description?: string | null
+}
+
 export interface Sale {
   id: string
   client_id: string
@@ -39,7 +45,8 @@ export interface Sale {
   commission_percentage: number | null
   commission_value: number | null
   down_payment: number | null
-  payment_method: PaymentMethod | null
+  payment_method: PaymentMethod | null // Legacy, deprecated
+  payment_methods: PaymentMethodItem[] | null // New: multiple payment methods
   rent_duration_months: number | null
   rent_start_date: string | null
   proposal_date: string | null
@@ -71,7 +78,8 @@ export interface SaleCreate {
   sale_value: number
   commission_percentage?: number | null
   down_payment?: number | null
-  payment_method?: PaymentMethod | null
+  payment_method?: PaymentMethod | null // Legacy, deprecated
+  payment_methods?: PaymentMethodItem[] | null // New: multiple payment methods
   rent_duration_months?: number | null
   rent_start_date?: string | null
   proposal_date?: string | null
@@ -86,7 +94,8 @@ export interface SaleUpdate {
   commission_percentage?: number | null
   commission_value?: number | null
   down_payment?: number | null
-  payment_method?: PaymentMethod | null
+  payment_method?: PaymentMethod | null // Legacy, deprecated
+  payment_methods?: PaymentMethodItem[] | null // New: multiple payment methods
   rent_duration_months?: number | null
   rent_start_date?: string | null
   proposal_date?: string | null

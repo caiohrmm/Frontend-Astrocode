@@ -309,6 +309,22 @@
                 ></v-autocomplete>
               </v-col>
 
+              <!-- Corretor -->
+              <v-col cols="12">
+                <v-autocomplete
+                  v-model="newSale.broker_id"
+                  :items="corretores"
+                  item-title="full_name"
+                  item-value="id"
+                  label="Corretor (opcional)"
+                  prepend-inner-icon="mdi-account-tie"
+                  variant="outlined"
+                  density="comfortable"
+                  clearable
+                  :loading="isLoadingCorretores"
+                ></v-autocomplete>
+              </v-col>
+
               <!-- Valor -->
               <v-col cols="12" sm="6">
                 <v-text-field
@@ -337,30 +353,83 @@
                 ></v-text-field>
               </v-col>
 
-              <!-- Entrada -->
-              <v-col cols="12" sm="6">
-                <v-text-field
-                  v-model.number="newSale.down_payment"
-                  label="Entrada (opcional)"
-                  prepend-inner-icon="mdi-cash"
-                  variant="outlined"
-                  density="comfortable"
-                  type="number"
-                  prefix="R$"
-                ></v-text-field>
-              </v-col>
-
-              <!-- Forma de pagamento -->
-              <v-col cols="12" sm="6">
-                <v-select
-                  v-model="newSale.payment_method"
-                  :items="paymentMethodOptions"
-                  label="Forma de Pagamento"
-                  prepend-inner-icon="mdi-credit-card"
-                  variant="outlined"
-                  density="comfortable"
-                  clearable
-                ></v-select>
+              <!-- Formas de Pagamento -->
+              <v-col cols="12">
+                <v-card variant="outlined" class="pa-4">
+                  <v-card-title class="text-subtitle-1 d-flex align-center mb-3">
+                    <v-icon start size="20">mdi-credit-card-multiple</v-icon>
+                    Formas de Pagamento
+                  </v-card-title>
+                  
+                  <div v-for="(payment, index) in paymentMethods" :key="index" class="mb-3">
+                    <v-row dense>
+                      <v-col cols="12" sm="4">
+                        <v-select
+                          v-model="payment.method"
+                          :items="paymentMethodOptions"
+                          label="Forma"
+                          variant="outlined"
+                          density="compact"
+                          :rules="[(v: PaymentMethod | null) => !!v || 'Selecione a forma']"
+                        ></v-select>
+                      </v-col>
+                      <v-col cols="12" sm="4">
+                        <v-text-field
+                          v-model.number="payment.value"
+                          label="Valor"
+                          variant="outlined"
+                          density="compact"
+                          type="number"
+                          prefix="R$"
+                          :rules="[(v: number | null) => (v !== null && v > 0) || 'Valor deve ser maior que zero']"
+                        ></v-text-field>
+                      </v-col>
+                      <v-col cols="12" sm="3">
+                        <v-text-field
+                          v-model="payment.description"
+                          label="Descrição (opcional)"
+                          variant="outlined"
+                          density="compact"
+                          placeholder="Ex: Entrada, Financiamento..."
+                        ></v-text-field>
+                      </v-col>
+                      <v-col cols="12" sm="1" class="d-flex align-center">
+                        <v-btn
+                          icon
+                          variant="text"
+                          color="error"
+                          size="small"
+                          @click="removePaymentMethod(index)"
+                          :disabled="paymentMethods.length === 1"
+                        >
+                          <v-icon>mdi-delete</v-icon>
+                        </v-btn>
+                      </v-col>
+                    </v-row>
+                  </div>
+                  
+                  <v-btn
+                    variant="outlined"
+                    color="primary"
+                    prepend-icon="mdi-plus"
+                    @click="addPaymentMethod"
+                    size="small"
+                  >
+                    Adicionar Forma de Pagamento
+                  </v-btn>
+                  
+                  <v-alert
+                    v-if="paymentMethodsTotal !== newSale.sale_value && newSale.sale_value"
+                    type="warning"
+                    variant="tonal"
+                    density="compact"
+                    class="mt-3"
+                  >
+                    Soma das formas de pagamento ({{ formatCurrency(paymentMethodsTotal) }}) 
+                    {{ paymentMethodsTotal > newSale.sale_value ? 'excede' : 'não atinge' }} 
+                    o valor total ({{ formatCurrency(newSale.sale_value) }})
+                  </v-alert>
+                </v-card>
               </v-col>
 
               <!-- Campos de aluguel -->
@@ -513,7 +582,26 @@
                     {{ formatCurrency(selectedSale.down_payment) }}
                   </v-list-item-subtitle>
                 </v-list-item>
-                <v-list-item v-if="selectedSale.payment_method">
+                <template v-if="selectedSale.payment_methods && selectedSale.payment_methods.length > 0">
+                  <v-list-item
+                    v-for="(payment, index) in selectedSale.payment_methods"
+                    :key="index"
+                  >
+                    <template v-slot:prepend>
+                      <v-icon color="primary">mdi-credit-card</v-icon>
+                    </template>
+                    <v-list-item-title>
+                      {{ getPaymentMethodLabel(payment.method) }}
+                      <span v-if="payment.description" class="text-caption text-medium-emphasis">
+                        ({{ payment.description }})
+                      </span>
+                    </v-list-item-title>
+                    <v-list-item-subtitle class="text-success font-weight-bold">
+                      {{ formatCurrency(payment.value) }}
+                    </v-list-item-subtitle>
+                  </v-list-item>
+                </template>
+                <v-list-item v-else-if="selectedSale.payment_method">
                   <template v-slot:prepend>
                     <v-icon color="primary">mdi-credit-card</v-icon>
                   </template>
@@ -712,6 +800,7 @@ import {
   type Sale,
   type SaleCreate,
   type SaleStats,
+  type PaymentMethodItem,
   SaleType,
   SaleStatus,
   PaymentMethod,
@@ -724,11 +813,13 @@ import {
 } from '@/shared/services/sales.service'
 import { clientsService, type Client } from '@/shared/services/clients.service'
 import { propertiesService, type Property } from '@/shared/services/properties.service'
+import { usersService, type User } from '@/shared/services/users.service'
 
 // State
 const sales = ref<Sale[]>([])
 const clients = ref<Client[]>([])
 const properties = ref<Property[]>([])
+const corretores = ref<User[]>([])
 const stats = ref<SaleStats>({
   total_sales: 0,
   total_value: 0,
@@ -745,6 +836,7 @@ const stats = ref<SaleStats>({
 const isLoading = ref(false)
 const isLoadingClients = ref(false)
 const isLoadingProperties = ref(false)
+const isLoadingCorretores = ref(false)
 const isCreating = ref(false)
 const isCompleting = ref(false)
 const isCancelling = ref(false)
@@ -762,6 +854,9 @@ const newSale = ref<Partial<SaleCreate>>({
   sale_type: SaleType.SALE,
   commission_percentage: 5,
 })
+const paymentMethods = ref<PaymentMethodItem[]>([
+  { method: PaymentMethod.CASH, value: 0, description: '' }
+])
 
 // Selected sale
 const selectedSale = ref<Sale | null>(null)
@@ -880,12 +975,29 @@ const loadProperties = async () => {
   }
 }
 
+const loadCorretores = async () => {
+  isLoadingCorretores.value = true
+  try {
+    corretores.value = await usersService.getCorretores()
+  } catch (error) {
+    console.error('Error loading corretores:', error)
+  } finally {
+    isLoadingCorretores.value = false
+  }
+}
+
 const createSale = async () => {
   if (!isCreateFormValid.value) return
 
   isCreating.value = true
   try {
-    await salesService.createSale(newSale.value as SaleCreate)
+    // Prepare sale data with payment methods
+    const saleData: SaleCreate = {
+      ...newSale.value,
+      payment_methods: paymentMethods.value.filter(pm => pm.method && pm.value > 0),
+    } as SaleCreate
+    
+    await salesService.createSale(saleData)
     showSnackbar('Venda registrada com sucesso!', 'success')
     closeCreateDialog()
     loadSales()
@@ -950,7 +1062,28 @@ const closeCreateDialog = () => {
     sale_type: SaleType.SALE,
     commission_percentage: 5,
   }
+  paymentMethods.value = [
+    { method: PaymentMethod.CASH, value: 0, description: '' }
+  ]
 }
+
+const addPaymentMethod = () => {
+  paymentMethods.value.push({
+    method: PaymentMethod.CASH,
+    value: 0,
+    description: '',
+  })
+}
+
+const removePaymentMethod = (index: number) => {
+  if (paymentMethods.value.length > 1) {
+    paymentMethods.value.splice(index, 1)
+  }
+}
+
+const paymentMethodsTotal = computed(() => {
+  return paymentMethods.value.reduce((sum, pm) => sum + (pm.value || 0), 0)
+})
 
 const showSnackbar = (message: string, color: string) => {
   snackbar.value = { show: true, message, color }
@@ -1006,6 +1139,7 @@ onMounted(() => {
   loadSales()
   loadClients()
   loadProperties()
+  loadCorretores()
 })
 </script>
 
