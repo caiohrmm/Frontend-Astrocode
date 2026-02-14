@@ -112,9 +112,9 @@
 
                 <!-- Canal * -->
                 <v-col cols="12" md="6">
-                  <v-select v-model="formData.channel" :items="channelOptions" label="Canal de Atendimento *"
+                  <v-select v-model="formData.channel" :items="channelOptions" label="Meio de contato *"
                     variant="outlined" :rules="[rules.required]" prepend-inner-icon="mdi-phone"
-                    hint="Como o atendimento foi realizado" persistent-hint item-title="title" item-value="value">
+                    hint="Por onde o cliente entrou em contato" persistent-hint item-title="title" item-value="value">
                     <template #item="{ item, props }">
                       <v-list-item v-bind="props" :key="`channel-${item.value}`">
                         <template #prepend>
@@ -184,35 +184,27 @@
                     item-value="value"></v-select>
                 </v-col>
 
-                <!-- Agendar Visita (Opcional) -->
-                <v-col cols="12" md="6">
-                  <v-text-field v-model="formData.scheduled_visit_at" label="Agendar Visita (Opcional)"
-                    type="datetime-local" variant="outlined" prepend-inner-icon="mdi-calendar-plus"
-                    hint="Data/hora para agendar uma visita relacionada" persistent-hint></v-text-field>
-                </v-col>
+              
 
                 <!-- Conteúdo do Atendimento * -->
                 <v-col cols="12">
                   <v-textarea 
-                    v-model="formData.raw_content" 
-                    label="Conteúdo da Conversa *" 
-                    variant="outlined"
-                    :rules="[rules.required, rules.minLength, rules.maxLength]" 
-                    :rows="8" 
-                    prepend-inner-icon="mdi-text"
-                    hint="Descreva o conteúdo da conversa. Se houver um ciclo ativo com objetivo similar, este conteúdo será adicionado ao ciclo existente. Caso contrário, um novo ciclo será criado."
-                    persistent-hint 
-                    counter
-                    :maxlength="100000"
-                    :error-messages="rawContentErrorMessages"
-                    :error="rawContentErrorMessages.length > 0"
-                  >
-                    <template #counter="{ value, maxLength }">
-                      <span :class="getCounterColor(value ?? 0, maxLength ?? 100000)">
-                        {{ formatCounter(value ?? 0, maxLength ?? 100000) }}
-                      </span>
-                    </template>
-                  </v-textarea>
+  v-model="formData.raw_content" 
+  label="Conteúdo da Conversa *" 
+  variant="outlined"
+  persistent-placeholder
+  density="comfortable"
+  :rules="[rules.required, rules.minLength, rules.maxLength]" 
+  :rows="8" 
+  prepend-inner-icon="mdi-text"
+  hint="Descreva o conteúdo da conversa. Se houver um ciclo ativo com objetivo similar, este conteúdo será adicionado ao ciclo existente. Caso contrário, um novo ciclo será criado."
+  persistent-hint 
+  counter
+  :maxlength="100000"
+  :error-messages="rawContentErrorMessages"
+  :error="rawContentErrorMessages.length > 0"
+>
+</v-textarea>
                   <!-- Warning when approaching limit -->
                   <v-alert
                     v-if="rawContentLength > 90000"
