@@ -162,40 +162,27 @@
         </template>
 
         <template #item.price="{ item }">
-          <div v-if="item.business_type === 'SALE' && item.price">
-            <span class="font-weight-bold text-primary">
-              {{ formatCurrency(item.price) }}
-            </span>
-          </div>
-          <div v-else-if="item.business_type === 'RENT' && item.rent_price">
-            <span class="font-weight-bold text-success">
-              {{ formatCurrency(item.rent_price) }}/mês
-            </span>
-          </div>
-          <div v-else-if="item.business_type === 'BOTH'">
-            <div v-if="item.price" class="text-caption">
-              Venda: {{ formatCurrency(item.price) }}
+          <div class="d-flex flex-column" style="gap: 4px;">
+            <!-- Venda -->
+            <div v-if="(item.business_type === 'SALE' || item.business_type === 'BOTH') && item.price" class="d-flex align-center">
+              <v-icon size="16" color="primary" class="mr-1">mdi-currency-usd</v-icon>
+              <span class="font-weight-bold text-primary">
+                {{ formatCurrency(item.price) }}
+              </span>
+              <v-chip size="x-small" color="primary" variant="tonal" class="ml-2">Venda</v-chip>
             </div>
-            <div v-if="item.rent_price" class="text-caption">
-              Aluguel: {{ formatCurrency(item.rent_price) }}/mês
+            <!-- Aluguel -->
+            <div v-if="(item.business_type === 'RENT' || item.business_type === 'BOTH') && item.rent_price" class="d-flex align-center">
+              <v-icon size="16" color="success" class="mr-1">mdi-key</v-icon>
+              <span class="font-weight-bold text-success">
+                {{ formatCurrency(item.rent_price) }}
+              </span>
+              <span class="text-caption text-medium-emphasis ml-1">/mês</span>
+              <v-chip size="x-small" color="success" variant="tonal" class="ml-2">Aluguel</v-chip>
             </div>
+            <!-- Sem valor -->
+            <span v-if="!item.price && !item.rent_price" class="text-medium-emphasis">-</span>
           </div>
-          <span v-else class="text-medium-emphasis">-</span>
-        </template>
-
-        <template #item.visibility_score="{ item }">
-          <v-progress-linear
-            v-if="item.visibility_score !== null"
-            :model-value="item.visibility_score"
-            color="primary"
-            height="20"
-            rounded
-          >
-            <template #default="{ value }">
-              <span class="text-caption font-weight-bold">{{ Math.round(value) }}%</span>
-            </template>
-          </v-progress-linear>
-          <span v-else class="text-medium-emphasis">-</span>
         </template>
 
         <template #item.actions="{ item }">
@@ -356,8 +343,7 @@ const headers: DataTableHeader[] = [
   { title: 'Tipo', key: 'property_type', sortable: false, width: '140px' },
   { title: 'Negócio', key: 'business_type', sortable: false, width: '120px' },
   { title: 'Status', key: 'status', sortable: false, width: '120px' },
-  { title: 'Valor', key: 'price', sortable: false, width: '180px' },
-  { title: 'Visibilidade', key: 'visibility_score', sortable: false, width: '120px' },
+  { title: 'Valor', key: 'price', sortable: false, width: '280px' },
   { title: 'Ações', key: 'actions', sortable: false, align: 'end', width: '80px' },
 ]
 
