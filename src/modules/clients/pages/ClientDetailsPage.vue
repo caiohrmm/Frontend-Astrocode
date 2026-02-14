@@ -574,71 +574,189 @@
                   </v-select>
                 </v-col>
 
-                <!-- Urgência -->
+                <!-- Urgência (AI-Controlled) -->
                 <v-col cols="12" md="6">
                   <div class="d-flex align-center mb-2">
                     <v-icon class="mr-2" color="primary">mdi-alert-circle</v-icon>
                     <span class="text-subtitle-1 font-weight-medium">Urgência</span>
+                    <v-tooltip location="top" max-width="300">
+                      <template #activator="{ props }">
+                        <v-icon v-bind="props" size="16" color="primary" class="ml-1">mdi-robot</v-icon>
+                      </template>
+                      <span class="text-caption">Este campo é controlado automaticamente pela IA com base nos atendimentos</span>
+                    </v-tooltip>
                   </div>
-                  <v-select v-model="editableFields.current_urgency_level" :items="urgencyOptions" variant="outlined"
+                  <v-select 
+                    :model-value="client.current_urgency_level" 
+                    :items="urgencyOptions" 
+                    variant="outlined"
                     density="compact"
-                    @update:model-value="handleFieldUpdate('current_urgency_level', $event)"></v-select>
+                    readonly
+                    disabled
+                    :bg-color="'grey-50'"
+                  >
+                    <template #prepend-inner>
+                      <v-icon size="18" color="primary" class="mr-2">mdi-robot</v-icon>
+                    </template>
+                  </v-select>
                 </v-col>
 
-                <!-- Tipo de Interesse -->
+                <!-- Tipo de Interesse (AI-Controlled) -->
                 <v-col cols="12" md="6">
                   <div class="d-flex align-center mb-2">
                     <v-icon class="mr-2" color="primary">mdi-handshake</v-icon>
                     <span class="text-subtitle-1 font-weight-medium">Tipo de Interesse</span>
+                    <v-tooltip location="top" max-width="300">
+                      <template #activator="{ props }">
+                        <v-icon v-bind="props" size="16" color="primary" class="ml-1">mdi-robot</v-icon>
+                      </template>
+                      <span class="text-caption">Este campo é controlado automaticamente pela IA com base nos atendimentos</span>
+                    </v-tooltip>
                   </div>
-                  <v-select v-model="editableFields.current_interest_type" :items="interestTypeOptions"
-                    variant="outlined" density="compact" clearable
-                    @update:model-value="handleFieldUpdate('current_interest_type', $event)"></v-select>
+                  <v-select 
+                    :model-value="client.current_interest_type" 
+                    :items="interestTypeOptions"
+                    variant="outlined" 
+                    density="compact" 
+                    readonly
+                    disabled
+                    :bg-color="'grey-50'"
+                  >
+                    <template #prepend-inner>
+                      <v-icon size="18" color="primary" class="mr-2">mdi-robot</v-icon>
+                    </template>
+                  </v-select>
                 </v-col>
 
-                <!-- Tipo de Imóvel -->
+                <!-- Tipo de Imóvel (AI-Controlled) -->
                 <v-col cols="12" md="6">
                   <div class="d-flex align-center mb-2">
                     <v-icon class="mr-2" color="primary">mdi-home-variant</v-icon>
                     <span class="text-subtitle-1 font-weight-medium">Tipo de Imóvel</span>
+                    <v-tooltip location="top" max-width="300">
+                      <template #activator="{ props }">
+                        <v-icon v-bind="props" size="16" color="primary" class="ml-1">mdi-robot</v-icon>
+                      </template>
+                      <span class="text-caption">Este campo é controlado automaticamente pela IA com base nos atendimentos</span>
+                    </v-tooltip>
                   </div>
-                  <v-select v-model="editableFields.current_property_type" :items="propertyTypeOptions"
-                    variant="outlined" density="compact" clearable
-                    @update:model-value="handleFieldUpdate('current_property_type', $event)"></v-select>
+                  <v-select 
+                    :model-value="client.current_property_type" 
+                    :items="propertyTypeOptions"
+                    variant="outlined" 
+                    density="compact" 
+                    readonly
+                    disabled
+                    :bg-color="'grey-50'"
+                  >
+                    <template #prepend-inner>
+                      <v-icon size="18" color="primary" class="mr-2">mdi-robot</v-icon>
+                    </template>
+                  </v-select>
                 </v-col>
 
-                <!-- Cidade de Interesse -->
+                <!-- Cidade de Interesse (AI-Controlled) -->
                 <v-col cols="12" md="6">
                   <div class="d-flex align-center mb-2">
                     <v-icon class="mr-2" color="primary">mdi-map-marker</v-icon>
                     <span class="text-subtitle-1 font-weight-medium">Cidade de Interesse</span>
+                    <v-tooltip location="top" max-width="300">
+                      <template #activator="{ props }">
+                        <v-icon v-bind="props" size="16" color="primary" class="ml-1">mdi-robot</v-icon>
+                      </template>
+                      <span class="text-caption">Este campo é controlado automaticamente pela IA com base nos atendimentos</span>
+                    </v-tooltip>
                   </div>
-                  <v-text-field v-model="editableFields.current_city_interest" variant="outlined" density="compact"
-                    @blur="handleFieldUpdate('current_city_interest', editableFields.current_city_interest)"></v-text-field>
+                  <v-text-field 
+                    :model-value="client.current_city_interest || 'Não definido'" 
+                    variant="outlined" 
+                    density="compact"
+                    readonly
+                    disabled
+                    :bg-color="'grey-50'"
+                  >
+                    <template #prepend-inner>
+                      <v-icon size="18" color="primary" class="mr-2">mdi-robot</v-icon>
+                    </template>
+                  </v-text-field>
                 </v-col>
 
-                <!-- Orçamento Mínimo -->
+                <!-- Orçamento Mínimo (AI-Controlled) -->
                 <v-col cols="12" md="6">
                   <div class="d-flex align-center mb-2">
                     <v-icon class="mr-2" color="primary">mdi-currency-usd</v-icon>
                     <span class="text-subtitle-1 font-weight-medium">Orçamento Mínimo</span>
+                    <v-tooltip location="top" max-width="300">
+                      <template #activator="{ props }">
+                        <v-icon v-bind="props" size="16" color="primary" class="ml-1">mdi-robot</v-icon>
+                      </template>
+                      <span class="text-caption">Este campo é controlado automaticamente pela IA com base nos atendimentos</span>
+                    </v-tooltip>
                   </div>
-                  <v-text-field v-model="budgetMinFormatted" @blur="handleBudgetMinUpdate" variant="outlined"
-                    density="compact" prefix="R$"></v-text-field>
+                  <v-text-field 
+                    :model-value="client.current_budget_min ? formatCurrency(parseFloat(client.current_budget_min)) : 'Não definido'" 
+                    variant="outlined"
+                    density="compact" 
+                    prefix="R$"
+                    readonly
+                    disabled
+                    :bg-color="'grey-50'"
+                  >
+                    <template #prepend-inner>
+                      <v-icon size="18" color="primary" class="mr-2">mdi-robot</v-icon>
+                    </template>
+                  </v-text-field>
                 </v-col>
 
-                <!-- Orçamento Máximo -->
+                <!-- Orçamento Máximo (AI-Controlled) -->
                 <v-col cols="12" md="6">
                   <div class="d-flex align-center mb-2">
                     <v-icon class="mr-2" color="primary">mdi-currency-usd</v-icon>
                     <span class="text-subtitle-1 font-weight-medium">Orçamento Máximo</span>
+                    <v-tooltip location="top" max-width="300">
+                      <template #activator="{ props }">
+                        <v-icon v-bind="props" size="16" color="primary" class="ml-1">mdi-robot</v-icon>
+                      </template>
+                      <span class="text-caption">Este campo é controlado automaticamente pela IA com base nos atendimentos</span>
+                    </v-tooltip>
                   </div>
-                  <v-text-field v-model="budgetMaxFormatted" @blur="handleBudgetMaxUpdate" variant="outlined"
-                    density="compact" prefix="R$"></v-text-field>
+                  <v-text-field 
+                    :model-value="client.current_budget_max ? formatCurrency(parseFloat(client.current_budget_max)) : 'Não definido'" 
+                    variant="outlined"
+                    density="compact" 
+                    prefix="R$"
+                    readonly
+                    disabled
+                    :bg-color="'grey-50'"
+                  >
+                    <template #prepend-inner>
+                      <v-icon size="18" color="primary" class="mr-2">mdi-robot</v-icon>
+                    </template>
+                  </v-text-field>
+                </v-col>
+
+                <!-- AI-Controlled Fields Notice -->
+                <v-col cols="12" class="mt-4">
+                  <v-alert type="info" variant="tonal" density="comfortable" rounded="lg">
+                    <div class="d-flex align-center">
+                      <v-icon class="mr-3" size="24" color="primary">mdi-robot</v-icon>
+                      <div class="flex-grow-1">
+                        <div class="text-body-1 font-weight-medium mb-1">
+                          Campos Controlados pela IA
+                        </div>
+                        <div class="text-body-2 text-medium-emphasis">
+                          Os campos <strong>Tipo de Interesse</strong>, <strong>Tipo de Imóvel</strong>, 
+                          <strong>Cidade de Interesse</strong>, <strong>Orçamento</strong> e <strong>Urgência</strong> 
+                          são atualizados automaticamente pela IA com base na análise dos atendimentos. 
+                          Eles não podem ser editados manualmente para manter a consistência e precisão dos dados.
+                        </div>
+                      </div>
+                    </div>
+                  </v-alert>
                 </v-col>
 
                 <!-- State Derivation Info -->
-                <v-col cols="12" class="mt-4">
+                <v-col cols="12" class="mt-2">
                   <ClientStateDerivationInfo :client="client" />
                 </v-col>
               </v-row>
