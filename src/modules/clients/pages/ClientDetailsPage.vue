@@ -536,42 +536,36 @@
             <!-- Tab 1: Visão Geral -->
             <v-window-item value="overview">
               <v-row>
-                <!-- Status -->
+                <!-- Status (AI-Controlled) -->
                 <v-col cols="12" md="6">
                   <div class="d-flex align-center mb-2">
                     <v-icon class="mr-2" color="primary">mdi-flag</v-icon>
                     <span class="text-subtitle-1 font-weight-medium">Status</span>
+                    <v-tooltip location="top">
+                      <template #activator="{ props }">
+                        <v-icon v-bind="props" size="16" color="primary" class="ml-2">mdi-robot</v-icon>
+                      </template>
+                      <span class="text-caption">Este campo é controlado automaticamente pela IA com base no ciclo de atendimento ativo</span>
+                    </v-tooltip>
                   </div>
-                  <v-select 
-                    v-model="editableFields.current_status" 
-                    :items="statusOptions" 
+                  <v-text-field
+                    :model-value="getStatusLabel(client.current_status || 'NEW_LEAD')"
                     variant="outlined"
-                    density="compact" 
-                    item-title="title"
-                    item-value="value"
-                    @update:model-value="handleStatusChange">
-                    <template #item="{ props }">
-                      <v-list-item v-bind="props">
-                        <template #prepend>
-                          <v-chip 
-                            :color="getStatusColor(props.value)" 
-                            variant="flat" 
-                            size="small" 
-                            class="mr-2">
-                            {{ props.title }}
-                          </v-chip>
-                        </template>
-                      </v-list-item>
-                    </template>
-                    <template #selection="{ item }">
+                    density="compact"
+                    readonly
+                    disabled
+                    :color="getStatusColor(client.current_status || 'NEW_LEAD')"
+                  >
+                    <template #prepend-inner>
                       <v-chip 
-                        :color="getStatusColor(item.value)" 
+                        :color="getStatusColor(client.current_status || 'NEW_LEAD')" 
                         variant="flat" 
-                        size="small">
-                        {{ item.title }}
+                        size="small"
+                        class="mr-2">
+                        {{ getStatusLabel(client.current_status || 'NEW_LEAD') }}
                       </v-chip>
                     </template>
-                  </v-select>
+                  </v-text-field>
                 </v-col>
 
                 <!-- Urgência (AI-Controlled) -->
@@ -1734,9 +1728,8 @@ const loadClient = async () => {
       current_budget_max: client.value?.current_budget_max,
     })
 
-    // Initialize editable fields
+    // Initialize editable fields (status is now AI-controlled, not editable)
     editableFields.value = {
-      current_status: client.value.current_status,
       current_urgency_level: client.value.current_urgency_level,
       current_interest_type: client.value.current_interest_type,
       current_property_type: client.value.current_property_type,
@@ -1974,22 +1967,7 @@ const handleFieldUpdate = async (field: keyof ClientUpdate, value: any) => {
 const handleStatusChange = async (newStatus: ClientStatus) => {
   if (!client.value) return
   
-  // Update local state immediately for better UX
-  editableFields.value.current_status = newStatus
-  
-  try {
-    const updateData: ClientUpdate = {
-      current_status: newStatus,
-    }
-
-    client.value = await clientsService.updateClient(client.value.id, updateData)
-  } catch (error: any) {
-    console.error('Error updating status:', error)
-    alert(`Erro ao atualizar status: ${error.message}`)
-    // Reload client to revert changes
-    await loadClient()
-  }
-}
+// Status is now AI-controlled, no manual update handler needed
 
 const handleBudgetMinUpdate = async () => {
   const parsed = parseCurrency(budgetMinFormatted.value)
