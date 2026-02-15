@@ -526,33 +526,6 @@
                     persistent-hint
                   ></v-select>
                 </v-col>
-                <v-col cols="12" md="6">
-                  <v-autocomplete
-                    v-model="formData.assigned_agent_id"
-                    :items="corretoresOptions"
-                    label="Corretor Responsável"
-                    variant="outlined"
-                    prepend-inner-icon="mdi-account-tie"
-                    item-title="full_name"
-                    item-value="id"
-                    return-object
-                    clearable
-                    hint="Corretor responsável pelo imóvel"
-                    persistent-hint
-                  >
-                    <template #item="{ props, item }">
-                      <v-list-item v-bind="props">
-                        <template #prepend>
-                          <v-avatar color="primary" size="32" class="mr-3">
-                            <v-icon color="white" size="18">mdi-account</v-icon>
-                          </v-avatar>
-                        </template>
-                        <v-list-item-title>{{ item.raw.full_name }}</v-list-item-title>
-                        <v-list-item-subtitle>{{ item.raw.email }}</v-list-item-subtitle>
-                      </v-list-item>
-                    </template>
-                  </v-autocomplete>
-                </v-col>
               </v-row>
             </v-window-item>
 
@@ -784,7 +757,6 @@ const activeTab = ref('general')
 const isFormValid = ref(false)
 const isSaving = ref(false)
 const property = ref<Property | null>(null)
-const corretores = ref<User[]>([])
 
 // Geocoding
 const addressSearch = ref('')
@@ -839,7 +811,7 @@ const matchingClients = ref<MatchingClient[]>([])
 const isEditMode = computed(() => !!route.params.id)
 
 // Form data
-const formData = ref<PropertyCreate & { assigned_agent_id?: string | null }>({
+const formData = ref<PropertyCreate>({
   code: '',
   title: '',
   description: null,
@@ -866,7 +838,6 @@ const formData = ref<PropertyCreate & { assigned_agent_id?: string | null }>({
   condo_fee: null as number | null,
   iptu: null as number | null,
   status: 'DRAFT',
-  assigned_agent_id: null,
   owner_name: null,
   owner_contact: null,
   visibility_score: null,
@@ -896,14 +867,6 @@ const statusOptions = [
   { title: 'Alugado', value: 'RENTED' },
   { title: 'Indisponível', value: 'UNAVAILABLE' },
 ]
-
-const corretoresOptions = computed(() => {
-  return corretores.value.map(corretor => ({
-    ...corretor,
-    full_name: corretor.full_name,
-    email: corretor.email,
-  }))
-})
 
 // Computed
 const showSalePrice = computed(() => {
@@ -1011,9 +974,8 @@ const calculatedScore = computed(() => {
   if (f.price || f.rent_price) score += 10
   if (f.condo_fee !== null || f.iptu !== null) score += 5
   
-  // Commercial (10 points max)
+  // Commercial (5 points max)
   if (f.status === 'PUBLISHED') score += 5
-  if (f.assigned_agent_id) score += 5
   
   return Math.min(score, 100)
 })
@@ -1027,7 +989,6 @@ const completenessItems = computed(() => {
     { label: 'Características básicas', complete: Number(f.bedrooms ?? 0) > 0 || Number(f.area_total ?? 0) > 0 },
     { label: 'Preço definido', complete: Number(f.price ?? 0) > 0 || Number(f.rent_price ?? 0) > 0 },
     { label: 'Imagem principal', complete: !!f.main_image_url },
-    { label: 'Corretor atribuído', complete: !!f.assigned_agent_id },
   ]
 })
 
@@ -1376,7 +1337,6 @@ const loadProperty = async () => {
       condo_fee: property.value.condo_fee ? parseFloat(property.value.condo_fee) : null,
       iptu: property.value.iptu ? parseFloat(property.value.iptu) : null,
       status: property.value.status,
-      assigned_agent_id: property.value.assigned_agent_id,
       owner_name: property.value.owner_name,
       owner_contact: property.value.owner_contact,
       visibility_score: property.value.visibility_score,
@@ -1387,15 +1347,6 @@ const loadProperty = async () => {
     console.error('Error loading property:', error)
     // TODO: Show error notification
     router.push({ name: 'properties' })
-  }
-}
-
-const loadCorretores = async () => {
-  try {
-    corretores.value = await usersService.getCorretores()
-  } catch (error) {
-    console.error('Error loading corretores:', error)
-    // If user doesn't have permission, just continue with empty list
   }
 }
 
@@ -1445,7 +1396,6 @@ const handleSave = async () => {
       condo_fee: formData.value.condo_fee ? String(formData.value.condo_fee) : null,
       iptu: formData.value.iptu ? String(formData.value.iptu) : null,
       status: formData.value.status,
-      assigned_agent_id: formData.value.assigned_agent_id || null,
       owner_name: formData.value.owner_name || null,
       owner_contact: formData.value.owner_contact || null,
       ideal_client_profile: formData.value.ideal_client_profile || null,
@@ -1737,10 +1687,7 @@ watch(() => formData.value.business_type, (newType) => {
 })
 
 onMounted(async () => {
-  await Promise.all([
-    loadProperty(),
-    loadCorretores(),
-  ])
+  await loadProperty()
 })
 </script>
 
