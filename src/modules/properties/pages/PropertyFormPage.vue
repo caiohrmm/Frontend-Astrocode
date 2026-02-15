@@ -194,7 +194,7 @@
                       prepend-inner-icon="mdi-magnify"
                       :loading="isGeocoding"
                       :error="!!geocodeError"
-                      :error-messages="geocodeError ? [geocodeError] : []"
+                      :error-messages="geocodeError || []"
                       hint="Busca endereço e coordenadas geográficas"
                       persistent-hint
                       @keyup.enter="handleGeocodeAddress"
@@ -789,7 +789,7 @@ const corretores = ref<User[]>([])
 // Geocoding
 const addressSearch = ref('')
 const isGeocoding = ref(false)
-const geocodeError = ref<string | null>(null)
+const geocodeError = ref<string[] | null>(null)
 
 // CEP Search (ViaCEP)
 const cepSearch = ref('')
@@ -1528,6 +1528,42 @@ const handleImageError = (error: string) => {
   console.error('Image upload error:', error)
 }
 
+/**
+ * Format geocoding error messages to be more user-friendly
+ * Returns an array of strings for better display in Vuetify error messages
+ */
+const formatGeocodingError = (error: any): string[] => {
+  const errorMessage = error?.response?.data?.detail || error?.message || error?.toString() || ''
+  
+  // Check for specific Google Maps URL error
+  if (errorMessage.includes('Could not extract valid location information from Google Maps URL') ||
+      errorMessage.includes('place_id or coordinates')) {
+    return [
+      'Não foi possível identificar a localização neste link do Google Maps.',
+      'Por favor, tente uma das opções abaixo:',
+      '• Cole um endereço completo em texto (ex: "Rua Exemplo, 123, São Paulo, SP")',
+      '• Use um link direto do Google Maps que contenha coordenadas ou um local específico',
+      '• Ou preencha os campos de endereço manualmente'
+    ]
+  }
+  
+  // Check for other common geocoding errors
+  if (errorMessage.includes('ZERO_RESULTS') || errorMessage.includes('not found')) {
+    return ['Endereço não encontrado. Verifique se o endereço está correto e tente novamente.']
+  }
+  
+  if (errorMessage.includes('OVER_QUERY_LIMIT') || errorMessage.includes('quota')) {
+    return ['Limite de consultas excedido. Por favor, tente novamente em alguns instantes.']
+  }
+  
+  if (errorMessage.includes('REQUEST_DENIED') || errorMessage.includes('permission')) {
+    return ['Erro de permissão na busca de endereço. Entre em contato com o suporte.']
+  }
+  
+  // Generic error message
+  return ['Erro ao buscar endereço. Verifique se o endereço está correto ou tente preencher os campos manualmente.']
+}
+
 const handleGeocodeAddress = async () => {
   if (!addressSearch.value.trim()) {
     return
@@ -1571,8 +1607,7 @@ const handleGeocodeAddress = async () => {
     // Show success message (you can add a snackbar here if needed)
   } catch (error: any) {
     console.error('Geocoding error:', error)
-    geocodeError.value = error.message || 'Erro ao buscar endereço. Verifique se o endereço está correto.'
-    // TODO: Show error notification
+    geocodeError.value = formatGeocodingError(error)
   } finally {
     isGeocoding.value = false
   }
