@@ -1046,8 +1046,125 @@
                     </div>
                   </v-col>
 
+                  <!-- Propriedade de Interesse Específica -->
+                  <v-col cols="12" v-if="specificProperty">
+                    <div class="insight-card insight-card-properties">
+                      <div class="insight-card-header">
+                        <div class="d-flex align-center">
+                          <v-avatar color="primary" size="40" class="mr-3">
+                            <v-icon color="white" size="22">mdi-home-star</v-icon>
+                          </v-avatar>
+                          <div>
+                            <h3 class="text-h6 font-weight-bold mb-1">Imóvel de Interesse</h3>
+                            <div class="text-caption text-medium-emphasis">
+                              Cliente demonstrou interesse específico neste imóvel
+                            </div>
+                          </div>
+                        </div>
+                        <v-chip color="primary" variant="flat" size="small" class="ml-auto">
+                          <v-icon start size="16">mdi-star</v-icon>
+                          Interesse Específico
+                        </v-chip>
+                      </div>
+                      <div class="insight-card-content">
+                        <v-card 
+                          variant="outlined" 
+                          class="property-detail-card"
+                          @click="goToProperty(specificProperty.id)"
+                        >
+                          <v-row no-gutters>
+                            <v-col cols="12" md="4" v-if="specificProperty.main_image_url">
+                              <v-img 
+                                :src="specificProperty.main_image_url" 
+                                height="200" 
+                                cover
+                                class="property-image"
+                              ></v-img>
+                            </v-col>
+                            <v-col cols="12" :md="specificProperty.main_image_url ? 8 : 12">
+                              <v-card-text>
+                                <div class="d-flex align-center mb-3">
+                                  <h4 class="text-h6 font-weight-bold">{{ specificProperty.title }}</h4>
+                                  <v-spacer></v-spacer>
+                                  <v-chip 
+                                    :color="getPropertyStatusColor(specificProperty.status)" 
+                                    variant="flat" 
+                                    size="small"
+                                  >
+                                    {{ getPropertyStatusLabel(specificProperty.status) }}
+                                  </v-chip>
+                                </div>
+                                
+                                <div class="text-body-2 text-medium-emphasis mb-2">
+                                  <strong>Código:</strong> {{ specificProperty.code }}
+                                </div>
+                                
+                                <v-row dense class="mb-2">
+                                  <v-col cols="6" sm="3" v-if="specificProperty.property_type">
+                                    <div class="d-flex align-center">
+                                      <v-icon size="18" class="mr-1">mdi-home</v-icon>
+                                      <span class="text-caption">{{ getPropertyTypeLabel(specificProperty.property_type) }}</span>
+                                    </div>
+                                  </v-col>
+                                  <v-col cols="6" sm="3" v-if="specificProperty.bedrooms">
+                                    <div class="d-flex align-center">
+                                      <v-icon size="18" class="mr-1">mdi-bed</v-icon>
+                                      <span class="text-caption">{{ specificProperty.bedrooms }} {{ specificProperty.bedrooms === 1 ? 'quarto' : 'quartos' }}</span>
+                                    </div>
+                                  </v-col>
+                                  <v-col cols="6" sm="3" v-if="specificProperty.bathrooms">
+                                    <div class="d-flex align-center">
+                                      <v-icon size="18" class="mr-1">mdi-shower</v-icon>
+                                      <span class="text-caption">{{ specificProperty.bathrooms }} {{ specificProperty.bathrooms === 1 ? 'banheiro' : 'banheiros' }}</span>
+                                    </div>
+                                  </v-col>
+                                  <v-col cols="6" sm="3" v-if="specificProperty.area_total">
+                                    <div class="d-flex align-center">
+                                      <v-icon size="18" class="mr-1">mdi-ruler</v-icon>
+                                      <span class="text-caption">{{ specificProperty.area_total }} m²</span>
+                                    </div>
+                                  </v-col>
+                                </v-row>
+                                
+                                <div class="text-body-2 mb-2" v-if="specificProperty.city || specificProperty.neighborhood">
+                                  <v-icon size="18" class="mr-1">mdi-map-marker</v-icon>
+                                  <span v-if="specificProperty.neighborhood">{{ specificProperty.neighborhood }}, </span>
+                                  <span v-if="specificProperty.city">{{ specificProperty.city }}</span>
+                                  <span v-if="specificProperty.state">, {{ specificProperty.state }}</span>
+                                </div>
+                                
+                                <div class="text-h6 font-weight-bold text-primary mt-3" v-if="specificProperty.price || specificProperty.rent_price">
+                                  <span v-if="specificProperty.price">
+                                    {{ formatCurrency(specificProperty.price) }}
+                                  </span>
+                                  <span v-else-if="specificProperty.rent_price">
+                                    {{ formatCurrency(specificProperty.rent_price) }}/mês
+                                  </span>
+                                </div>
+                                
+                                <div class="text-caption text-medium-emphasis mt-2" v-if="specificProperty.description">
+                                  {{ truncateText(specificProperty.description, 150) }}
+                                </div>
+                              </v-card-text>
+                              <v-card-actions>
+                                <v-btn 
+                                  color="primary" 
+                                  variant="flat"
+                                  @click.stop="goToProperty(specificProperty.id)"
+                                >
+                                  <v-icon start>mdi-eye</v-icon>
+                                  Ver Detalhes
+                                </v-btn>
+                              </v-card-actions>
+                            </v-col>
+                          </v-row>
+                        </v-card>
+                      </div>
+                    </div>
+                  </v-col>
+
                   <!-- Propriedades Recomendadas pela IA -->
-                  <v-col cols="12" v-if="recommendedProperties.length > 0">
+                  <v-col cols="12" v-else-if="recommendedProperties.length > 0">
                     <div class="insight-card insight-card-properties">
                       <div class="insight-card-header">
                         <div class="d-flex align-center">
@@ -1525,6 +1642,7 @@ const recommendedProperties = ref<Property[]>([])
 const profileBasedProperties = ref<Property[]>([])
 const clientAttendances = ref<Attendance[]>([])
 const expandedAttendances = ref<string[]>([])
+const specificProperty = ref<Property | null>(null) // Property the client is specifically interested in
 
 // Editable fields (for inline editing)
 const editableFields = ref<Partial<ClientUpdate>>({})
@@ -1839,6 +1957,30 @@ const loadAIInsights = async () => {
   isLoadingAIInsights.value = true
   try {
     console.log('[DEBUG] Loading AI insights for client:', client.value.id)
+    
+    // First, check if there's an active attendance with a specific property
+    specificProperty.value = null
+    recommendedProperties.value = []
+    
+    try {
+      const activeAttendance = await attendancesService.getActiveAttendanceByClient(client.value.id)
+      if (activeAttendance?.property_id) {
+        console.log('[DEBUG] Active attendance has specific property:', activeAttendance.property_id)
+        // Load the specific property the client is interested in
+        try {
+          specificProperty.value = await propertiesService.getPropertyById(activeAttendance.property_id)
+          console.log('[DEBUG] Specific property loaded:', specificProperty.value?.title)
+          // Don't load recommendations when client has a specific property interest
+          return
+        } catch (error) {
+          console.error('[DEBUG] Error loading specific property:', error)
+          // Continue to load recommendations if property loading fails
+        }
+      }
+    } catch (error) {
+      // No active attendance or error - continue to load recommendations
+      console.log('[DEBUG] No active attendance with property_id, loading recommendations')
+    }
     
     // Load all AI summaries for this client
     aiSummaries.value = await aiSummariesService.getSummariesByClientId(client.value.id)
