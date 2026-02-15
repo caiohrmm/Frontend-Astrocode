@@ -1760,7 +1760,7 @@ const aggregatedInsights = computed(() => {
   // First, try to get from attendances ai_next_steps field
   clientAttendances.value
     .filter(a => a.status === 'COMPLETED' && a.ai_next_steps)
-    .sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime())
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .forEach(attendance => {
       if (attendance.ai_next_steps) {
         // Parse the ai_next_steps field and extract individual steps
@@ -1789,17 +1789,31 @@ const aggregatedInsights = computed(() => {
   // Generate smart suggestions based on client profile if no AI steps
   if (allNextSteps.length === 0 && client.value) {
     const c = client.value
+    
+    // Check if client has a specific property interest (active attendance with property_id)
+    const activeAttendance = clientAttendances.value.find(a => a.status === 'ACTIVE' && a.property_id)
+    const hasSpecificProperty = !!activeAttendance?.property_id
 
     // Based on status
     if (c.current_status === 'NEW_LEAD') {
       allNextSteps.push('Fazer primeiro contato para qualificar o lead')
       allNextSteps.push('Entender necessidades e preferências do cliente')
     } else if (c.current_status === 'CONTACTED') {
-      allNextSteps.push('Agendar visita a imóveis compatíveis com o perfil')
-      allNextSteps.push('Enviar opções de imóveis por WhatsApp ou e-mail')
+      if (hasSpecificProperty) {
+        allNextSteps.push('Acompanhar interesse do cliente no imóvel específico')
+        allNextSteps.push('Agendar visita ao imóvel de interesse')
+      } else {
+        allNextSteps.push('Agendar visita a imóveis compatíveis com o perfil')
+        allNextSteps.push('Enviar opções de imóveis por WhatsApp ou e-mail')
+      }
     } else if (c.current_status === 'QUALIFIED') {
-      allNextSteps.push('Selecionar imóveis que atendam aos critérios do cliente')
-      allNextSteps.push('Agendar visitas presenciais')
+      if (hasSpecificProperty) {
+        allNextSteps.push('Agendar visita ao imóvel de interesse do cliente')
+        allNextSteps.push('Preparar informações detalhadas sobre o imóvel')
+      } else {
+        allNextSteps.push('Selecionar imóveis que atendam aos critérios do cliente')
+        allNextSteps.push('Agendar visitas presenciais')
+      }
     } else if (c.current_status === 'VISIT_SCHEDULED' || c.current_status === 'VISITING') {
       allNextSteps.push('Confirmar visita com antecedência')
       allNextSteps.push('Preparar documentação do imóvel para apresentação')
@@ -1813,6 +1827,17 @@ const aggregatedInsights = computed(() => {
     // Based on urgency
     if (c.current_urgency_level === 'IMMEDIATE' || c.current_urgency_level === 'HIGH') {
       allNextSteps.unshift('Priorizar atendimento - cliente com urgência alta')
+    }
+    
+    // Remove generic property recommendations if client has specific property interest
+    if (hasSpecificProperty) {
+      const filteredSteps = allNextSteps.filter(step => 
+        !step.toLowerCase().includes('apresentar') && 
+        !step.toLowerCase().includes('recomendado') &&
+        !step.toLowerCase().includes('imóvel(eis)')
+      )
+      allNextSteps.length = 0
+      allNextSteps.push(...filteredSteps)
     }
   }
 
@@ -1863,6 +1888,9 @@ const loadClient = async () => {
     budgetMaxFormatted.value = client.value.current_budget_max
       ? formatCurrency(parseFloat(client.value.current_budget_max))
       : ''
+    
+    // Load attendances to show count in overview
+    await loadClientAttendances()
   } catch (error) {
     console.error('Error loading client:', error)
     client.value = null
