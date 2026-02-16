@@ -49,9 +49,10 @@
             <v-icon color="primary" size="28" class="mr-3">mdi-robot</v-icon>
             <h2 class="text-h6 font-weight-bold">Resumo da IA</h2>
           </div>
-          <p class="text-body-1 text-medium-emphasis mb-4">
-            {{ analysis.summary }}
-          </p>
+          <div 
+            class="text-body-1 text-medium-emphasis mb-4 markdown-content"
+            v-html="formatMarkdown(analysis.summary)"
+          ></div>
           <v-chip
             color="warning"
             variant="tonal"
@@ -156,20 +157,17 @@
               <v-icon start color="purple">mdi-eye-outline</v-icon>
               Padrões Detectados pela IA
             </v-card-title>
-            <v-card-text>
-              <v-list density="compact">
-                <v-list-item
+            <v-card-text class="patterns-content">
+              <div class="patterns-list">
+                <div
                   v-for="(pattern, index) in analysis.patterns_detected"
                   :key="index"
+                  class="pattern-item"
                 >
-                  <template v-slot:prepend>
-                    <v-icon color="purple" size="20">mdi-lightbulb</v-icon>
-                  </template>
-                  <v-list-item-title class="text-body-2">
-                    {{ pattern }}
-                  </v-list-item-title>
-                </v-list-item>
-              </v-list>
+                  <v-icon color="purple" size="20" class="pattern-icon">mdi-lightbulb</v-icon>
+                  <div class="pattern-text markdown-content" v-html="formatMarkdown(pattern)"></div>
+                </div>
+              </div>
               <div v-if="!analysis.patterns_detected.length" class="text-center text-medium-emphasis pa-4">
                 <v-icon size="48" color="grey-lighten-1">mdi-magnify</v-icon>
                 <p class="mt-2">Nenhum padrão detectado ainda</p>
@@ -185,20 +183,17 @@
               <v-icon start color="error">mdi-alert</v-icon>
               Fatores de Risco
             </v-card-title>
-            <v-card-text>
-              <v-list density="compact">
-                <v-list-item
+            <v-card-text class="risk-factors-content">
+              <div class="risk-factors-list">
+                <div
                   v-for="(risk, index) in analysis.risk_factors"
                   :key="index"
+                  class="risk-item"
                 >
-                  <template v-slot:prepend>
-                    <v-icon color="error" size="20">mdi-alert-circle</v-icon>
-                  </template>
-                  <v-list-item-title class="text-body-2">
-                    {{ risk }}
-                  </v-list-item-title>
-                </v-list-item>
-              </v-list>
+                  <v-icon color="error" size="20" class="risk-icon">mdi-alert-circle</v-icon>
+                  <div class="risk-text markdown-content" v-html="formatMarkdown(risk)"></div>
+                </div>
+              </div>
               <div v-if="!analysis.risk_factors.length" class="text-center text-medium-emphasis pa-4">
                 <v-icon size="48" color="grey-lighten-1">mdi-shield-check</v-icon>
                 <p class="mt-2">Nenhum fator de risco identificado</p>
@@ -228,7 +223,7 @@
                       <v-avatar color="success" size="32" class="mr-3">
                         <span class="text-white font-weight-bold">{{ index + 1 }}</span>
                       </v-avatar>
-                      <p class="text-body-2 mb-0">{{ rec }}</p>
+                      <div class="text-body-2 mb-0 markdown-content" v-html="formatMarkdown(rec)"></div>
                     </div>
                   </v-card>
                 </v-col>
@@ -249,7 +244,7 @@
               Comparação: Vendas x Perdas
             </v-card-title>
             <v-card-text>
-              <p class="text-body-1">{{ analysis.success_vs_loss_insights }}</p>
+              <div class="text-body-1 markdown-content" v-html="formatMarkdown(analysis.success_vs_loss_insights || '')"></div>
             </v-card-text>
           </v-card>
         </v-col>
@@ -419,6 +414,117 @@ const formatDate = (dateStr: string): string => {
   return new Date(dateStr).toLocaleDateString('pt-BR')
 }
 
+// Markdown formatting
+const formatMarkdown = (text: string | null | undefined): string => {
+  if (!text) return ''
+  
+  let html = text
+  
+  // Code blocks first (to avoid processing markdown inside code)
+  html = html.replace(/```([\s\S]*?)```/g, '<pre class="markdown-pre"><code>$1</code></pre>')
+  
+  // Headers
+  html = html.replace(/^### (.*$)/gim, '<h3 class="markdown-h3">$1</h3>')
+  html = html.replace(/^## (.*$)/gim, '<h2 class="markdown-h2">$1</h2>')
+  html = html.replace(/^# (.*$)/gim, '<h1 class="markdown-h1">$1</h1>')
+  
+  // Bold and italic
+  html = html.replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>')
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>')
+  
+  // Inline code
+  html = html.replace(/`([^`]+)`/g, '<code class="markdown-code">$1</code>')
+  
+  // Links
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" class="markdown-link">$1</a>')
+  
+  // Lists
+  const lines = html.split('\n')
+  const processedLines: string[] = []
+  let inList = false
+  let listType = ''
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim()
+    
+    // Unordered list
+    if (/^[-*+] (.+)$/.test(line)) {
+      const ulMatch = line.match(/^[-*+] (.+)$/)
+      if (ulMatch) {
+        if (!inList || listType !== 'ul') {
+          if (inList) processedLines.push(`</${listType}>`)
+          processedLines.push('<ul class="markdown-list">')
+          inList = true
+          listType = 'ul'
+        }
+        const content = formatInlineMarkdown(ulMatch[1])
+        processedLines.push(`<li>${content}</li>`)
+        continue
+      }
+    }
+    
+    // Ordered list
+    if (/^\d+\. (.+)$/.test(line)) {
+      const olMatch = line.match(/^\d+\. (.+)$/)
+      if (olMatch) {
+        if (!inList || listType !== 'ol') {
+          if (inList) processedLines.push(`</${listType}>`)
+          processedLines.push('<ol class="markdown-list">')
+          inList = true
+          listType = 'ol'
+        }
+        const content = formatInlineMarkdown(olMatch[1])
+        processedLines.push(`<li>${content}</li>`)
+        continue
+      }
+    }
+    
+    // Close list if needed
+    if (inList && line === '') {
+      processedLines.push(`</${listType}>`)
+      inList = false
+      listType = ''
+      continue
+    }
+    
+    // Regular paragraph
+    if (line) {
+      if (line.startsWith('<h') || line.startsWith('<pre') || line.startsWith('<ul') || line.startsWith('<ol')) {
+        processedLines.push(line)
+      } else {
+        processedLines.push(`<p class="markdown-p">${formatInlineMarkdown(line)}</p>`)
+      }
+    } else {
+      processedLines.push('<div class="markdown-spacer"></div>')
+    }
+  }
+  
+  // Close any open list
+  if (inList) {
+    processedLines.push(`</${listType}>`)
+  }
+  
+  return processedLines.join('\n')
+}
+
+const formatInlineMarkdown = (text: string): string => {
+  let html = text
+  
+  // Bold and italic
+  html = html.replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>')
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>')
+  
+  // Inline code
+  html = html.replace(/`([^`]+)`/g, '<code class="markdown-code">$1</code>')
+  
+  // Links
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" class="markdown-link">$1</a>')
+  
+  return html
+}
+
 // Watch period changes
 watch(selectedPeriod, () => {
   loadAnalysis()
@@ -462,6 +568,171 @@ onMounted(() => {
 
 .text-white-alpha {
   color: rgba(255, 255, 255, 0.85);
+}
+
+/* Markdown Content Styles */
+.markdown-content {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.markdown-content :deep(h1),
+.markdown-content :deep(h2),
+.markdown-content :deep(h3),
+.markdown-content :deep(h4) {
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.markdown-content :deep(h1) {
+  font-size: 1.5rem;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+  padding-bottom: 0.5rem;
+}
+
+.markdown-content :deep(h2) {
+  font-size: 1.25rem;
+}
+
+.markdown-content :deep(h3) {
+  font-size: 1.1rem;
+}
+
+.markdown-content :deep(h4) {
+  font-size: 1rem;
+}
+
+.markdown-content :deep(p) {
+  margin: 0.5rem 0;
+  line-height: 1.6;
+}
+
+.markdown-content :deep(ul),
+.markdown-content :deep(ol) {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.markdown-content :deep(li) {
+  margin: 0.25rem 0;
+  line-height: 1.5;
+}
+
+.markdown-content :deep(strong) {
+  font-weight: 600;
+  color: inherit;
+}
+
+.markdown-content :deep(em) {
+  font-style: italic;
+}
+
+.markdown-content :deep(code) {
+  background: rgba(0, 0, 0, 0.05);
+  padding: 0.125rem 0.25rem;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+.markdown-content :deep(pre) {
+  background: rgba(0, 0, 0, 0.05);
+  padding: 1rem;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin: 0.75rem 0;
+}
+
+.markdown-content :deep(pre code) {
+  background: transparent;
+  padding: 0;
+}
+
+.markdown-content :deep(a) {
+  color: rgb(var(--v-theme-primary));
+  text-decoration: none;
+}
+
+.markdown-content :deep(a:hover) {
+  text-decoration: underline;
+}
+
+.markdown-content :deep(.markdown-spacer) {
+  height: 0.5rem;
+}
+
+/* Patterns and Risk Factors Cards - Allow scroll and full content */
+.patterns-content,
+.risk-factors-content {
+  max-height: 500px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.patterns-list,
+.risk-factors-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.pattern-item,
+.risk-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+  border-left: 3px solid;
+}
+
+.pattern-item {
+  border-left-color: rgb(var(--v-theme-purple));
+}
+
+.risk-item {
+  border-left-color: rgb(var(--v-theme-error));
+}
+
+.pattern-icon,
+.risk-icon {
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.pattern-text,
+.risk-text {
+  flex: 1;
+  min-width: 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  line-height: 1.6;
+}
+
+/* Custom scrollbar for patterns and risk factors */
+.patterns-content::-webkit-scrollbar,
+.risk-factors-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.patterns-content::-webkit-scrollbar-track,
+.risk-factors-content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+
+.patterns-content::-webkit-scrollbar-thumb,
+.risk-factors-content::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.patterns-content::-webkit-scrollbar-thumb:hover,
+.risk-factors-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
 }
 </style>
 
