@@ -2935,8 +2935,31 @@ const getPropertyStatusLabel = (status: string): string => {
   return labels[status] || status
 }
 
-onMounted(() => {
-  loadClient()
+onMounted(async () => {
+  await loadClient()
+  
+  // Check if loss dialog should be opened from query params (when loss is detected)
+  if (route.query.showLossDialog === 'true') {
+    // Pre-fill loss form with detected information
+    if (route.query.lossReason) {
+      newLoss.value.loss_reason = route.query.lossReason as string
+    }
+    if (route.query.lossStage) {
+      newLoss.value.loss_stage = route.query.lossStage as string
+    }
+    if (route.query.detailedReason) {
+      newLoss.value.detailed_reason = route.query.detailedReason as string
+    }
+    if (route.query.clientFeedback) {
+      newLoss.value.client_feedback = route.query.clientFeedback as string
+    }
+    
+    // Open loss dialog
+    showLossDialog.value = true
+    
+    // Clear query params to avoid reopening on refresh
+    router.replace({ query: {} })
+  }
 })
 </script>
 

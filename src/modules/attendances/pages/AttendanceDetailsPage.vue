@@ -1032,6 +1032,23 @@ const handleAddConversation = async () => {
     // Backend will accumulate this content into the existing cycle
     const updatedAttendance = await attendancesService.createAttendance(attendanceData)
 
+    // Check if loss was detected - redirect to client page with loss dialog
+    if (updatedAttendance.detected_loss && updatedAttendance.detected_loss.detected) {
+      // Navigate to client details page with loss detection
+      router.push({ 
+        name: 'clients-details', 
+        params: { id: updatedAttendance.client_id },
+        query: { 
+          showLossDialog: 'true',
+          lossReason: updatedAttendance.detected_loss.loss_reason || '',
+          lossStage: updatedAttendance.detected_loss.loss_stage || '',
+          detailedReason: updatedAttendance.detected_loss.detailed_reason || '',
+          clientFeedback: updatedAttendance.detected_loss.client_feedback || '',
+        }
+      })
+      return
+    }
+
     // Show feedback based on cycle action
     if (updatedAttendance.cycle_action === 'NEW_CYCLE_CREATED') {
       if (updatedAttendance.previous_cycle_id) {

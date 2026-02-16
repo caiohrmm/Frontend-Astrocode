@@ -713,6 +713,23 @@ const handleSave = async () => {
         return // Don't redirect yet, wait for user to handle visit dialog
       }
       
+      // Check if loss was detected - redirect to client page with loss dialog
+      if (created.detected_loss && created.detected_loss.detected) {
+        // Navigate to client details page with loss detection
+        router.push({ 
+          name: 'clients-details', 
+          params: { id: created.client_id },
+          query: { 
+            showLossDialog: 'true',
+            lossReason: created.detected_loss.loss_reason || '',
+            lossStage: created.detected_loss.loss_stage || '',
+            detailedReason: created.detected_loss.detailed_reason || '',
+            clientFeedback: created.detected_loss.client_feedback || '',
+          }
+        })
+        return
+      }
+      
       // If attendance is completed, check for AI suggestions
       if (created.status === 'COMPLETED') {
         await checkForAISuggestions(created.id, created.client_id)

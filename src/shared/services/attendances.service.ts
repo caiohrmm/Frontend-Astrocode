@@ -56,6 +56,20 @@ export interface Attendance {
   cycle_action?: CycleAction | null // Action taken: NEW_CYCLE_CREATED, CYCLE_UPDATED, or PREVIOUS_CYCLE_CLOSED
   previous_cycle_id?: string | null // ID of the previous cycle that was closed (if any)
   detected_visit?: DetectedVisitInfo | null // Visit intent detected by AI from raw_content
+  detected_loss?: DetectedLossInfo | null // Loss intent detected by AI from raw_content
+}
+
+/**
+ * Detected loss information from AI analysis
+ */
+export interface DetectedLossInfo {
+  detected: boolean
+  loss_reason?: string | null // LossReason enum value
+  loss_stage?: string | null // LossStage enum value
+  confidence?: number | null // Confidence score (0-1)
+  extracted_text?: string | null // Text that indicated loss intent
+  detailed_reason?: string | null // Detailed explanation extracted from content
+  client_feedback?: string | null // Client feedback extracted from content
 }
 
 /**
