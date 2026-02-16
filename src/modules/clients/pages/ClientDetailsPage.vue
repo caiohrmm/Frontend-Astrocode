@@ -1499,9 +1499,9 @@
               </div>
             </v-window-item>
 
-            <!-- Tab 4: Jornada do Cliente -->
+            <!-- Tab 4: Jornada dos Atendimentos -->
             <v-window-item value="journey">
-              <ClientJourneyPanel :client-id="clientId" />
+              <AttendanceJourneyPanel :client-id="clientId" />
             </v-window-item>
           </v-window>
         </v-card-text>
@@ -1553,7 +1553,7 @@ import { attendancesService, type Attendance } from '@/shared/services/attendanc
 import { visitsService } from '@/shared/services/visits.service'
 import { formatPhone, formatCurrency, parseCurrency } from '@/shared/utils/masks'
 import ClientCreateDialog from '@/shared/components/ClientCreateDialog.vue'
-import ClientJourneyPanel from '@/shared/components/ClientJourneyPanel.vue'
+import AttendanceJourneyPanel from '@/shared/components/AttendanceJourneyPanel.vue'
 import ClientAttendanceCycles from '@/shared/components/ClientAttendanceCycles.vue'
 import ClientStateDerivationInfo from '@/shared/components/ClientStateDerivationInfo.vue'
 // Markdown formatting (using simple parser, not marked library)
