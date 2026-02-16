@@ -640,15 +640,19 @@ const getChannelIcon = (channel: AttendanceChannel): string => {
 }
 
 const formatDateTime = (dateString: string): string => {
+  if (!dateString) return ''
   const date = new Date(dateString)
-  return new Intl.DateTimeFormat('pt-BR', {
+  // Ensure we're formatting in Brazil timezone (UTC-3)
+  return date.toLocaleString('pt-BR', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  }).format(date)
+    timeZone: 'America/Sao_Paulo', // Explicitly use Brazil timezone
+  })
 }
+
 
 // AI Summary Modal Functions
 const openAISummaryModal = (attendance: Attendance) => {

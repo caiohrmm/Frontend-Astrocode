@@ -425,6 +425,7 @@ const formatDateTime = (dateString: string | null | undefined): string => {
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    timeZone: 'America/Sao_Paulo', // Explicitly use Brazil timezone
   }).format(date)
 }
 

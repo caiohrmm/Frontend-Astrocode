@@ -1197,12 +1197,14 @@ const pollAISummary = async (maxAttempts = 10) => {
 const formatDateTime = (dateString: string): string => {
   if (!dateString) return ''
   const date = new Date(dateString)
+  // Ensure we're formatting in Brazil timezone (UTC-3)
   return date.toLocaleString('pt-BR', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    timeZone: 'America/Sao_Paulo', // Explicitly use Brazil timezone
   })
 }
 
@@ -1686,12 +1688,24 @@ const parsedConversations = computed(() => {
     const part = parts[i].trim()
     if (!part) continue
     
-    // Check if part starts with timestamp pattern [YYYY-MM-DD HH:MM:SS]
-    const timestampMatch = part.match(/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]\s*(.+)$/s)
+    // Check if part starts with timestamp pattern [YYYY-MM-DD HH:MM:SS] or [YYYY-MM-DD HH:MM:SS UTC]
+    const timestampMatch = part.match(/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})(?:\s+UTC)?\]\s*(.+)$/s)
     
     if (timestampMatch) {
+      // Parse timestamp as UTC and format for display
+      const timestampStr = timestampMatch[1]
+      const utcDate = new Date(timestampStr + ' UTC') // Treat as UTC
+      const formattedTimestamp = utcDate.toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'America/Sao_Paulo', // Convert to Brazil timezone
+      })
+      
       conversations.push({
-        timestamp: timestampMatch[1],
+        timestamp: formattedTimestamp,
         content: timestampMatch[2].trim(),
       })
     } else {
