@@ -2960,6 +2960,32 @@ onMounted(async () => {
     // Clear query params to avoid reopening on refresh
     router.replace({ query: {} })
   }
+  
+  // Check if sale dialog should be opened from query params (when sale is detected)
+  if (route.query.showSaleDialog === 'true') {
+    // Pre-fill sale form with detected information
+    if (route.query.saleType) {
+      newSale.value.sale_type = route.query.saleType as 'SALE' | 'RENT'
+    }
+    if (route.query.saleValue) {
+      const value = parseFloat(route.query.saleValue as string)
+      if (!isNaN(value)) {
+        newSale.value.sale_value = value
+      }
+    }
+    if (route.query.paymentMethod) {
+      newSale.value.payment_method = route.query.paymentMethod as string
+    }
+    if (route.query.notes) {
+      newSale.value.notes = route.query.notes as string
+    }
+    
+    // Open sale dialog
+    showSaleDialog.value = true
+    
+    // Clear query params to avoid reopening on refresh
+    router.replace({ query: {} })
+  }
 })
 </script>
 

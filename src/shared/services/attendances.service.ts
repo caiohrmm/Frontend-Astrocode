@@ -57,6 +57,7 @@ export interface Attendance {
   previous_cycle_id?: string | null // ID of the previous cycle that was closed (if any)
   detected_visit?: DetectedVisitInfo | null // Visit intent detected by AI from raw_content
   detected_loss?: DetectedLossInfo | null // Loss intent detected by AI from raw_content
+  detected_sale?: DetectedSaleInfo | null // Sale intent detected by AI from raw_content
 }
 
 /**
@@ -70,6 +71,19 @@ export interface DetectedLossInfo {
   extracted_text?: string | null // Text that indicated loss intent
   detailed_reason?: string | null // Detailed explanation extracted from content
   client_feedback?: string | null // Client feedback extracted from content
+}
+
+/**
+ * Detected sale information from AI analysis
+ */
+export interface DetectedSaleInfo {
+  detected: boolean
+  sale_type?: string | null // SALE or RENT
+  sale_value?: number | null // Extracted sale value
+  confidence?: number | null // Confidence score (0-1)
+  extracted_text?: string | null // Text that indicated sale intent
+  payment_method?: string | null // Payment method mentioned (CASH, FINANCING, etc.)
+  notes?: string | null // Additional information extracted from content
 }
 
 /**

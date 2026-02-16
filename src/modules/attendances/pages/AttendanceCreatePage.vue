@@ -730,6 +730,23 @@ const handleSave = async () => {
         return
       }
       
+      // Check if sale was detected - redirect to client page with sale dialog
+      if (created.detected_sale && created.detected_sale.detected) {
+        // Navigate to client details page with sale detection
+        router.push({ 
+          name: 'clients-details', 
+          params: { id: created.client_id },
+          query: { 
+            showSaleDialog: 'true',
+            saleType: created.detected_sale.sale_type || '',
+            saleValue: created.detected_sale.sale_value?.toString() || '',
+            paymentMethod: created.detected_sale.payment_method || '',
+            notes: created.detected_sale.notes || '',
+          }
+        })
+        return
+      }
+      
       // If attendance is completed, check for AI suggestions
       if (created.status === 'COMPLETED') {
         await checkForAISuggestions(created.id, created.client_id)

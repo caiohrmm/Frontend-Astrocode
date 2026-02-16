@@ -55,10 +55,28 @@
           </div>
           <!-- Action Buttons -->
           <div class="d-flex ga-2">
-            <!-- Complete Button -->
+            <!-- Register Sale Button (only for ACTIVE cycles) -->
             <v-btn
               v-if="attendance.status === 'ACTIVE'"
               color="success"
+              prepend-icon="mdi-cash-check"
+              @click="openSaleDialog"
+            >
+              Registrar Venda
+            </v-btn>
+            <!-- Register Loss Button (only for ACTIVE cycles) -->
+            <v-btn
+              v-if="attendance.status === 'ACTIVE'"
+              color="error"
+              prepend-icon="mdi-cancel"
+              @click="openLossDialog"
+            >
+              Registrar Perda
+            </v-btn>
+            <!-- Complete Button -->
+            <v-btn
+              v-if="attendance.status === 'ACTIVE'"
+              color="info"
               prepend-icon="mdi-check-circle"
               @click="handleCompleteAttendance"
               :loading="isCompleting"
@@ -820,6 +838,8 @@ import { attendancesService, type Attendance, type AttendanceChannel, type Atten
 import { clientsService, type Client } from '@/shared/services/clients.service'
 import { propertiesService, type Property } from '@/shared/services/properties.service'
 import { aiSummariesService, type AISummary, type Sentiment, type DetectedIntent } from '@/shared/services/aiSummaries.service'
+import { salesService } from '@/shared/services/sales.service'
+import { lossesService } from '@/shared/services/losses.service'
 import { formatPhone } from '@/shared/utils/masks'
 
 const route = useRoute()
@@ -954,6 +974,26 @@ const goBack = () => {
   router.push({ name: 'attendances' })
 }
 
+// Open sale dialog by navigating to client page
+const openSaleDialog = () => {
+  if (!attendance.value) return
+  router.push({ 
+    name: 'clients-details', 
+    params: { id: attendance.value.client_id },
+    query: { showSaleDialog: 'true' }
+  })
+}
+
+// Open loss dialog by navigating to client page
+const openLossDialog = () => {
+  if (!attendance.value) return
+  router.push({ 
+    name: 'clients-details', 
+    params: { id: attendance.value.client_id },
+    query: { showLossDialog: 'true' }
+  })
+}
+
 const goToClient = () => {
   if (attendance.value?.client_id) {
     router.push({ name: 'clients-details', params: { id: attendance.value.client_id } })
@@ -1044,6 +1084,23 @@ const handleAddConversation = async () => {
           lossStage: updatedAttendance.detected_loss.loss_stage || '',
           detailedReason: updatedAttendance.detected_loss.detailed_reason || '',
           clientFeedback: updatedAttendance.detected_loss.client_feedback || '',
+        }
+      })
+      return
+    }
+
+    // Check if sale was detected - redirect to client page with sale dialog
+    if (updatedAttendance.detected_sale && updatedAttendance.detected_sale.detected) {
+      // Navigate to client details page with sale detection
+      router.push({ 
+        name: 'clients-details', 
+        params: { id: updatedAttendance.client_id },
+        query: { 
+          showSaleDialog: 'true',
+          saleType: updatedAttendance.detected_sale.sale_type || '',
+          saleValue: updatedAttendance.detected_sale.sale_value?.toString() || '',
+          paymentMethod: updatedAttendance.detected_sale.payment_method || '',
+          notes: updatedAttendance.detected_sale.notes || '',
         }
       })
       return
