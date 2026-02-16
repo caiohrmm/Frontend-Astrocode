@@ -1033,7 +1033,26 @@
                           <div v-if="aggregatedInsights.averageLeadScore !== null" class="text-caption text-medium-emphasis mb-2">
                             Score médio sugerido pela IA: <strong>{{ aggregatedInsights.averageLeadScore }}/100</strong>
                           </div>
-                          <v-alert type="info" variant="tonal" density="compact" class="mt-0">
+                          
+                          <!-- Lead Score Explanation -->
+                          <v-expansion-panels v-if="aggregatedInsights.leadScoreExplanation" variant="accordion" class="mt-3">
+                            <v-expansion-panel>
+                              <v-expansion-panel-title>
+                                <div class="d-flex align-center">
+                                  <v-icon class="mr-2" size="18">mdi-information</v-icon>
+                                  <span class="text-body-2">Como a IA calculou este score?</span>
+                                </div>
+                              </v-expansion-panel-title>
+                              <v-expansion-panel-text>
+                                <div 
+                                  class="text-body-2 markdown-content lead-score-explanation"
+                                  v-html="formatMarkdown(aggregatedInsights.leadScoreExplanation)"
+                                ></div>
+                              </v-expansion-panel-text>
+                            </v-expansion-panel>
+                          </v-expansion-panels>
+                          
+                          <v-alert type="info" variant="tonal" density="compact" class="mt-3">
                             <v-icon start size="16">mdi-robot</v-icon>
                             <span class="text-caption">Este score é calculado e atualizado automaticamente pela IA com base nas interações do cliente.</span>
                           </v-alert>
@@ -1698,17 +1717,26 @@ const hasInterestProfile = computed(() => {
 
 // Aggregated AI Insights
 const aggregatedInsights = computed(() => {
-  const completedSummaries = aiSummaries.value.filter(s => s.status === 'COMPLETED')
+  // Include both COMPLETED and PROCESSING summaries (PROCESSING means AI is still analyzing)
+  // This ensures insights work even when there's an active attendance being processed
+  const availableSummaries = aiSummaries.value.filter(s => 
+    s.status === 'COMPLETED' || s.status === 'PROCESSING'
+  )
 
-  if (completedSummaries.length === 0) {
+  if (availableSummaries.length === 0) {
     return {
       clientSummary: null,
       sentimentAnalysis: null,
       intents: [],
       averageLeadScore: null,
       nextSteps: [],
+      leadScoreExplanation: null,
     }
   }
+
+  // For calculations, prefer COMPLETED summaries, but use PROCESSING if that's all we have
+  const completedSummaries = availableSummaries.filter(s => s.status === 'COMPLETED')
+  const summariesForCalculation = completedSummaries.length > 0 ? completedSummaries : availableSummaries
 
   // Sentiment Analysis
   const sentimentCounts: Record<Sentiment, number> = {
@@ -1718,7 +1746,7 @@ const aggregatedInsights = computed(() => {
     MIXED: 0,
   }
 
-  completedSummaries.forEach(summary => {
+  summariesForCalculation.forEach(summary => {
     if (summary.sentiment) {
       sentimentCounts[summary.sentiment]++
     }
@@ -1730,7 +1758,7 @@ const aggregatedInsights = computed(() => {
 
   // Intent Analysis
   const intentCounts: Record<string, number> = {}
-  completedSummaries.forEach(summary => {
+  summariesForCalculation.forEach(summary => {
     if (summary.detected_intent) {
       intentCounts[summary.detected_intent] = (intentCounts[summary.detected_intent] || 0) + 1
     }
@@ -1741,7 +1769,7 @@ const aggregatedInsights = computed(() => {
     .sort((a, b) => b.count - a.count)
 
   // Average Lead Score
-  const leadScores = completedSummaries
+  const leadScores = summariesForCalculation
     .map(s => s.lead_score_suggested)
     .filter((score): score is number => score !== null)
 
@@ -1749,8 +1777,56 @@ const aggregatedInsights = computed(() => {
     ? Math.round(leadScores.reduce((a, b) => a + b, 0) / leadScores.length)
     : null
 
+  // Lead Score Explanation - Calculate how the AI arrived at the current score
+  const leadScoreExplanation = (() => {
+    if (!client.value?.current_lead_score) return null
+    
+    const currentScore = client.value.current_lead_score
+    const mostRecentSummaryWithScore = summariesForCalculation
+      .filter(s => s.lead_score_suggested !== null)
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
+    
+    if (!mostRecentSummaryWithScore) return null
+    
+    const explanation: string[] = []
+    explanation.push(`**Score Base:** 30 pontos`)
+    
+    if (mostRecentSummaryWithScore.interest_type_detected) {
+      explanation.push(`**Tipo de Interesse Detectado:** +20 pontos`)
+    }
+    
+    if (mostRecentSummaryWithScore.urgency_level_detected) {
+      const urgency = mostRecentSummaryWithScore.urgency_level_detected
+      if (urgency === 'IMMEDIATE') {
+        explanation.push(`**Urgência Imediata:** +25 pontos`)
+      } else if (urgency === 'HIGH') {
+        explanation.push(`**Urgência Alta:** +15 pontos`)
+      } else if (urgency === 'MEDIUM') {
+        explanation.push(`**Urgência Média:** +10 pontos`)
+      } else if (urgency === 'LOW') {
+        explanation.push(`**Urgência Baixa:** +5 pontos`)
+      }
+    }
+    
+    if (mostRecentSummaryWithScore.budget_min_detected || mostRecentSummaryWithScore.budget_max_detected) {
+      explanation.push(`**Orçamento Detectado:** +15 pontos`)
+    }
+    
+    if (mostRecentSummaryWithScore.detected_intent) {
+      if (mostRecentSummaryWithScore.detected_intent === 'SCHEDULE_VISIT') {
+        explanation.push(`**Intenção: Agendar Visita:** +10 pontos`)
+      } else if (mostRecentSummaryWithScore.detected_intent === 'PRICE_NEGOTIATION') {
+        explanation.push(`**Intenção: Negociação de Preço:** +8 pontos`)
+      }
+    }
+    
+    explanation.push(`\n**Total Calculado:** ${currentScore}/100 pontos`)
+    
+    return explanation.join('\n')
+  })()
+
   // Client Summary (from most recent summary)
-  const mostRecentSummary = completedSummaries.sort((a, b) =>
+  const mostRecentSummary = summariesForCalculation.sort((a, b) =>
     new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   )[0]
 
@@ -1850,6 +1926,7 @@ const aggregatedInsights = computed(() => {
     intents,
     averageLeadScore,
     nextSteps: allNextSteps.slice(0, 6), // Top 6 next steps
+    leadScoreExplanation,
   }
 })
 
@@ -1998,19 +2075,18 @@ const loadAIInsights = async () => {
         try {
           specificProperty.value = await propertiesService.getPropertyById(activeAttendance.property_id)
           console.log('[DEBUG] Specific property loaded:', specificProperty.value?.title)
-          // Don't load recommendations when client has a specific property interest
-          return
+          // Continue to load summaries even when client has a specific property interest
         } catch (error) {
           console.error('[DEBUG] Error loading specific property:', error)
-          // Continue to load recommendations if property loading fails
+          // Continue to load summaries if property loading fails
         }
       }
     } catch (error) {
-      // No active attendance or error - continue to load recommendations
-      console.log('[DEBUG] No active attendance with property_id, loading recommendations')
+      // No active attendance or error - continue to load summaries
+      console.log('[DEBUG] No active attendance with property_id, loading summaries')
     }
     
-    // Load all AI summaries for this client
+    // Load all AI summaries for this client (including PROCESSING/PENDING for active attendances)
     aiSummaries.value = await aiSummariesService.getSummariesByClientId(client.value.id)
     console.log('[DEBUG] AI summaries loaded:', {
       count: aiSummaries.value.length,
