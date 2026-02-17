@@ -23,9 +23,6 @@
           <v-btn icon variant="text" class="mr-2" @click="goBack">
             <v-icon>mdi-arrow-left</v-icon>
           </v-btn>
-          <v-icon class="mr-3" :color="getChannelColor(attendance.channel)" size="32">
-            {{ getChannelIcon(attendance.channel) }}
-          </v-icon>
           <div class="flex-grow-1">
             <div class="text-h5 font-weight-bold">Detalhes do Atendimento</div>
             <div class="text-caption text-medium-emphasis">
@@ -42,15 +39,6 @@
             >
               <v-icon start size="18">{{ getStatusIcon(attendance.status) }}</v-icon>
               {{ getStatusLabel(attendance.status) }}
-            </v-chip>
-            <!-- Channel -->
-            <v-chip
-              :color="getChannelColor(attendance.channel)"
-              variant="outlined"
-              size="small"
-            >
-              <v-icon start size="16">{{ getChannelIcon(attendance.channel) }}</v-icon>
-              {{ getChannelLabel(attendance.channel) }}
             </v-chip>
           </div>
           <!-- Action Buttons -->
@@ -834,7 +822,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { attendancesService, type Attendance, type AttendanceChannel, type AttendanceStatus } from '@/shared/services/attendances.service'
+import { attendancesService, type Attendance, type AttendanceStatus } from '@/shared/services/attendances.service'
 import { clientsService, type Client } from '@/shared/services/clients.service'
 import { propertiesService, type Property } from '@/shared/services/properties.service'
 import { aiSummariesService, type AISummary, type Sentiment, type DetectedIntent } from '@/shared/services/aiSummaries.service'
@@ -1064,7 +1052,6 @@ const handleAddConversation = async () => {
       agent_id: attendance.value.agent_id,
       property_id: attendance.value.property_id,
       objective: attendance.value.objective, // Keep same objective
-      channel: attendance.value.channel,
       raw_content: newConversationContent.value.trim(), // New conversation content
       status: 'ACTIVE' as const,
     }
@@ -1248,39 +1235,6 @@ const getStatusLabel = (status: AttendanceStatus): string => {
   return labels[status] || status
 }
 
-// Channel helpers
-const getChannelColor = (channel: AttendanceChannel): string => {
-  const colors: Record<AttendanceChannel, string> = {
-    WHATSAPP: 'success',
-    SITE: 'primary',
-    PHONE: 'info',
-    EMAIL: 'warning',
-    IN_PERSON: 'purple',
-  }
-  return colors[channel] || 'grey'
-}
-
-const getChannelIcon = (channel: AttendanceChannel): string => {
-  const icons: Record<AttendanceChannel, string> = {
-    WHATSAPP: 'mdi-whatsapp',
-    SITE: 'mdi-web',
-    PHONE: 'mdi-phone',
-    EMAIL: 'mdi-email',
-    IN_PERSON: 'mdi-account',
-  }
-  return icons[channel] || 'mdi-help-circle'
-}
-
-const getChannelLabel = (channel: AttendanceChannel): string => {
-  const labels: Record<AttendanceChannel, string> = {
-    WHATSAPP: 'WhatsApp',
-    SITE: 'Site',
-    PHONE: 'Telefone',
-    EMAIL: 'E-mail',
-    IN_PERSON: 'Presencial',
-  }
-  return labels[channel] || channel
-}
 
 // Property status helpers
 const getPropertyStatusColor = (status: string): string => {

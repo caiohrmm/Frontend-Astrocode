@@ -121,19 +121,6 @@
                 </div>
               </div>
 
-              <!-- Channel -->
-              <div class="mb-3">
-                <v-chip
-                  :color="getChannelColor(attendance.channel)"
-                  variant="outlined"
-                  size="small"
-                  class="mr-2"
-                >
-                  <v-icon start size="16">{{ getChannelIcon(attendance.channel) }}</v-icon>
-                  {{ getChannelLabel(attendance.channel) }}
-                </v-chip>
-              </div>
-
               <!-- Property Link -->
               <div v-if="attendance.property_id" class="mb-3">
                 <v-btn
@@ -229,7 +216,6 @@ import {
   attendancesService,
   type Attendance,
   type AttendanceStatus,
-  type AttendanceChannel,
 } from '@/shared/services/attendances.service'
 
 const props = defineProps<{
@@ -303,39 +289,6 @@ const getStatusLabel = (status: AttendanceStatus): string => {
     ABANDONED: 'Abandonado',
   }
   return labels[status] || status
-}
-
-const getChannelColor = (channel: AttendanceChannel): string => {
-  const colors: Record<AttendanceChannel, string> = {
-    WHATSAPP: 'success',
-    PHONE: 'primary',
-    EMAIL: 'info',
-    SITE: 'secondary',
-    IN_PERSON: 'warning',
-  }
-  return colors[channel] || 'grey'
-}
-
-const getChannelIcon = (channel: AttendanceChannel): string => {
-  const icons: Record<AttendanceChannel, string> = {
-    WHATSAPP: 'mdi-whatsapp',
-    PHONE: 'mdi-phone',
-    EMAIL: 'mdi-email',
-    SITE: 'mdi-web',
-    IN_PERSON: 'mdi-account',
-  }
-  return icons[channel] || 'mdi-message'
-}
-
-const getChannelLabel = (channel: AttendanceChannel): string => {
-  const labels: Record<AttendanceChannel, string> = {
-    WHATSAPP: 'WhatsApp',
-    PHONE: 'Telefone',
-    EMAIL: 'E-mail',
-    SITE: 'Site',
-    IN_PERSON: 'Presencial',
-  }
-  return labels[channel] || channel
 }
 
 const formatDateTime = (dateStr: string): string => {

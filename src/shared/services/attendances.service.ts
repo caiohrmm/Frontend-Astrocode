@@ -6,8 +6,6 @@
 import { apiClient } from './api'
 
 // Enums matching backend
-export type AttendanceChannel = 'WHATSAPP' | 'SITE' | 'PHONE' | 'EMAIL' | 'IN_PERSON'
-
 export type AttendanceStatus = 'ACTIVE' | 'COMPLETED' | 'LOST' | 'ABANDONED'
 
 export type CycleAction = 'NEW_CYCLE_CREATED' | 'CYCLE_UPDATED' | 'PREVIOUS_CYCLE_CLOSED'
@@ -44,7 +42,6 @@ export interface Attendance {
   agent_id: string
   property_id: string | null
   objective: string | null // Clear objective of this interaction cycle
-  channel: AttendanceChannel
   raw_content: string // Accumulated conversations within the same cycle
   ai_summary: string | null
   ai_next_steps: string | null
@@ -94,7 +91,6 @@ export interface AttendanceCreate {
   agent_id: string
   property_id?: string | null
   objective?: string | null // Optional: will be auto-detected from raw_content if not provided
-  channel: AttendanceChannel
   raw_content: string // New conversation content (will be accumulated if updating existing cycle)
   ai_summary?: string | null
   ai_next_steps?: string | null
@@ -111,7 +107,6 @@ export interface AttendanceUpdate {
   agent_id?: string | null
   property_id?: string | null
   objective?: string | null // Updating objective may trigger new cycle creation
-  channel?: AttendanceChannel | null
   raw_content?: string | null // New content will be appended to existing cycle
   ai_summary?: string | null
   ai_next_steps?: string | null
@@ -129,7 +124,6 @@ export interface ListAttendancesParams {
   client_id?: string | null
   agent_id?: string | null
   property_id?: string | null
-  channel?: AttendanceChannel | null
   status?: AttendanceStatus | null
 }
 
@@ -153,9 +147,6 @@ class AttendancesService {
     }
     if (params?.property_id) {
       queryParams.append('property_id', params.property_id)
-    }
-    if (params?.channel) {
-      queryParams.append('channel', params.channel)
     }
     if (params?.status) {
       queryParams.append('status', params.status)

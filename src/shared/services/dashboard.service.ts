@@ -106,7 +106,9 @@ class DashboardService {
         attendances,
         visits,
         properties,
-        corretores
+        corretores,
+        allSales,
+        allLosses
       ] = await Promise.all([
         clientsService.getClients({ limit: 1000 }),
         salesService.getStats(),
@@ -114,7 +116,9 @@ class DashboardService {
         attendancesService.getAttendances({ limit: 1000 }),
         visitsService.getVisits({ limit: 1000 }),
         propertiesService.listProperties({ limit: 1000 }),
-        usersService.getCorretores()
+        usersService.getCorretores(),
+        salesService.listSales({ limit: 1000 }), // Get all sales for monthly trends
+        lossesService.listLosses({ limit: 1000 }) // Get all losses for monthly trends
       ])
 
       // Calculate client metrics
@@ -177,13 +181,13 @@ class DashboardService {
       const funnelData = this.calculateFunnelData(clients)
       
       // Monthly trends (last 6 months)
-      const monthlyTrends = this.calculateMonthlyTrends(clients, salesStats)
+      const monthlyTrends = this.calculateMonthlyTrends(clients, allSales, allLosses)
       
       // Broker performance
       const brokerPerformance = await this.calculateBrokerPerformance(
         corretores,
-        clients,
-        salesStats
+        allSales,
+        attendances
       )
       
       // Insights
@@ -248,7 +252,11 @@ class DashboardService {
     }).filter(stage => stage.count > 0)
   }
   
-  private calculateMonthlyTrends(clients: Client[], salesStats: SaleStats): MonthlyTrend[] {
+  private calculateMonthlyTrends(
+    clients: Client[], 
+    sales: any[], 
+    losses: any[]
+  ): MonthlyTrend[] {
     const months: MonthlyTrend[] = []
     const now = new Date()
     
@@ -257,17 +265,34 @@ class DashboardService {
       const monthStart = new Date(date.getFullYear(), date.getMonth(), 1)
       const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59)
       
+      // Clients created in this month
       const monthClients = clients.filter(c => {
         const created = new Date(c.created_at)
         return created >= monthStart && created <= monthEnd
       }).length
       
+      // Sales completed in this month
+      const monthSales = sales.filter(s => {
+        if (!s.completion_date && !s.created_at) return false
+        const saleDate = s.completion_date ? new Date(s.completion_date) : new Date(s.created_at)
+        return saleDate >= monthStart && saleDate <= monthEnd && s.status === 'COMPLETED'
+      })
+      const monthSalesCount = monthSales.length
+      const monthRevenue = monthSales.reduce((sum, s) => sum + (s.sale_value || 0), 0)
+      
+      // Losses in this month
+      const monthLosses = losses.filter(l => {
+        if (!l.lost_at && !l.created_at) return false
+        const lossDate = l.lost_at ? new Date(l.lost_at) : new Date(l.created_at)
+        return lossDate >= monthStart && lossDate <= monthEnd
+      }).length
+      
       months.push({
         month: date.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }),
         clients: monthClients,
-        sales: 0, // Would need sales data with dates
-        losses: 0, // Would need loss data with dates
-        revenue: 0, // Would need sales data with dates
+        sales: monthSalesCount,
+        losses: monthLosses,
+        revenue: monthRevenue,
       })
     }
     
@@ -276,40 +301,45 @@ class DashboardService {
   
   private async calculateBrokerPerformance(
     corretores: any[],
-    clients: Client[],
-    salesStats: SaleStats
+    allSales: any[],
+    attendances: any[]
   ): Promise<BrokerPerformance[]> {
     const performance: BrokerPerformance[] = []
     
     for (const broker of corretores) {
-      const brokerClients = clients.filter(c => c.assigned_agent_id === broker.id)
-      const activeClients = brokerClients.filter(c => 
-        c.current_status && 
-        !['WON', 'LOST', 'INACTIVE'].includes(c.current_status)
-      ).length
+      // Get broker sales (completed sales with this broker_id)
+      const brokerSales = allSales.filter(s => 
+        s.broker_id === broker.id && s.status === 'COMPLETED'
+      )
       
-      // Get broker sales stats
-      try {
-        const brokerSalesStats = await salesService.getStats({ broker_id: broker.id })
-        const wonClients = brokerClients.filter(c => c.current_status === 'WON').length
-        const conversionRate = brokerClients.length > 0
-          ? (wonClients / brokerClients.length) * 100
-          : 0
-        
-        performance.push({
-          broker_id: broker.id,
-          broker_name: broker.full_name || broker.name || 'Sem nome',
-          total_sales: brokerSalesStats.completed_count,
-          total_revenue: Number(brokerSalesStats.total_value),
-          total_commission: Number(brokerSalesStats.total_commission),
-          conversion_rate: Math.round(conversionRate * 100) / 100,
-          active_clients: activeClients,
-        })
-      } catch (error) {
-        console.error(`Error fetching stats for broker ${broker.id}:`, error)
-      }
+      const totalSales = brokerSales.length
+      const totalRevenue = brokerSales.reduce((sum, s) => sum + (s.sale_value || 0), 0)
+      const totalCommission = brokerSales.reduce((sum, s) => sum + (s.commission_value || 0), 0)
+      
+      // Get active attendances for this broker (agent_id)
+      const brokerAttendances = attendances.filter(a => 
+        a.agent_id === broker.id && a.status === 'ACTIVE'
+      )
+      const activeClients = new Set(brokerAttendances.map(a => a.client_id)).size
+      
+      // Calculate conversion rate: completed sales / total attendances (including closed ones)
+      const allBrokerAttendances = attendances.filter(a => a.agent_id === broker.id)
+      const conversionRate = allBrokerAttendances.length > 0
+        ? (totalSales / allBrokerAttendances.length) * 100
+        : 0
+      
+      performance.push({
+        broker_id: broker.id,
+        broker_name: broker.full_name || broker.name || 'Sem nome',
+        total_sales: totalSales,
+        total_revenue: totalRevenue,
+        total_commission: totalCommission,
+        conversion_rate: Math.round(conversionRate * 100) / 100,
+        active_clients: activeClients,
+      })
     }
     
+    // Sort by revenue descending, but include all brokers even with 0 sales
     return performance.sort((a, b) => b.total_revenue - a.total_revenue)
   }
   

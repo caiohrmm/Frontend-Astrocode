@@ -46,18 +46,6 @@
           </v-col>
           <v-col cols="12" sm="6" md="2">
             <v-select
-              v-model="filters.channel"
-              :items="channelOptions"
-              label="Canal"
-              variant="outlined"
-              density="compact"
-              clearable
-              hide-details
-              @update:model-value="applyFilters"
-            ></v-select>
-          </v-col>
-          <v-col cols="12" sm="6" md="2">
-            <v-select
               v-model="filters.agent_id"
               :items="agentOptions"
               label="Agente"
@@ -134,18 +122,6 @@
           <v-chip v-else variant="tonal" size="small" color="grey">
             <v-icon start size="14">mdi-help-circle</v-icon>
             Não definido
-          </v-chip>
-        </template>
-
-        <!-- Channel Column -->
-        <template #item.channel="{ item }">
-          <v-chip
-            :color="getChannelColor(item.channel)"
-            variant="flat"
-            size="small"
-          >
-            <v-icon start size="16">{{ getChannelIcon(item.channel) }}</v-icon>
-            {{ getChannelLabel(item.channel) }}
           </v-chip>
         </template>
 
@@ -308,14 +284,6 @@
               </v-col>
               <v-col cols="12" sm="6" class="pb-2">
                 <div class="info-field">
-                  <div class="text-caption text-medium-emphasis mb-1">Canal</div>
-                  <div class="text-body-2 font-weight-medium">
-                    {{ getChannelLabel(selectedAttendance.channel) }}
-                  </div>
-                </div>
-              </v-col>
-              <v-col cols="12" sm="6" class="pb-2">
-                <div class="info-field">
                   <div class="text-caption text-medium-emphasis mb-1">Status</div>
                   <v-chip
                     :color="getStatusColor(selectedAttendance.status)"
@@ -370,7 +338,6 @@ import {
   attendancesService,
   type Attendance,
   type AttendanceStatus,
-  type AttendanceChannel,
 } from '@/shared/services/attendances.service'
 import { usersService, type User } from '@/shared/services/users.service'
 import { clientsService, type Client } from '@/shared/services/clients.service'
@@ -383,7 +350,6 @@ const isLoading = ref(false)
 const searchQuery = ref('')
 const filters = ref({
   status: null as AttendanceStatus | null,
-  channel: null as AttendanceChannel | null,
   agent_id: null as string | null,
 })
 const agents = ref<User[]>([])
@@ -416,7 +382,6 @@ const agentsMap = computed(() => {
 const headers = [
   { title: 'Cliente', key: 'client_id', sortable: true },
   { title: 'Objetivo', key: 'objective', sortable: false },
-  { title: 'Canal', key: 'channel', sortable: true },
   { title: 'Status', key: 'status', sortable: true },
   { title: 'Agente', key: 'agent_id', sortable: true },
   { title: 'Criado em', key: 'created_at', sortable: true },
@@ -431,14 +396,6 @@ const statusOptions = [
   { title: 'Abandonado', value: 'ABANDONED' },
 ]
 
-const channelOptions = [
-  { title: 'WhatsApp', value: 'WHATSAPP' },
-  { title: 'Site', value: 'SITE' },
-  { title: 'Telefone', value: 'PHONE' },
-  { title: 'E-mail', value: 'EMAIL' },
-  { title: 'Presencial', value: 'IN_PERSON' },
-]
-
 const agentOptions = computed(() => {
   return agents.value.map(agent => ({
     title: agent.full_name,
@@ -450,7 +407,6 @@ const agentOptions = computed(() => {
 const hasActiveFilters = computed(() => {
   return !!(
     filters.value.status ||
-    filters.value.channel ||
     filters.value.agent_id
   )
 })
@@ -479,11 +435,6 @@ const filteredAttendances = computed(() => {
   // Status filter
   if (filters.value.status) {
     result = result.filter(attendance => attendance.status === filters.value.status)
-  }
-
-  // Channel filter
-  if (filters.value.channel) {
-    result = result.filter(attendance => attendance.channel === filters.value.channel)
   }
 
   // Agent filter
@@ -571,7 +522,6 @@ const applyFilters = () => {
 const clearFilters = () => {
   filters.value = {
     status: null,
-    channel: null,
     agent_id: null,
   }
   searchQuery.value = ''
@@ -604,39 +554,6 @@ const getStatusColor = (status: AttendanceStatus): string => {
     ABANDONED: 'warning',
   }
   return colors[status] || 'grey'
-}
-
-const getChannelLabel = (channel: AttendanceChannel): string => {
-  const labels: Record<AttendanceChannel, string> = {
-    WHATSAPP: 'WhatsApp',
-    SITE: 'Site',
-    PHONE: 'Telefone',
-    EMAIL: 'E-mail',
-    IN_PERSON: 'Presencial',
-  }
-  return labels[channel] || channel
-}
-
-const getChannelColor = (channel: AttendanceChannel): string => {
-  const colors: Record<AttendanceChannel, string> = {
-    WHATSAPP: 'success',
-    SITE: 'primary',
-    PHONE: 'info',
-    EMAIL: 'warning',
-    IN_PERSON: 'purple',
-  }
-  return colors[channel] || 'grey'
-}
-
-const getChannelIcon = (channel: AttendanceChannel): string => {
-  const icons: Record<AttendanceChannel, string> = {
-    WHATSAPP: 'mdi-whatsapp',
-    SITE: 'mdi-web',
-    PHONE: 'mdi-phone',
-    EMAIL: 'mdi-email',
-    IN_PERSON: 'mdi-account',
-  }
-  return icons[channel] || 'mdi-help-circle'
 }
 
 const formatDateTime = (dateString: string): string => {

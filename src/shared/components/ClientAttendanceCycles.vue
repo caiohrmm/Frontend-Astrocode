@@ -119,19 +119,6 @@
                 <v-row dense>
                   <v-col cols="12" sm="6">
                     <div class="info-field">
-                      <div class="text-caption text-medium-emphasis mb-1">Canal</div>
-                      <v-chip
-                        :color="getChannelColor(attendance.channel)"
-                        variant="flat"
-                        size="small"
-                      >
-                        <v-icon start size="16">{{ getChannelIcon(attendance.channel) }}</v-icon>
-                        {{ getChannelLabel(attendance.channel) }}
-                      </v-chip>
-                    </div>
-                  </v-col>
-                  <v-col cols="12" sm="6">
-                    <div class="info-field">
                       <div class="text-caption text-medium-emphasis mb-1">Agente Responsável</div>
                       <div class="text-body-2 font-weight-medium">
                         {{ getAgentName(attendance.agent_id) }}
@@ -281,7 +268,6 @@ import {
   attendancesService,
   type Attendance,
   type AttendanceStatus,
-  type AttendanceChannel,
 } from '@/shared/services/attendances.service'
 import { usersService, type User } from '@/shared/services/users.service'
 
@@ -378,40 +364,6 @@ const getStatusIcon = (status: AttendanceStatus): string => {
     ABANDONED: 'mdi-pause-circle',
   }
   return icons[status] || 'mdi-help-circle'
-}
-
-// Channel helpers
-const getChannelLabel = (channel: AttendanceChannel): string => {
-  const labels: Record<AttendanceChannel, string> = {
-    WHATSAPP: 'WhatsApp',
-    SITE: 'Site',
-    PHONE: 'Telefone',
-    EMAIL: 'E-mail',
-    IN_PERSON: 'Presencial',
-  }
-  return labels[channel] || channel
-}
-
-const getChannelColor = (channel: AttendanceChannel): string => {
-  const colors: Record<AttendanceChannel, string> = {
-    WHATSAPP: 'success',
-    SITE: 'primary',
-    PHONE: 'info',
-    EMAIL: 'warning',
-    IN_PERSON: 'purple',
-  }
-  return colors[channel] || 'grey'
-}
-
-const getChannelIcon = (channel: AttendanceChannel): string => {
-  const icons: Record<AttendanceChannel, string> = {
-    WHATSAPP: 'mdi-whatsapp',
-    SITE: 'mdi-web',
-    PHONE: 'mdi-phone',
-    EMAIL: 'mdi-email',
-    IN_PERSON: 'mdi-account',
-  }
-  return icons[channel] || 'mdi-help-circle'
 }
 
 // Formatting helpers

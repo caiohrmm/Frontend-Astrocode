@@ -2478,39 +2478,6 @@ const formatDateTime = (dateString: string): string => {
 }
 
 
-// Attendance helpers
-const getChannelLabel = (channel: string): string => {
-  const labels: Record<string, string> = {
-    WHATSAPP: 'WhatsApp',
-    SITE: 'Site',
-    PHONE: 'Telefone',
-    EMAIL: 'E-mail',
-    IN_PERSON: 'Presencial',
-  }
-  return labels[channel] || channel
-}
-
-const getChannelIcon = (channel: string): string => {
-  const icons: Record<string, string> = {
-    WHATSAPP: 'mdi-whatsapp',
-    SITE: 'mdi-web',
-    PHONE: 'mdi-phone',
-    EMAIL: 'mdi-email',
-    IN_PERSON: 'mdi-account',
-  }
-  return icons[channel] || 'mdi-phone'
-}
-
-const getChannelColor = (channel: string): string => {
-  const colors: Record<string, string> = {
-    WHATSAPP: 'success',
-    SITE: 'primary',
-    PHONE: 'info',
-    EMAIL: 'warning',
-    IN_PERSON: 'purple',
-  }
-  return colors[channel] || 'grey'
-}
 
 const getAttendanceStatusLabel = (status: string): string => {
   const labels: Record<string, string> = {

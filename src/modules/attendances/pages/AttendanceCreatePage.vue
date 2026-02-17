@@ -110,30 +110,6 @@
                   </SearchSelectDialog>
                 </v-col>
 
-                <!-- Canal * -->
-                <v-col cols="12" md="6">
-                  <v-select v-model="formData.channel" :items="channelOptions" label="Meio de contato *"
-                    variant="outlined" :rules="[rules.required]" prepend-inner-icon="mdi-phone"
-                    hint="Por onde o cliente entrou em contato" persistent-hint item-title="title" item-value="value">
-                    <template #item="{ item, props }">
-                      <v-list-item v-bind="props" :key="`channel-${item.value}`">
-                        <template #prepend>
-                          <v-icon :color="item.raw?.color" class="mr-3">
-                            {{ item.raw?.icon }}
-                          </v-icon>
-                        </template>
-                      </v-list-item>
-                    </template>
-                    <template #selection="{ item }">
-                      <div class="d-flex align-center">
-                        <v-icon :color="item.raw?.color" size="small" class="mr-2">
-                          {{ item.raw?.icon }}
-                        </v-icon>
-                        <span>{{ item.raw?.title }}</span>
-                      </div>
-                    </template>
-                  </v-select>
-                </v-col>
 
                 <!-- Objective (Optional) -->
                 <v-col cols="12">
@@ -373,26 +349,11 @@ const formData = ref<AttendanceCreate>({
   agent_id: '',
   property_id: null,
   objective: null, // Optional: will be auto-detected
-  channel: 'WHATSAPP',
   raw_content: '',
   status: 'ACTIVE',
   scheduled_visit_at: null,
 })
 
-// Options
-const channelOptions = computed(() => {
-  const options = [
-    { title: 'WhatsApp', value: 'WHATSAPP', icon: 'mdi-whatsapp', color: 'success' },
-    { title: 'Site', value: 'SITE', icon: 'mdi-web', color: 'primary' },
-    { title: 'Telefone', value: 'PHONE', icon: 'mdi-phone', color: 'info' },
-    { title: 'E-mail', value: 'EMAIL', icon: 'mdi-email', color: 'warning' },
-    { title: 'Presencial', value: 'IN_PERSON', icon: 'mdi-account', color: 'purple' },
-  ]
-  // Remove duplicates by value
-  return Array.from(
-    new Map(options.map(option => [option.value, option])).values()
-  )
-})
 
 const statusOptions = [
   { title: 'Ativo', value: 'ACTIVE' },
@@ -596,7 +557,6 @@ const loadAttendance = async () => {
       agent_id: attendance.agent_id,
       property_id: attendance.property_id || null,
       objective: attendance.objective || null,
-      channel: attendance.channel,
       raw_content: attendance.raw_content,
       status: attendance.status,
       scheduled_visit_at: convertISOToLocalDateTime(attendance.scheduled_visit_at),
@@ -640,7 +600,6 @@ const handleSave = async () => {
         agent_id: formData.value.agent_id,
         property_id: formData.value.property_id || null,
         objective: formData.value.objective || null,
-        channel: formData.value.channel,
         raw_content: formData.value.raw_content.trim(),
         status: formData.value.status,
         scheduled_visit_at: formData.value.scheduled_visit_at
@@ -672,7 +631,6 @@ const handleSave = async () => {
         agent_id: formData.value.agent_id,
         property_id: formData.value.property_id || null,
         objective: formData.value.objective || null, // Optional: backend will auto-detect if not provided
-        channel: formData.value.channel,
         raw_content: formData.value.raw_content.trim(),
         status: formData.value.status,
         scheduled_visit_at: formData.value.scheduled_visit_at
