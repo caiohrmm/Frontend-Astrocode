@@ -1095,13 +1095,13 @@ const handleAddConversation = async () => {
       router.push({ 
         name: 'clients-details', 
         params: { id: updatedAttendance.client_id },
-        query: { 
-          showSaleDialog: 'true',
-          saleType: updatedAttendance.detected_sale.sale_type || '',
-          saleValue: updatedAttendance.detected_sale.sale_value?.toString() || '',
-          paymentMethod: updatedAttendance.detected_sale.payment_method || '',
-          notes: updatedAttendance.detected_sale.notes || '',
-        }
+          query: { 
+            showSaleDialog: 'true',
+            saleType: updatedAttendance.detected_sale.sale_type || '',
+            saleValue: updatedAttendance.detected_sale.sale_value?.toString() || '',
+            propertyId: updatedAttendance.detected_sale.property_id || updatedAttendance.property_id || '',
+            notes: updatedAttendance.detected_sale.notes || '',
+          }
       })
       return
     }

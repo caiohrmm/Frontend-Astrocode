@@ -740,7 +740,7 @@ const handleSave = async () => {
             showSaleDialog: 'true',
             saleType: created.detected_sale.sale_type || '',
             saleValue: created.detected_sale.sale_value?.toString() || '',
-            paymentMethod: created.detected_sale.payment_method || '',
+            propertyId: created.detected_sale.property_id || created.property_id || '',
             notes: created.detected_sale.notes || '',
           }
         })

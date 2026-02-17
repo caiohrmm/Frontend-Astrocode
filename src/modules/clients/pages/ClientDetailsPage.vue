@@ -147,7 +147,7 @@
             <v-col cols="6" sm="3" class="pa-4 border-start d-flex align-center justify-center">
               <div class="d-flex flex-column text-center">
                 <div class="text-body-1 font-weight-bold text-success">
-                  {{ formatBudgetRange(client.current_budget_min, client.current_budget_max) }}
+                  {{ formatBudgetRange(client.current_budget_min ? parseFloat(client.current_budget_min) : null, client.current_budget_max ? parseFloat(client.current_budget_max) : null) }}
                 </div>
                 <span class="text-caption text-medium-emphasis mt-1">
                   Orçamento
@@ -280,10 +280,10 @@
       <!-- Sale Registration Dialog -->
       <v-dialog v-model="showSaleDialog" max-width="700" persistent>
         <v-card rounded="lg">
-          <v-toolbar color="success" density="compact">
+          <v-toolbar color="primary" density="compact">
             <v-toolbar-title class="text-white font-weight-bold">
               <v-icon start>mdi-handshake</v-icon>
-              Registrar Venda/Aluguel
+              Registrar Nova Venda
             </v-toolbar-title>
             <v-spacer></v-spacer>
             <v-btn icon variant="text" @click="closeSaleDialog">
@@ -316,75 +316,210 @@
 
                 <!-- Imóvel -->
                 <v-col cols="12">
-                  <v-autocomplete v-model="newSale.property_id" :items="availableProperties" item-title="title"
-                    item-value="id" label="Imóvel (opcional)" prepend-inner-icon="mdi-home" variant="outlined"
-                    density="comfortable" clearable :loading="isLoadingProperties">
-                    <template v-slot:item="{ props, item }">
-                      <v-list-item v-bind="props">
-                        <v-list-item-subtitle>
-                          {{ item.raw.city }} - R$ {{ formatPropertyPrice(item.raw) }}
-                        </v-list-item-subtitle>
-                      </v-list-item>
+                  <SearchSelectDialog
+                    v-model="newSale.property_id"
+                    label="Imóvel (Opcional)"
+                    dialog-title="Buscar Propriedade"
+                    icon="mdi-home"
+                    icon-color="success"
+                    item-icon="mdi-home"
+                    placeholder="Clique para buscar propriedade..."
+                    hint="Selecione a propriedade relacionada, se aplicável"
+                    :persistent-hint="true"
+                    :clearable="true"
+                    :items="propertySearchItems"
+                    :total-items="propertiesTotalItems"
+                    :items-per-page="propertiesPerPage"
+                    :is-loading="isLoadingProperties"
+                    display-field="title"
+                    @search="handlePropertySearch"
+                    @select="handlePropertySelect"
+                  >
+                    <template #item-prepend="{ item }">
+                      <v-avatar color="success" size="40" class="mr-3" rounded="lg">
+                        <v-img v-if="item.main_image_url" :src="item.main_image_url" cover></v-img>
+                        <v-icon v-else color="white">mdi-home</v-icon>
+                      </v-avatar>
                     </template>
-                  </v-autocomplete>
+                    <template #item-title="{ item }">
+                      {{ item.title }}
+                    </template>
+                    <template #item-subtitle="{ item }">
+                      <span>Código: {{ item.code }}</span>
+                      <span v-if="item.city" class="ml-2">• {{ item.city }}</span>
+                    </template>
+                  </SearchSelectDialog>
+                </v-col>
+
+                <!-- Corretor -->
+                <v-col cols="12">
+                  <v-autocomplete
+                    v-model="newSale.broker_id"
+                    :items="corretores"
+                    item-title="full_name"
+                    item-value="id"
+                    label="Corretor (opcional)"
+                    prepend-inner-icon="mdi-account-tie"
+                    variant="outlined"
+                    density="comfortable"
+                    clearable
+                    :loading="isLoadingCorretores"
+                  ></v-autocomplete>
                 </v-col>
 
                 <!-- Valor -->
                 <v-col cols="12" sm="6">
-                  <v-text-field v-model.number="newSale.sale_value" label="Valor *"
-                    prepend-inner-icon="mdi-currency-usd" variant="outlined" density="comfortable" type="number"
+                  <v-text-field
+                    v-model="saleValueFormatted"
+                    label="Valor *"
+                    prepend-inner-icon="mdi-currency-usd"
+                    variant="outlined"
+                    density="comfortable"
                     prefix="R$"
-                    :rules="[(v: number | null) => (v !== null && v > 0) || 'Valor deve ser maior que zero']"></v-text-field>
+                    :rules="[(v: string) => {
+                      const parsed = parseCurrencyInputRealTime(v || '');
+                      return (parsed !== null && parsed > 0) || 'Valor deve ser maior que zero';
+                    }]"
+                    @input="handleSaleValueInput($event)"
+                    @blur="handleSaleValueBlur()"
+                  ></v-text-field>
                 </v-col>
 
                 <!-- Comissão -->
                 <v-col cols="12" sm="6">
-                  <v-text-field v-model.number="newSale.commission_percentage" label="Comissão (%)"
-                    prepend-inner-icon="mdi-percent" variant="outlined" density="comfortable" type="number"
-                    suffix="%"></v-text-field>
+                  <v-text-field
+                    v-model.number="newSale.commission_percentage"
+                    label="Comissão (%)"
+                    prepend-inner-icon="mdi-percent"
+                    variant="outlined"
+                    density="comfortable"
+                    type="number"
+                    suffix="%"
+                    :rules="[(v: number | null) => v === null || (v >= 0 && v <= 100) || 'Entre 0 e 100']"
+                  ></v-text-field>
                 </v-col>
 
-                <!-- Entrada -->
-                <v-col cols="12" sm="6">
-                  <v-text-field v-model.number="newSale.down_payment" label="Entrada (opcional)"
-                    prepend-inner-icon="mdi-cash" variant="outlined" density="comfortable" type="number"
-                    prefix="R$"></v-text-field>
-                </v-col>
-
-                <!-- Forma de pagamento -->
-                <v-col cols="12" sm="6">
-                  <v-select v-model="newSale.payment_method" :items="paymentMethodOptions" label="Forma de Pagamento"
-                    prepend-inner-icon="mdi-credit-card" variant="outlined" density="comfortable" clearable></v-select>
+                <!-- Formas de Pagamento -->
+                <v-col cols="12">
+                  <v-card variant="outlined" class="pa-4">
+                    <v-card-title class="text-subtitle-1 d-flex align-center mb-3">
+                      <v-icon start size="20">mdi-credit-card-multiple</v-icon>
+                      Formas de Pagamento
+                    </v-card-title>
+                    
+                    <div v-for="(payment, index) in paymentMethods" :key="index" class="mb-3">
+                      <v-row dense>
+                        <v-col cols="12" sm="4">
+                          <v-select
+                            v-model="payment.method"
+                            :items="paymentMethodOptions"
+                            label="Forma"
+                            variant="outlined"
+                            density="compact"
+                            :rules="[(v: PaymentMethod | null) => !!v || 'Selecione a forma']"
+                          ></v-select>
+                        </v-col>
+                        <v-col cols="12" sm="4">
+                          <v-text-field
+                            :model-value="getPaymentValueFormatted(index)"
+                            label="Valor"
+                            variant="outlined"
+                            density="compact"
+                            prefix="R$"
+                            :rules="[(v: string) => {
+                              const parsed = parseCurrencyInputRealTime(v || '');
+                              return (parsed !== null && parsed > 0) || 'Valor deve ser maior que zero';
+                            }]"
+                            @input="handlePaymentValueInput($event, index)"
+                            @blur="handlePaymentValueBlur(index)"
+                          ></v-text-field>
+                        </v-col>
+                        <v-col cols="12" sm="3">
+                          <v-text-field
+                            v-model="payment.description"
+                            label="Descrição (opcional)"
+                            variant="outlined"
+                            density="compact"
+                            placeholder="Ex: Entrada, Financiamento..."
+                          ></v-text-field>
+                        </v-col>
+                        <v-col cols="12" sm="1" class="d-flex align-center">
+                          <v-btn
+                            icon
+                            variant="text"
+                            color="error"
+                            size="small"
+                            @click="removePaymentMethod(index)"
+                            :disabled="paymentMethods.length === 1"
+                          >
+                            <v-icon>mdi-delete</v-icon>
+                          </v-btn>
+                        </v-col>
+                      </v-row>
+                    </div>
+                    
+                    <v-btn
+                      variant="outlined"
+                      color="primary"
+                      prepend-icon="mdi-plus"
+                      @click="addPaymentMethod"
+                      size="small"
+                    >
+                      Adicionar Forma de Pagamento
+                    </v-btn>
+                    
+                    <v-alert
+                      v-if="paymentMethodsTotal !== newSale.sale_value && newSale.sale_value"
+                      type="warning"
+                      variant="tonal"
+                      density="compact"
+                      class="mt-3"
+                    >
+                      Soma das formas de pagamento ({{ formatCurrency(paymentMethodsTotal) }}) 
+                      {{ paymentMethodsTotal > newSale.sale_value ? 'excede' : 'não atinge' }} 
+                      o valor total ({{ formatCurrency(newSale.sale_value || 0) }})
+                    </v-alert>
+                  </v-card>
                 </v-col>
 
                 <!-- Campos de aluguel -->
                 <template v-if="newSale.sale_type === 'RENT'">
                   <v-col cols="12" sm="6">
-                    <v-text-field v-model.number="newSale.rent_duration_months" label="Duração (meses)"
-                      prepend-inner-icon="mdi-calendar-range" variant="outlined" density="comfortable"
-                      type="number"></v-text-field>
+                    <v-text-field
+                      v-model.number="newSale.rent_duration_months"
+                      label="Duração (meses)"
+                      prepend-inner-icon="mdi-calendar-range"
+                      variant="outlined"
+                      density="comfortable"
+                      type="number"
+                    ></v-text-field>
                   </v-col>
                   <v-col cols="12" sm="6">
-                    <v-text-field v-model="newSale.rent_start_date" label="Data de Início"
-                      prepend-inner-icon="mdi-calendar" variant="outlined" density="comfortable"
-                      type="date"></v-text-field>
+                    <v-text-field
+                      v-model="newSale.rent_start_date"
+                      label="Data de Início"
+                      prepend-inner-icon="mdi-calendar"
+                      variant="outlined"
+                      density="comfortable"
+                      type="date"
+                    ></v-text-field>
                   </v-col>
                 </template>
 
                 <!-- Notas -->
                 <v-col cols="12">
-                  <v-textarea v-model="newSale.notes" label="Observações" prepend-inner-icon="mdi-note-text"
-                    variant="outlined" density="comfortable" rows="2" auto-grow></v-textarea>
+                  <v-textarea
+                    v-model="newSale.notes"
+                    label="Observações"
+                    prepend-inner-icon="mdi-note-text"
+                    variant="outlined"
+                    density="comfortable"
+                    rows="3"
+                    auto-grow
+                  ></v-textarea>
                 </v-col>
               </v-row>
             </v-form>
-
-            <v-alert type="info" variant="tonal" density="compact" class="mt-4">
-              <template v-slot:text>
-                Ao registrar a venda, o status do cliente será atualizado para "Ganho" e a IA irá
-                analisar a negociação quando a venda for concluída.
-              </template>
-            </v-alert>
           </v-card-text>
 
           <v-divider></v-divider>
@@ -394,8 +529,13 @@
             <v-btn variant="text" @click="closeSaleDialog" :disabled="isCreatingSale">
               Cancelar
             </v-btn>
-            <v-btn color="success" variant="flat" @click="createSale" :loading="isCreatingSale"
-              :disabled="!isSaleFormValid">
+            <v-btn
+              color="primary"
+              variant="flat"
+              @click="createSale"
+              :loading="isCreatingSale"
+              :disabled="!isSaleFormValid"
+            >
               <v-icon start>mdi-check</v-icon>
               Registrar Venda
             </v-btn>
@@ -1546,7 +1686,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   clientsService,
@@ -1560,7 +1700,7 @@ import {
 import { usersService, type User } from '@/shared/services/users.service'
 import { aiSummariesService, type AISummary, type Sentiment, type DetectedIntent } from '@/shared/services/aiSummaries.service'
 import { propertiesService, type Property } from '@/shared/services/properties.service'
-import { salesService } from '@/shared/services/sales.service'
+import { salesService, type PaymentMethod, type PaymentMethodItem, PaymentMethod as PaymentMethodEnum, SaleType } from '@/shared/services/sales.service'
 import {
   lossesService,
   lossReasonOptions,
@@ -1570,7 +1710,8 @@ import {
 } from '@/shared/services/losses.service'
 import { attendancesService, type Attendance } from '@/shared/services/attendances.service'
 import { visitsService } from '@/shared/services/visits.service'
-import { formatPhone, formatCurrency, parseCurrency } from '@/shared/utils/masks'
+import { formatPhone, formatCurrency, parseCurrency, formatCurrencyInputRealTime, parseCurrencyInputRealTime } from '@/shared/utils/masks'
+import SearchSelectDialog from '@/shared/components/SearchSelectDialog.vue'
 import ClientCreateDialog from '@/shared/components/ClientCreateDialog.vue'
 import AttendanceJourneyPanel from '@/shared/components/AttendanceJourneyPanel.vue'
 import ClientAttendanceCycles from '@/shared/components/ClientAttendanceCycles.vue'
@@ -1602,35 +1743,49 @@ const showSaleDialog = ref(false)
 const isSaleFormValid = ref(false)
 const isCreatingSale = ref(false)
 const isLoadingProperties = ref(false)
-const availableProperties = ref<Property[]>([])
+const isLoadingCorretores = ref(false)
 const saleForm = ref()
 const newSale = ref<{
-  sale_type: string
+  sale_type: SaleType
   property_id: string | null
+  broker_id: string | null
   sale_value: number | null
   commission_percentage: number | null
-  down_payment: number | null
-  payment_method: string | null
   rent_duration_months: number | null
   rent_start_date: string | null
   notes: string | null
 }>({
-  sale_type: 'SALE',
+  sale_type: SaleType.SALE,
   property_id: null,
+  broker_id: null,
   sale_value: null,
   commission_percentage: 5,
-  down_payment: null,
-  payment_method: null,
   rent_duration_months: null,
   rent_start_date: null,
   notes: null,
 })
 
+const paymentMethods = ref<PaymentMethodItem[]>([
+  { method: PaymentMethodEnum.CASH, value: 0, description: '' }
+])
+
+// Formatted values for real-time currency input
+const saleValueFormatted = ref('')
+const paymentValueFormatted = ref<Record<number, string>>({})
+
+// Search state for properties
+const propertySearchItems = ref<any[]>([])
+const propertiesTotalItems = ref(0)
+const propertiesPerPage = 10
+
+// Corretores
+const corretores = ref<User[]>([])
+
 const paymentMethodOptions = [
-  { title: 'À Vista', value: 'CASH' },
-  { title: 'Financiamento', value: 'FINANCING' },
-  { title: 'Parcelado', value: 'INSTALLMENTS' },
-  { title: 'Misto', value: 'MIXED' },
+  { title: 'À Vista', value: PaymentMethodEnum.CASH },
+  { title: 'Financiamento', value: PaymentMethodEnum.FINANCING },
+  { title: 'Parcelado', value: PaymentMethodEnum.INSTALLMENTS },
+  { title: 'Misto', value: PaymentMethodEnum.MIXED },
 ]
 
 // Loss registration
@@ -2720,29 +2875,107 @@ const handleDeleteClient = async () => {
 // Sale registration functions
 const openSaleDialog = async () => {
   showSaleDialog.value = true
-  // Load available properties
-  isLoadingProperties.value = true
-  try {
-    availableProperties.value = await propertiesService.listProperties({ status: 'PUBLISHED' })
-  } catch (error) {
-    console.error('Error loading properties:', error)
-  } finally {
-    isLoadingProperties.value = false
+  // Initialize formatted values
+  if (newSale.value.sale_value) {
+    saleValueFormatted.value = formatCurrency(newSale.value.sale_value)
+  } else {
+    saleValueFormatted.value = ''
+  }
+  
+  // Initialize payment methods formatted values
+  paymentMethods.value.forEach((pm, index) => {
+    if (pm.value && pm.value > 0) {
+      paymentValueFormatted.value[index] = formatCurrency(pm.value)
+    } else {
+      paymentValueFormatted.value[index] = ''
+    }
+  })
+  
+  // Load corretores if not loaded
+  if (corretores.value.length === 0) {
+    await loadCorretores()
   }
 }
 
 const closeSaleDialog = () => {
   showSaleDialog.value = false
   newSale.value = {
-    sale_type: 'SALE',
+    sale_type: SaleType.SALE,
     property_id: null,
+    broker_id: null,
     sale_value: null,
     commission_percentage: 5,
-    down_payment: null,
-    payment_method: null,
     rent_duration_months: null,
     rent_start_date: null,
     notes: null,
+  }
+  paymentMethods.value = [
+    { method: PaymentMethodEnum.CASH, value: 0, description: '' }
+  ]
+  saleValueFormatted.value = ''
+  paymentValueFormatted.value = {}
+}
+
+const loadCorretores = async () => {
+  isLoadingCorretores.value = true
+  try {
+    corretores.value = await usersService.getCorretores()
+  } catch (error) {
+    console.error('Error loading corretores:', error)
+  } finally {
+    isLoadingCorretores.value = false
+  }
+}
+
+// Handle property search from SearchSelectDialog
+const handlePropertySearch = async (query: string, page: number) => {
+  isLoadingProperties.value = true
+  try {
+    // Fetch all properties (backend doesn't support pagination/search filtering yet)
+    const data = await propertiesService.listProperties({ limit: 1000 })
+    
+    // Filter by search query client-side
+    let filtered = data
+    if (query && query.trim()) {
+      const lowerQuery = query.toLowerCase().trim()
+      filtered = data.filter(property =>
+        property.title.toLowerCase().includes(lowerQuery) ||
+        property.code.toLowerCase().includes(lowerQuery) ||
+        (property.city && property.city.toLowerCase().includes(lowerQuery)) ||
+        (property.neighborhood && property.neighborhood.toLowerCase().includes(lowerQuery))
+      )
+    }
+    
+    // Apply pagination client-side
+    const startIndex = (page - 1) * propertiesPerPage
+    const endIndex = startIndex + propertiesPerPage
+    const paginatedItems = filtered.slice(startIndex, endIndex)
+    
+    // Map to search items format
+    propertySearchItems.value = paginatedItems.map(property => ({
+      id: property.id,
+      title: property.title,
+      code: property.code,
+      city: property.city,
+      neighborhood: property.neighborhood,
+      main_image_url: property.main_image_url,
+      subtitle: `${property.code} ${property.city ? '• ' + property.city : ''}`,
+    }))
+    
+    propertiesTotalItems.value = filtered.length
+  } catch (error) {
+    console.error('Error searching properties:', error)
+    propertySearchItems.value = []
+    propertiesTotalItems.value = 0
+  } finally {
+    isLoadingProperties.value = false
+  }
+}
+
+// Handle property selection
+const handlePropertySelect = (item: any) => {
+  if (item) {
+    console.log('Property selected:', item)
   }
 }
 
@@ -2754,11 +2987,11 @@ const createSale = async () => {
     await salesService.createSale({
       client_id: client.value.id,
       property_id: newSale.value.property_id || undefined,
-      sale_type: newSale.value.sale_type as 'SALE' | 'RENT',
+      broker_id: newSale.value.broker_id || undefined,
+      sale_type: newSale.value.sale_type,
       sale_value: newSale.value.sale_value!,
       commission_percentage: newSale.value.commission_percentage || undefined,
-      down_payment: newSale.value.down_payment || undefined,
-      payment_method: newSale.value.payment_method as any || undefined,
+      payment_methods: paymentMethods.value.filter(pm => pm.method && pm.value > 0),
       rent_duration_months: newSale.value.rent_duration_months || undefined,
       rent_start_date: newSale.value.rent_start_date || undefined,
       notes: newSale.value.notes || undefined,
@@ -2766,7 +2999,7 @@ const createSale = async () => {
     closeSaleDialog()
     // Reload client to get updated status
     await loadClient()
-    alert('Venda registrada com sucesso! 🎉')
+    // Removed alert - no longer showing success message
   } catch (error: any) {
     console.error('Error creating sale:', error)
     alert(`Erro ao registrar venda: ${error?.message || 'Erro desconhecido'}`)
@@ -2775,14 +3008,134 @@ const createSale = async () => {
   }
 }
 
-const formatPropertyPrice = (property: Property): string => {
-  const price = property.price || property.rent_price || 0
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    maximumFractionDigits: 0,
-  }).format(price)
+// Real-time currency input handlers
+const handleSaleValueInput = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const inputValue = target.value
+  
+  // Remove all formatting to get raw digits
+  const rawDigits = inputValue.replace(/\D/g, '')
+  
+  if (rawDigits === '') {
+    saleValueFormatted.value = ''
+    newSale.value.sale_value = null
+    return
+  }
+  
+  // Format in real-time
+  const formatted = formatCurrencyInputRealTime(rawDigits)
+  saleValueFormatted.value = formatted
+  
+  // Update formData immediately
+  const parsed = parseCurrencyInputRealTime(formatted)
+  if (parsed !== null) {
+    newSale.value.sale_value = parsed
+  }
+  
+  // Place cursor at the end
+  nextTick(() => {
+    target.setSelectionRange(formatted.length, formatted.length)
+  })
 }
+
+const handleSaleValueBlur = () => {
+  const parsed = parseCurrencyInputRealTime(saleValueFormatted.value)
+  if (parsed !== null) {
+    newSale.value.sale_value = parsed
+    saleValueFormatted.value = formatCurrency(parsed)
+  } else {
+    saleValueFormatted.value = ''
+    newSale.value.sale_value = null
+  }
+}
+
+const getPaymentValueFormatted = (index: number): string => {
+  if (!paymentValueFormatted.value[index]) {
+    const value = paymentMethods.value[index]?.value || 0
+    if (value > 0) {
+      paymentValueFormatted.value[index] = formatCurrency(value)
+    } else {
+      paymentValueFormatted.value[index] = ''
+    }
+  }
+  return paymentValueFormatted.value[index] || ''
+}
+
+const handlePaymentValueInput = (event: Event, index: number) => {
+  const target = event.target as HTMLInputElement
+  const inputValue = target.value
+  
+  // Remove all formatting to get raw digits
+  const rawDigits = inputValue.replace(/\D/g, '')
+  
+  if (rawDigits === '') {
+    paymentValueFormatted.value[index] = ''
+    if (paymentMethods.value[index]) {
+      paymentMethods.value[index].value = 0
+    }
+    return
+  }
+  
+  // Format in real-time
+  const formatted = formatCurrencyInputRealTime(rawDigits)
+  paymentValueFormatted.value[index] = formatted
+  
+  // Update formData immediately
+  const parsed = parseCurrencyInputRealTime(formatted)
+  if (parsed !== null && paymentMethods.value[index]) {
+    paymentMethods.value[index].value = parsed
+  }
+  
+  // Place cursor at the end
+  nextTick(() => {
+    target.setSelectionRange(formatted.length, formatted.length)
+  })
+}
+
+const handlePaymentValueBlur = (index: number) => {
+  const formatted = paymentValueFormatted.value[index] || ''
+  const parsed = parseCurrencyInputRealTime(formatted)
+  if (parsed !== null && paymentMethods.value[index]) {
+    paymentMethods.value[index].value = parsed
+    paymentValueFormatted.value[index] = formatCurrency(parsed)
+  } else {
+    paymentValueFormatted.value[index] = ''
+    if (paymentMethods.value[index]) {
+      paymentMethods.value[index].value = 0
+    }
+  }
+}
+
+const addPaymentMethod = () => {
+  const newIndex = paymentMethods.value.length
+  paymentMethods.value.push({
+    method: PaymentMethodEnum.CASH,
+    value: 0,
+    description: '',
+  })
+  // Initialize formatted value for new payment method
+  paymentValueFormatted.value[newIndex] = ''
+}
+
+const removePaymentMethod = (index: number) => {
+  if (paymentMethods.value.length > 1) {
+    paymentMethods.value.splice(index, 1)
+    // Remove formatted value for removed payment method
+    delete paymentValueFormatted.value[index]
+    // Reindex remaining formatted values
+    const newFormatted: Record<number, string> = {}
+    paymentMethods.value.forEach((_, i) => {
+      if (paymentValueFormatted.value[i]) {
+        newFormatted[i] = paymentValueFormatted.value[i]
+      }
+    })
+    paymentValueFormatted.value = newFormatted
+  }
+}
+
+const paymentMethodsTotal = computed(() => {
+  return paymentMethods.value.reduce((sum, pm) => sum + (pm.value || 0), 0)
+})
 
 // Loss registration functions
 const openLossDialog = () => {
@@ -3041,16 +3394,17 @@ onMounted(async () => {
   if (route.query.showSaleDialog === 'true') {
     // Pre-fill sale form with detected information
     if (route.query.saleType) {
-      newSale.value.sale_type = route.query.saleType as 'SALE' | 'RENT'
+      newSale.value.sale_type = route.query.saleType as SaleType
     }
     if (route.query.saleValue) {
       const value = parseFloat(route.query.saleValue as string)
       if (!isNaN(value)) {
         newSale.value.sale_value = value
+        saleValueFormatted.value = formatCurrency(value)
       }
     }
-    if (route.query.paymentMethod) {
-      newSale.value.payment_method = route.query.paymentMethod as string
+    if (route.query.propertyId) {
+      newSale.value.property_id = route.query.propertyId as string
     }
     if (route.query.notes) {
       newSale.value.notes = route.query.notes as string
@@ -3058,6 +3412,11 @@ onMounted(async () => {
     
     // Open sale dialog
     showSaleDialog.value = true
+    
+    // Load corretores if not loaded
+    if (corretores.value.length === 0) {
+      await loadCorretores()
+    }
     
     // Clear query params to avoid reopening on refresh
     router.replace({ query: {} })
