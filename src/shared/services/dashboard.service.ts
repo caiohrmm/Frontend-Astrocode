@@ -166,8 +166,10 @@ class DashboardService {
         ? (lostClients / totalClients) * 100
         : 0
       const now = new Date()
+      const pendingStatuses = ['SCHEDULED', 'CONFIRMED', 'IN_PROGRESS']
       const upcomingVisits = visits.filter(v => {
         if (!v.scheduled_at) return false
+        if (!pendingStatuses.includes(v.status || '')) return false
         const scheduled = new Date(v.scheduled_at)
         return scheduled >= now && scheduled <= new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
       }).length
@@ -398,8 +400,10 @@ class DashboardService {
     if (topOpportunities.length > 0) {
       recommendations.push(`${topOpportunities.length} oportunidades de alto valor precisam de atenção`)
     }
+    const pendingVisitStatuses = ['SCHEDULED', 'CONFIRMED', 'IN_PROGRESS']
     const upcomingVisits = visits.filter(v => {
       if (!v.scheduled_at) return false
+      if (!pendingVisitStatuses.includes(v.status || '')) return false
       const scheduled = new Date(v.scheduled_at)
       const tomorrow = new Date()
       tomorrow.setDate(tomorrow.getDate() + 1)
