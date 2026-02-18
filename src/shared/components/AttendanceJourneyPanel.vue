@@ -3,7 +3,7 @@
     <!-- Header com explicação -->
     <v-alert type="info" variant="tonal" class="mb-4" density="compact" rounded="lg">
       <div class="d-flex align-center">
-        <v-icon class="mr-3" size="24" color="primary">mdi-information</v-icon>
+        
         <div class="flex-grow-1">
           <div class="text-body-1 font-weight-medium mb-1">
             Jornada dos Atendimentos
