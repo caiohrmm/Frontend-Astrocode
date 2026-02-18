@@ -354,14 +354,14 @@
                   <td class="font-weight-bold text-success text-end">
                     {{ formatCurrency(broker.total_revenue) }}
                   </td>
-                  <td class="text-center">
+                  <td class="text-center conversion-cell">
                     <v-progress-circular
                       :model-value="broker.conversion_rate"
                       :color="getConversionColor(broker.conversion_rate)"
-                      size="32"
+                      size="44"
                       width="4"
                     >
-                      <span class="text-caption">{{ broker.conversion_rate }}%</span>
+                      <span class="conversion-value">{{ formatConversionRate(broker.conversion_rate) }}</span>
                     </v-progress-circular>
                   </td>
                   <td class="text-center">
@@ -783,6 +783,10 @@ const getInitials = (name: string): string => {
   return name.substring(0, 2).toUpperCase()
 }
 
+const formatConversionRate = (rate: number): string => {
+  return `${Math.round(rate)}%`
+}
+
 const getConversionColor = (rate: number): string => {
   if (rate >= 30) return 'success'
   if (rate >= 15) return 'warning'
@@ -1011,5 +1015,18 @@ onUnmounted(() => {
 
 .broker-performance-card .text-wrap {
   overflow-wrap: break-word;
+}
+
+/* Conversion percentage - ensure it fits inside the circle */
+.broker-performance-card .conversion-cell {
+  min-width: 56px;
+  padding: 8px 12px !important;
+}
+
+.broker-performance-card .conversion-value {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  display: inline-block;
 }
 </style>
