@@ -191,7 +191,7 @@
                   size="small"
                   variant="outlined"
                   color="primary"
-                  class="justify-start"
+                  class="justify-start mb-2"
                   @click="inputMessage = question"
                 >
                   {{ question }}
