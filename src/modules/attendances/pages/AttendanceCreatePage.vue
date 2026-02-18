@@ -226,6 +226,7 @@
       :client-id="formData.client_id"
       :agent-id="formData.agent_id"
       :property-id="formData.property_id"
+      :attendance-id="savedAttendanceForVisit?.id || (isEditMode ? route.params.id as string : null)"
       @confirmed="handleVisitConfirmed"
       @cancelled="handleVisitCancelled"
     />

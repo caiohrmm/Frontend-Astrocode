@@ -124,6 +124,7 @@ interface Props {
   clientId: string
   agentId: string
   propertyId?: string | null
+  attendanceId?: string | null
 }
 
 const props = defineProps<Props>()
@@ -166,7 +167,7 @@ const handleConfirm = async () => {
       property_id: props.propertyId || props.visitInfo.property_id || null,
       status: 'SCHEDULED',
       notes: props.visitInfo.notes || `Visita detectada automaticamente pela IA: ${props.visitInfo.extracted_text || ''}`,
-      attendance_id: null, // Will be set if needed
+      attendance_id: props.attendanceId || null, // Vincula ao atendimento
     }
 
     // Create the visit

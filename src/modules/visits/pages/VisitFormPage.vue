@@ -89,6 +89,42 @@
                   </v-autocomplete>
                 </v-col>
 
+                <!-- Attendance Selection (required for creation) -->
+                <v-col cols="12">
+                  <SearchSelectDialog
+                    v-model="formData.attendance_id"
+                    :label="isEditMode ? 'Atendimento vinculado' : 'Atendimento *'"
+                    dialog-title="Buscar Atendimento"
+                    icon="mdi-phone-in-talk"
+                    icon-color="primary"
+                    item-icon="mdi-phone-in-talk"
+                    :items="attendanceSearchItems"
+                    :total-items="attendancesTotalItems"
+                    :items-per-page="ATTENDANCES_PER_PAGE"
+                    :is-loading="isLoadingAttendances"
+                    display-field="name"
+                    placeholder="Clique para buscar atendimento..."
+                    hint="Selecione o atendimento ao qual esta visita está vinculada"
+                    :persistent-hint="true"
+                    :rules="isEditMode ? [] : [rules.required]"
+                    :clearable="false"
+                    @search="handleAttendanceSearch"
+                    @select="handleAttendanceSelect"
+                  >
+                    <template #item-prepend="{ item }">
+                      <v-avatar color="primary" size="40">
+                        <v-icon color="white">mdi-phone-in-talk</v-icon>
+                      </v-avatar>
+                    </template>
+                    <template #item-title="{ item }">
+                      {{ item.name }}
+                    </template>
+                    <template #item-subtitle="{ item }">
+                      {{ item.subtitle }}
+                    </template>
+                  </SearchSelectDialog>
+                </v-col>
+
                 <!-- Property Selection -->
                 <v-col cols="12">
                   <SearchSelectDialog
@@ -237,6 +273,16 @@
                   <v-list-item-subtitle>{{ selectedProperty.city }}, {{ selectedProperty.state }}</v-list-item-subtitle>
                 </v-list-item>
 
+                <v-list-item v-if="selectedAttendance">
+                  <template #prepend>
+                    <v-avatar color="primary" size="40">
+                      <v-icon color="white">mdi-phone-in-talk</v-icon>
+                    </v-avatar>
+                  </template>
+                  <v-list-item-title>{{ formatAttendanceLabel(selectedAttendance) }}</v-list-item-title>
+                  <v-list-item-subtitle>Atendimento vinculado</v-list-item-subtitle>
+                </v-list-item>
+
                 <v-divider class="my-3"></v-divider>
 
                 <v-list-item v-if="formData.scheduled_at">
@@ -373,6 +419,7 @@ import { visitsService, type VisitStatus, type VisitCreate, type VisitUpdate } f
 import { clientsService, type Client } from '@/shared/services/clients.service'
 import { usersService, type User } from '@/shared/services/users.service'
 import { propertiesService, type Property } from '@/shared/services/properties.service'
+import { attendancesService, type Attendance, type AttendanceStatus } from '@/shared/services/attendances.service'
 import SearchSelectDialog from '@/shared/components/SearchSelectDialog.vue'
 
 const router = useRouter()
@@ -386,14 +433,19 @@ const isSaving = ref(false)
 const isLoadingClients = ref(false)
 const isLoadingBrokers = ref(false)
 const isLoadingProperties = ref(false)
+const isLoadingAttendances = ref(false)
 const showCancelDialog = ref(false)
 const cancelReason = ref('cliente')
 
 const clients = ref<Client[]>([])
 const brokers = ref<User[]>([])
 const properties = ref<Property[]>([])
+const attendances = ref<Attendance[]>([])
 const clientSearchQuery = ref('')
 const propertySearchQuery = ref('')
+const attendanceSearchPage = ref(1)
+const attendancesTotalItems = ref(0)
+const ATTENDANCES_PER_PAGE = 15
 
 const formData = ref<{
   client_id: string | null
@@ -448,6 +500,19 @@ const propertySearchItems = computed(() => {
     p.city?.toLowerCase().includes(query) ||
     p.code?.toLowerCase().includes(query)
   )
+})
+
+const attendanceSearchItems = computed(() => {
+  return attendances.value.map(a => ({
+    ...a,
+    name: formatAttendanceLabel(a),
+    subtitle: formatAttendanceSubtitle(a),
+  }))
+})
+
+const selectedAttendance = computed(() => {
+  if (!formData.value.attendance_id) return null
+  return attendances.value.find(a => a.id === formData.value.attendance_id) ?? null
 })
 
 const selectedClient = computed(() => {
@@ -523,6 +588,8 @@ const loadData = async () => {
       tomorrow.setDate(tomorrow.getDate() + 1)
       tomorrow.setHours(10, 0, 0, 0)
       formData.value.scheduled_at = formatDateTimeLocal(tomorrow)
+      // Preload first page of attendances for the selection dialog
+      await handleAttendanceSearch('', 1)
     }
   } catch (error) {
     console.error('Error loading data:', error)
@@ -542,6 +609,11 @@ const loadVisit = async () => {
       status: visit.status,
       notes: visit.notes || '',
       attendance_id: visit.attendance_id,
+    }
+    if (visit.attendance_id) {
+      const attendance = await attendancesService.getAttendanceById(visit.attendance_id)
+      attendances.value = [attendance]
+      attendancesTotalItems.value = 1
     }
   } catch (error) {
     console.error('Error loading visit:', error)
@@ -633,6 +705,76 @@ const handlePropertySelect = (item: { id: string } | null) => {
   if (item) {
     formData.value.property_id = item.id
   }
+}
+
+const handleAttendanceSearch = async (_query: string, page: number = 1) => {
+  attendanceSearchPage.value = page
+  isLoadingAttendances.value = true
+  try {
+    const params: {
+      limit: number
+      skip: number
+      client_id?: string
+      status?: AttendanceStatus
+    } = {
+      limit: ATTENDANCES_PER_PAGE,
+      skip: (page - 1) * ATTENDANCES_PER_PAGE,
+    }
+    if (formData.value.client_id) {
+      params.client_id = formData.value.client_id
+    }
+    // Só listar atendimentos ACTIVE para criação de visitas
+    params.status = 'ACTIVE'
+    const list = await attendancesService.getAttendances(params)
+    if (page === 1) {
+      attendances.value = list
+    } else {
+      attendances.value = [...attendances.value, ...list]
+    }
+    attendancesTotalItems.value = list.length >= ATTENDANCES_PER_PAGE ? list.length + (page - 1) * ATTENDANCES_PER_PAGE + 1 : (page - 1) * ATTENDANCES_PER_PAGE + list.length
+  } catch (err) {
+    console.error('Error loading attendances:', err)
+    attendances.value = []
+    attendancesTotalItems.value = 0
+  } finally {
+    isLoadingAttendances.value = false
+  }
+}
+
+const handleAttendanceSelect = (item: Attendance | (Attendance & { name: string; subtitle: string }) | null) => {
+  if (item) {
+    formData.value.attendance_id = item.id
+    if (!formData.value.client_id && item.client_id) {
+      formData.value.client_id = item.client_id
+      if (!clients.value.some(c => c.id === item.client_id)) {
+        clientsService.getClientById(item.client_id).then(client => {
+          if (!clients.value.find(c => c.id === client.id)) {
+            clients.value = [client, ...clients.value]
+          }
+        }).catch(() => {})
+      }
+    }
+    if (!formData.value.broker_id && item.agent_id) {
+      formData.value.broker_id = item.agent_id
+    }
+  }
+}
+
+const formatAttendanceLabel = (a: Attendance): string => {
+  const date = a.created_at ? new Date(a.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-'
+  const statusLabels: Record<string, string> = {
+    ACTIVE: 'Ativo',
+    COMPLETED: 'Concluído',
+    LOST: 'Perdido',
+    ABANDONED: 'Abandonado',
+  }
+  const status = statusLabels[a.status] || a.status
+  return `Atendimento ${date} - ${status}`
+}
+
+const formatAttendanceSubtitle = (a: Attendance): string => {
+  const date = a.created_at ? new Date(a.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''
+  return date ? `Criado em ${date}` : `ID: ${a.id.slice(0, 8)}...`
 }
 
 const getInitials = (name: string): string => {

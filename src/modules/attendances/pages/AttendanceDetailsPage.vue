@@ -620,6 +620,46 @@
             </v-card-text>
           </v-card>
 
+          <!-- Linked Visits -->
+          <v-card v-if="linkedVisits.length > 0" elevation="2" class="mb-4" rounded="lg">
+            <v-card-title class="pa-4">
+              <v-icon class="mr-2" color="primary">mdi-calendar-multiple</v-icon>
+              Visitas Vinculadas
+              <v-chip size="small" color="primary" variant="flat" class="ml-2">
+                {{ linkedVisits.length }}
+              </v-chip>
+            </v-card-title>
+            <v-card-text class="pa-4">
+              <v-list density="comfortable">
+                <v-list-item
+                  v-for="visit in linkedVisits"
+                  :key="visit.id"
+                  :to="{ name: 'visits-edit', params: { id: visit.id } }"
+                  class="mb-2"
+                  style="border: 1px solid rgba(0,0,0,0.12); border-radius: 8px;"
+                >
+                  <template #prepend>
+                    <v-icon :color="getVisitStatusColor(visit.status)">
+                      {{ getVisitStatusIcon(visit.status) }}
+                    </v-icon>
+                  </template>
+                  <v-list-item-title class="font-weight-medium">
+                    {{ formatDateTime(visit.scheduled_at) }}
+                  </v-list-item-title>
+                  <v-list-item-subtitle>
+                    Status: {{ getVisitStatusLabel(visit.status) }}
+                    <span v-if="visit.property_id" class="ml-2">
+                      • Imóvel vinculado
+                    </span>
+                  </v-list-item-subtitle>
+                  <template #append>
+                    <v-icon>mdi-chevron-right</v-icon>
+                  </template>
+                </v-list-item>
+              </v-list>
+            </v-card-text>
+          </v-card>
+
           <!-- Additional Info -->
           <v-card elevation="2" class="mb-4" rounded="lg">
             <v-card-title class="pa-4">
@@ -806,6 +846,7 @@ import { propertiesService, type Property } from '@/shared/services/properties.s
 import { aiSummariesService, type AISummary, type Sentiment, type DetectedIntent } from '@/shared/services/aiSummaries.service'
 import { salesService } from '@/shared/services/sales.service'
 import { lossesService } from '@/shared/services/losses.service'
+import { visitsService, type Visit } from '@/shared/services/visits.service'
 import { formatPhone } from '@/shared/utils/masks'
 
 const route = useRoute()
@@ -843,6 +884,8 @@ const client = ref<Client | null>(null)
 const property = ref<Property | null>(null)
 const aiSummary = ref<AISummary | null>(null)
 const recommendedProperties = ref<Property[]>([])
+const linkedVisits = ref<Visit[]>([])
+const isLoadingVisits = ref(false)
 
 // Load data
 const loadAttendance = async () => {
@@ -880,6 +923,9 @@ const loadAttendance = async () => {
     if (attendance.value.status === 'COMPLETED') {
       await loadAISummary()
     }
+    
+    // Load linked visits
+    await loadLinkedVisits()
   } catch (err: any) {
     console.error('Error loading attendance:', err)
     error.value = err.response?.data?.detail || err.message || 'Erro ao carregar atendimento'
@@ -923,6 +969,23 @@ const loadRecommendedProperties = async (propertyIds: string[]) => {
       .map(result => result.value)
   } catch (err) {
     console.error('Error loading recommended properties:', err)
+  }
+}
+
+// Load linked visits
+const loadLinkedVisits = async () => {
+  if (!attendance.value) return
+  
+  isLoadingVisits.value = true
+  try {
+    // Get all visits and filter by attendance_id
+    const allVisits = await visitsService.getVisits({ limit: 1000 })
+    linkedVisits.value = allVisits.filter(v => v.attendance_id === attendance.value!.id)
+  } catch (err) {
+    console.error('Error loading linked visits:', err)
+    linkedVisits.value = []
+  } finally {
+    isLoadingVisits.value = false
   }
 }
 
@@ -1379,6 +1442,43 @@ const formatCurrency = (value: number): string => {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value)
+}
+
+// Visit status helpers
+const getVisitStatusColor = (status: string): string => {
+  const colors: Record<string, string> = {
+    SCHEDULED: 'info',
+    CONFIRMED: 'success',
+    IN_PROGRESS: 'warning',
+    COMPLETED: 'success',
+    CANCELLED: 'error',
+    NO_SHOW: 'error',
+  }
+  return colors[status] || 'grey'
+}
+
+const getVisitStatusIcon = (status: string): string => {
+  const icons: Record<string, string> = {
+    SCHEDULED: 'mdi-calendar-clock',
+    CONFIRMED: 'mdi-calendar-check',
+    IN_PROGRESS: 'mdi-calendar-play',
+    COMPLETED: 'mdi-calendar-check',
+    CANCELLED: 'mdi-calendar-remove',
+    NO_SHOW: 'mdi-calendar-remove',
+  }
+  return icons[status] || 'mdi-calendar'
+}
+
+const getVisitStatusLabel = (status: string): string => {
+  const labels: Record<string, string> = {
+    SCHEDULED: 'Agendada',
+    CONFIRMED: 'Confirmada',
+    IN_PROGRESS: 'Em Andamento',
+    COMPLETED: 'Concluída',
+    CANCELLED: 'Cancelada',
+    NO_SHOW: 'Não Compareceu',
+  }
+  return labels[status] || status
 }
 
 // Edit attendance
