@@ -14,6 +14,7 @@ export interface ChatContext {
 export interface ChatRequest {
   message: string
   context?: ChatContext | null
+  include_dashboard?: boolean
 }
 
 export interface ChatResponse {

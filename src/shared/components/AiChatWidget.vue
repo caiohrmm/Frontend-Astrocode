@@ -336,6 +336,9 @@ const isLoading = ref(false)
 const error = ref<string | null>(null)
 const useContext = ref(true) // Toggle to enable/disable context
 
+// Detect if user is on dashboard (for dashboard context)
+const isOnDashboard = computed(() => route.name === 'dashboard')
+
 // Detect available context from current route (independent of toggle)
 const availableContext = computed<ChatContext | null>(() => {
   const context: ChatContext = {}
@@ -364,13 +367,23 @@ const availableContext = computed<ChatContext | null>(() => {
     }
   }
   
-  // Return context only if at least one ID is present
+  // Return context if at least one ID is present, or if on dashboard (dashboard has its own context)
   if (context.property_id || context.client_id || context.attendance_id) {
     return context
   }
   
+  // On dashboard, return empty context (dashboard data is loaded via include_dashboard)
+  if (route.name === 'dashboard') {
+    return {}
+  }
+  
   return null
 })
+
+// Whether to include dashboard data (when on dashboard page)
+const shouldIncludeDashboard = computed(() => 
+  useContext.value && isOnDashboard.value
+)
 
 // Context that will be sent to API (depends on toggle)
 const currentContext = computed<ChatContext | null>(() => {
@@ -380,46 +393,47 @@ const currentContext = computed<ChatContext | null>(() => {
 
 // Context description for UI (based on available context, not sent context)
 const contextDescription = computed(() => {
-  if (!availableContext.value) return null
-  
   const parts: string[] = []
-  if (availableContext.value.property_id) {
-    parts.push('Propriedade')
+  if (availableContext.value) {
+    if (availableContext.value.property_id) parts.push('Propriedade')
+    if (availableContext.value.client_id) parts.push('Cliente')
+    if (availableContext.value.attendance_id) parts.push('Atendimento')
   }
-  if (availableContext.value.client_id) {
-    parts.push('Cliente')
+  if (isOnDashboard.value) {
+    parts.push('Dashboard')
   }
-  if (availableContext.value.attendance_id) {
-    parts.push('Atendimento')
-  }
-  
   return parts.length > 0 ? parts.join(', ') : null
 })
 
 // Suggested questions based on available context
 const suggestedQuestions = computed(() => {
-  if (!availableContext.value) return []
-  
   const suggestions: string[] = []
   
-  if (availableContext.value.property_id) {
-    suggestions.push('Qual o status desta propriedade?')
-    suggestions.push('Quais são as características principais?')
-    suggestions.push('Qual o preço desta propriedade?')
+  if (isOnDashboard.value) {
+    suggestions.push('Resuma as principais métricas da dashboard')
+    suggestions.push('Quais oportunidades merecem atenção imediata?')
+    suggestions.push('Como está a performance dos corretores?')
+    suggestions.push('Quais clientes estão em risco?')
   }
   
-  if (availableContext.value.client_id) {
-    suggestions.push('Qual o status deste cliente?')
-    suggestions.push('Qual o interesse deste cliente?')
-    suggestions.push('Qual o orçamento deste cliente?')
+  if (availableContext.value) {
+    if (availableContext.value.property_id) {
+      suggestions.push('Qual o status desta propriedade?')
+      suggestions.push('Quais são as características principais?')
+      suggestions.push('Qual o preço desta propriedade?')
+    }
+    if (availableContext.value.client_id) {
+      suggestions.push('Qual o status deste cliente?')
+      suggestions.push('Qual o interesse deste cliente?')
+      suggestions.push('Qual o orçamento deste cliente?')
+    }
+    if (availableContext.value.attendance_id) {
+      suggestions.push('O que foi discutido neste atendimento?')
+      suggestions.push('Qual o resumo deste atendimento?')
+    }
   }
   
-  if (availableContext.value.attendance_id) {
-    suggestions.push('O que foi discutido neste atendimento?')
-    suggestions.push('Qual o resumo deste atendimento?')
-  }
-  
-  return suggestions.slice(0, 3) // Limit to 3 suggestions
+  return suggestions.slice(0, 4) // Limit to 4 suggestions
 })
 
 const openChat = () => {
@@ -512,10 +526,11 @@ const handleSend = async () => {
   scrollToBottom()
 
   try {
-    // Prepare request with current context
+    // Prepare request with current context and dashboard data when on dashboard
     const request: ChatRequest = {
       message,
       context: currentContext.value,
+      include_dashboard: shouldIncludeDashboard.value,
     }
 
     // Send to API

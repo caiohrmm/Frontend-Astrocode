@@ -311,9 +311,9 @@
 
     <!-- Broker Performance & Insights -->
     <v-row class="mb-4">
-      <!-- Broker Performance -->
-      <v-col cols="12" md="7">
-        <v-card elevation="2" rounded="lg">
+      <!-- Broker Performance - Full width for better readability -->
+      <v-col cols="12" md="8">
+        <v-card elevation="2" rounded="lg" class="broker-performance-card">
           <v-card-title class="d-flex align-center">
             <v-icon class="mr-2" color="primary">mdi-account-tie</v-icon>
             <span>Performance por Corretor</span>
@@ -323,14 +323,14 @@
             </v-chip>
           </v-card-title>
           <v-card-text>
-            <v-table density="compact">
+            <v-table density="comfortable" class="broker-table">
               <thead>
                 <tr>
-                  <th>Corretor</th>
-                  <th>Vendas</th>
-                  <th>Receita</th>
-                  <th>Conversão</th>
-                  <th>Clientes Ativos</th>
+                  <th class="broker-name-col">Corretor</th>
+                  <th class="text-center">Vendas</th>
+                  <th class="text-end">Receita</th>
+                  <th class="text-center">Conversão</th>
+                  <th class="text-center">Clientes Ativos</th>
                 </tr>
               </thead>
               <tbody>
@@ -338,23 +338,23 @@
                   v-for="broker in metrics?.broker_performance.slice(0, 5) || []"
                   :key="broker.broker_id"
                 >
-                  <td>
+                  <td class="broker-name-col">
                     <div class="d-flex align-center">
-                      <v-avatar size="32" color="primary" variant="tonal" class="mr-2">
+                      <v-avatar size="36" color="primary" variant="tonal" class="mr-3 flex-shrink-0">
                         <span class="text-caption">{{ getInitials(broker.broker_name) }}</span>
                       </v-avatar>
-                      <span class="font-weight-medium">{{ broker.broker_name }}</span>
+                      <span class="font-weight-medium text-wrap">{{ broker.broker_name }}</span>
                     </div>
                   </td>
-                  <td>
+                  <td class="text-center">
                     <v-chip size="small" color="success" variant="flat">
                       {{ broker.total_sales }}
                     </v-chip>
                   </td>
-                  <td class="font-weight-bold text-success">
+                  <td class="font-weight-bold text-success text-end">
                     {{ formatCurrency(broker.total_revenue) }}
                   </td>
-                  <td>
+                  <td class="text-center">
                     <v-progress-circular
                       :model-value="broker.conversion_rate"
                       :color="getConversionColor(broker.conversion_rate)"
@@ -364,7 +364,7 @@
                       <span class="text-caption">{{ broker.conversion_rate }}%</span>
                     </v-progress-circular>
                   </td>
-                  <td>
+                  <td class="text-center">
                     <v-chip size="small" variant="tonal">
                       {{ broker.active_clients }}
                     </v-chip>
@@ -377,7 +377,7 @@
       </v-col>
 
       <!-- Quick Insights -->
-      <v-col cols="12" md="5">
+      <v-col cols="12" md="4">
         <v-card elevation="2" rounded="lg">
           <v-card-title class="d-flex align-center">
             <v-icon class="mr-2" color="info">mdi-lightbulb-on</v-icon>
@@ -994,5 +994,22 @@ onUnmounted(() => {
   padding: 8px;
   border-radius: 8px;
   background: rgba(var(--v-theme-info), 0.05);
+}
+
+/* Broker Performance card - ensure full names are visible */
+.broker-performance-card .broker-table {
+  min-width: 100%;
+}
+
+.broker-performance-card .broker-name-col {
+  min-width: 200px;
+  max-width: 320px;
+  white-space: normal;
+  word-break: break-word;
+  padding-right: 16px !important;
+}
+
+.broker-performance-card .text-wrap {
+  overflow-wrap: break-word;
 }
 </style>
