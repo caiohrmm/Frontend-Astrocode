@@ -496,8 +496,8 @@ const handleClientSelect = (item: any) => {
 const handlePropertySearch = async (query: string, page: number) => {
   isLoadingProperties.value = true
   try {
-    // Fetch all properties (backend doesn't support pagination/search filtering yet)
-    const data = await propertiesService.listProperties({ limit: 1000 })
+    // Apenas imóveis publicados - vendidos/alugados não aparecem
+    const data = await propertiesService.listProperties({ limit: 1000, status: 'PUBLISHED' })
     
     // Filter by search query client-side
     let filtered = data

@@ -589,7 +589,7 @@ const loadData = async () => {
     const [clientsData, brokersData, propertiesData] = await Promise.all([
       clientsService.getClients({ limit: 1000 }),
       usersService.getCorretores(),
-      propertiesService.listProperties({ limit: 1000 }),
+      propertiesService.listProperties({ limit: 1000, status: 'PUBLISHED' }),
     ])
 
     clients.value = clientsData
