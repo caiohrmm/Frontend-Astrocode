@@ -476,7 +476,7 @@
                       {{ getUrgencyLabel(client.current_urgency_level) }}
                     </v-chip>
                     <span class="text-caption text-medium-emphasis">
-                      Sem contato há {{ getDaysSinceContact(client.last_contact_at) }} dias
+                      {{ getContactStatusText(client.last_contact_at) }}
                     </span>
                   </div>
                 </v-list-item-subtitle>
@@ -807,12 +807,18 @@ const getUrgencyLabel = (urgency: string | null): string => {
   return labels[urgency] || urgency
 }
 
-const getDaysSinceContact = (lastContact: string | null): number => {
-  if (!lastContact) return 999
+const getDaysSinceContact = (lastContact: string | null): number | null => {
+  if (!lastContact) return null
   const last = new Date(lastContact)
   const now = new Date()
   const diff = now.getTime() - last.getTime()
   return Math.floor(diff / (1000 * 60 * 60 * 24))
+}
+
+const getContactStatusText = (lastContact: string | null): string => {
+  const days = getDaysSinceContact(lastContact)
+  if (days === null) return 'Ainda à espera do primeiro contato'
+  return `Sem contato há ${days} dias`
 }
 
 const getInitials = (name: string): string => {
