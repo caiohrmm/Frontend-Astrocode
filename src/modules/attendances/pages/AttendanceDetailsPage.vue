@@ -180,7 +180,6 @@
               </div>
               <v-alert v-if="attendance.status === 'ACTIVE'" type="info" variant="tonal" density="compact" class="mt-4">
                 <div class="d-flex align-center">
-                  <v-icon size="18" class="mr-2">mdi-information</v-icon>
                   <div>
                     <div class="text-body-2 font-weight-medium mb-1">Ciclo Ativo</div>
                     <div class="text-caption">
@@ -518,15 +517,7 @@
             </v-card-text>
 
             <!-- Not Completed State -->
-            <v-card-text
-              v-else-if="attendance.status !== 'COMPLETED'"
-              class="text-center pa-8"
-            >
-              <v-icon color="info" size="64" class="mb-4">mdi-information</v-icon>
-              <div class="text-body-1 text-medium-emphasis">
-                Complete o ciclo para gerar o resumo da IA
-              </div>
-            </v-card-text>
+            
           </v-card>
         </v-col>
 
