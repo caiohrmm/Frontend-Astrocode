@@ -16,6 +16,8 @@ export type DetectedIntent =
   | 'DOCUMENTATION_REQUEST'
   | 'GENERAL_INQUIRY'
   | 'COMPLAINT'
+  | 'SALE_COMPLETED'   // Venda ou aluguel concretizado
+  | 'LOSS_REGISTERED'  // Perda registrada
 
 export type Sentiment = 'POSITIVE' | 'NEUTRAL' | 'NEGATIVE' | 'MIXED'
 

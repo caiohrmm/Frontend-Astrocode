@@ -1968,7 +1968,11 @@ const aggregatedInsights = computed(() => {
     }
     
     if (mostRecentSummaryWithScore.detected_intent) {
-      if (mostRecentSummaryWithScore.detected_intent === 'SCHEDULE_VISIT') {
+      if (mostRecentSummaryWithScore.detected_intent === 'SALE_COMPLETED') {
+        explanation.push(`**Intenção: Venda Concluída:** Score máximo`)
+      } else if (mostRecentSummaryWithScore.detected_intent === 'LOSS_REGISTERED') {
+        explanation.push(`**Intenção: Perda Registrada:** Score reduzido`)
+      } else if (mostRecentSummaryWithScore.detected_intent === 'SCHEDULE_VISIT') {
         explanation.push(`**Intenção: Agendar Visita:** +10 pontos`)
       } else if (mostRecentSummaryWithScore.detected_intent === 'PRICE_NEGOTIATION') {
         explanation.push(`**Intenção: Negociação de Preço:** +8 pontos`)
@@ -3278,6 +3282,8 @@ const getIntentColor = (intent: DetectedIntent): string => {
     DOCUMENTATION_REQUEST: 'purple',
     GENERAL_INQUIRY: 'cyan',
     COMPLAINT: 'error',
+    SALE_COMPLETED: 'success',
+    LOSS_REGISTERED: 'grey',
   }
   return colors[intent] || 'grey'
 }
@@ -3291,6 +3297,8 @@ const getIntentIcon = (intent: DetectedIntent): string => {
     DOCUMENTATION_REQUEST: 'mdi-file-document',
     GENERAL_INQUIRY: 'mdi-help-circle',
     COMPLAINT: 'mdi-alert',
+    SALE_COMPLETED: 'mdi-check-circle',
+    LOSS_REGISTERED: 'mdi-account-remove',
   }
   return icons[intent] || 'mdi-help-circle'
 }
@@ -3304,6 +3312,8 @@ const getIntentLabel = (intent: DetectedIntent): string => {
     DOCUMENTATION_REQUEST: 'Solicitação de Documentação',
     GENERAL_INQUIRY: 'Consulta Geral',
     COMPLAINT: 'Reclamação',
+    SALE_COMPLETED: 'Venda Concluída',
+    LOSS_REGISTERED: 'Perda Registrada',
   }
   return labels[intent] || intent
 }
