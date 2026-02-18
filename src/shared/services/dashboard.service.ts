@@ -359,13 +359,14 @@ class DashboardService {
       .sort((a, b) => (b.current_lead_score || 0) - (a.current_lead_score || 0))
       .slice(0, 5)
     
-    // At risk clients (no contact in 7+ days, high urgency)
+    // At risk clients (had contact before, but no contact in 7+ days, high urgency)
+    // Clients who never had contact are NOT at risk - they're awaiting first contact
     const sevenDaysAgo = new Date()
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
     
     const atRiskClients = clients
       .filter(c => {
-        if (!c.last_contact_at) return true
+        if (!c.last_contact_at) return false // Never contacted = not "at risk"
         const lastContact = new Date(c.last_contact_at)
         return lastContact < sevenDaysAgo &&
           c.current_urgency_level &&
