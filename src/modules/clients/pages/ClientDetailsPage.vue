@@ -3371,7 +3371,24 @@ onMounted(async () => {
       }
     }
     if (route.query.propertyId) {
-      newSale.value.property_id = route.query.propertyId as string
+      const propertyId = route.query.propertyId as string
+      newSale.value.property_id = propertyId
+      // Preload property so SearchSelectDialog can display it (instead of "Carregando...")
+      try {
+        const property = await propertiesService.getPropertyById(propertyId)
+        propertySearchItems.value = [{
+          id: property.id,
+          title: property.title,
+          code: property.code,
+          city: property.city,
+          neighborhood: property.neighborhood,
+          main_image_url: property.main_image_url,
+          subtitle: `${property.code} ${property.city ? '• ' + property.city : ''}`,
+        }]
+        propertiesTotalItems.value = 1
+      } catch (e) {
+        console.warn('Could not preload property for sale dialog:', e)
+      }
     }
     if (route.query.notes) {
       newSale.value.notes = route.query.notes as string

@@ -77,6 +77,7 @@ export interface DetectedSaleInfo {
   detected: boolean
   sale_type?: string | null // SALE or RENT
   sale_value?: number | null // Extracted sale value
+  property_id?: string | null // Property from attendance or linked visit (for pre-filling sale modal)
   confidence?: number | null // Confidence score (0-1)
   extracted_text?: string | null // Text that indicated sale intent
   payment_method?: string | null // Payment method mentioned (CASH, FINANCING, etc.)
