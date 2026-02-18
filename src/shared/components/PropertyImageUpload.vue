@@ -4,6 +4,17 @@
     File validation is handled internally, not by the parent form.
   -->
   <div class="property-image-upload">
+    <!-- Pending upload message (create mode: file selected, will upload on save) -->
+    <v-alert
+      v-if="hasPendingFile && !propertyId"
+      type="info"
+      variant="tonal"
+      density="compact"
+      class="mb-3"
+    >
+      Imagem selecionada. Será enviada automaticamente ao salvar o imóvel.
+    </v-alert>
+
     <!-- Image Preview Section -->
     <v-card
       v-if="imageUrl"
@@ -164,6 +175,8 @@ const emit = defineEmits<{
   'uploaded': [imageUrl: string]
   'removed': []
   'error': [error: string]
+  'file-selected': [file: File]
+  'pending-cleared': []
 }>()
 
 /**
@@ -173,12 +186,14 @@ const selectedFile = ref<File[]>([])
 const isUploading = ref(false)
 const error = ref<string | null>(null)
 const fileInputRef = ref()
-const previewUrl = ref<string | null>(null) // Temporary preview URL before upload
+const previewUrl = ref<string | null>(null)
+const pendingFile = ref<File | null>(null)
 
 /**
  * Computed
  */
 const imageUrl = computed(() => props.modelValue || previewUrl.value)
+const hasPendingFile = computed(() => !!pendingFile.value)
 
 /**
  * File validation rules
@@ -307,85 +322,36 @@ const handleFileSelect = async (value: File[] | File | null) => {
     return
   }
 
-  // Check if property ID exists (required for upload)
-  if (!props.propertyId) {
-    console.warn('Property ID not available, cannot upload')
-    error.value = 'ID do imóvel é necessário para fazer upload da imagem. Salve o imóvel primeiro.'
-    selectedFile.value = []
-    return
-  }
-
-  console.log('All validations passed, starting upload...')
-  
   // Create preview URL for immediate feedback
   if (previewUrl.value) {
     URL.revokeObjectURL(previewUrl.value)
   }
   previewUrl.value = URL.createObjectURL(file)
-  console.log('Preview URL created:', previewUrl.value)
-  
-  // All validations passed - upload file
-  await uploadImage(file)
+  pendingFile.value = file
+  selectedFile.value = Array.isArray(selectedFile.value) ? [file] : [file]
+
+  // Se tem propertyId, faz upload imediato; senão emite para o pai (modo criação)
+  if (props.propertyId) {
+    console.log('All validations passed, starting upload...')
+    await uploadImage(file)
+    pendingFile.value = null
+  } else {
+    emit('file-selected', file)
+  }
 }
 
 /**
- * Upload image to backend
+ * Upload image to backend (when propertyId is available)
  */
 const uploadImage = async (file: File) => {
-  console.log('uploadImage called with file:', file.name, file.type, file.size)
-  
-  if (!props.propertyId) {
-    error.value = 'ID do imóvel é necessário para fazer upload da imagem.'
-    return
+  if (!props.propertyId) return
+  await uploadImageWithId(props.propertyId, file)
+  selectedFile.value = []
+  if (previewUrl.value) {
+    URL.revokeObjectURL(previewUrl.value)
+    previewUrl.value = null
   }
-
-  isUploading.value = true
-  error.value = null
-
-  try {
-    console.log('Uploading image to property:', props.propertyId)
-    // Upload image via API
-    const updatedProperty = await propertiesService.uploadPropertyMainImage(
-      props.propertyId,
-      file
-    )
-
-    console.log('Upload response:', updatedProperty)
-    
-    // Update model value with new image URL
-    const imageUrl = updatedProperty.main_image_url
-    if (!imageUrl) {
-      throw new Error('Upload succeeded but no image URL was returned from server')
-    }
-    
-    console.log('Image URL received:', imageUrl)
-    
-    // Emit update to parent component
-    emit('update:modelValue', imageUrl)
-    emit('uploaded', imageUrl)
-    
-    // Clear file input and preview after successful upload
-    selectedFile.value = []
-    // Clean up preview URL since we now have the real URL
-    if (previewUrl.value) {
-      URL.revokeObjectURL(previewUrl.value)
-      previewUrl.value = null
-    }
-    console.log('Upload completed successfully')
-  } catch (err: any) {
-    console.error('Upload error:', err)
-    const errorMessage = err?.response?.data?.detail || err?.message || 'Erro ao fazer upload da imagem'
-    error.value = errorMessage
-    emit('error', errorMessage)
-    selectedFile.value = []
-    // Clean up preview URL on error
-    if (previewUrl.value) {
-      URL.revokeObjectURL(previewUrl.value)
-      previewUrl.value = null
-    }
-  } finally {
-    isUploading.value = false
-  }
+  pendingFile.value = null
 }
 
 /**
@@ -394,14 +360,70 @@ const uploadImage = async (file: File) => {
 const handleRemove = () => {
   emit('update:modelValue', null)
   emit('removed')
+  if (pendingFile.value) {
+    pendingFile.value = null
+    emit('pending-cleared')
+  }
   selectedFile.value = []
   error.value = null
-  // Clean up preview URL
   if (previewUrl.value) {
     URL.revokeObjectURL(previewUrl.value)
     previewUrl.value = null
   }
+  if (fileInputRef.value?.reset) {
+    fileInputRef.value.reset()
+  }
 }
+
+/**
+ * Upload a pending file (called by parent after property creation)
+ * Returns the image URL on success, or throws on error
+ */
+const uploadPendingFile = async (propertyId: string): Promise<string> => {
+  if (!pendingFile.value) {
+    throw new Error('Nenhum arquivo pendente para upload')
+  }
+  const file = pendingFile.value
+  pendingFile.value = null
+  const url = await uploadImageWithId(propertyId, file)
+  if (previewUrl.value) {
+    URL.revokeObjectURL(previewUrl.value)
+    previewUrl.value = null
+  }
+  selectedFile.value = []
+  return url
+}
+
+/**
+ * Upload image when property ID is provided (used internally and by parent)
+ */
+const uploadImageWithId = async (propertyId: string, file: File): Promise<string> => {
+  isUploading.value = true
+  error.value = null
+  try {
+    const updatedProperty = await propertiesService.uploadPropertyMainImage(propertyId, file)
+    const imageUrlResult = updatedProperty.main_image_url
+    if (!imageUrlResult) {
+      throw new Error('Upload concluído mas nenhuma URL retornada')
+    }
+    emit('update:modelValue', imageUrlResult)
+    emit('uploaded', imageUrlResult)
+    return imageUrlResult
+  } catch (err: any) {
+    const errorMessage = err?.response?.data?.detail || err?.message || 'Erro ao fazer upload da imagem'
+    error.value = errorMessage
+    emit('error', errorMessage)
+    throw err
+  } finally {
+    isUploading.value = false
+  }
+}
+
+defineExpose({
+  getPendingFile: () => pendingFile.value,
+  uploadPendingFile,
+  hasPendingFile,
+})
 
 /**
  * Watch for external image URL changes

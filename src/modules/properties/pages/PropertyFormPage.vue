@@ -654,6 +654,7 @@
                     e otimizada automaticamente para melhor performance.
                   </div>
                   <PropertyImageUpload
+                    ref="propertyImageUploadRef"
                     v-model="formData.main_image_url"
                     :property-id="isEditMode ? (route.params.id as string) : null"
                     :disabled="isSaving"
@@ -683,6 +684,7 @@ const route = useRoute()
 const router = useRouter()
 
 const formRef = ref<VForm | null>(null)
+const propertyImageUploadRef = ref<InstanceType<typeof PropertyImageUpload> | null>(null)
 const activeTab = ref('general')
 const isFormValid = ref(false)
 const isSaving = ref(false)
@@ -1240,7 +1242,13 @@ const handleSave = async () => {
     if (isEditMode.value) {
       await propertiesService.updateProperty(route.params.id as string, propertyData as PropertyUpdate)
     } else {
-      await propertiesService.createProperty(propertyData as PropertyCreate)
+      const created = await propertiesService.createProperty(propertyData as PropertyCreate)
+      // Se há imagem pendente (selecionada antes de salvar), faz upload agora
+      const uploadRef = propertyImageUploadRef.value
+      const pendingFile = uploadRef?.getPendingFile?.()
+      if (pendingFile && uploadRef?.uploadPendingFile) {
+        await uploadRef.uploadPendingFile(created.id)
+      }
     }
 
     // Redirect to list
