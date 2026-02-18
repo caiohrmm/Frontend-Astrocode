@@ -99,7 +99,7 @@
               size="small"
               variant="text"
               :color="item.is_active ? 'error' : 'success'"
-              @click="toggleUserStatus(item)"
+              @click="openToggleStatusDialog(item)"
             >
               <v-icon>
                 {{ item.is_active ? 'mdi-account-off' : 'mdi-account-check' }}
@@ -180,6 +180,58 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Confirmação Ativar/Desativar Usuário -->
+    <v-dialog
+      v-model="toggleStatusDialog"
+      max-width="420"
+      persistent
+    >
+      <v-card>
+        <v-card-title class="d-flex align-center pa-4">
+          <v-icon
+            class="mr-3"
+            :color="userToToggle?.is_active ? 'error' : 'success'"
+            size="28"
+          >
+            {{ userToToggle?.is_active ? 'mdi-account-off' : 'mdi-account-check' }}
+          </v-icon>
+          <span class="text-h6">
+            {{ userToToggle?.is_active ? 'Desativar' : 'Ativar' }} usuário
+          </span>
+        </v-card-title>
+        <v-card-text class="pa-4 pt-0">
+          <p class="text-body-1">
+            Tem certeza que deseja
+            <strong>{{ userToToggle?.is_active ? 'desativar' : 'ativar' }}</strong>
+            o usuário <strong>{{ userToToggle?.full_name }}</strong>?
+          </p>
+          <p
+            v-if="userToToggle?.is_active"
+            class="text-caption text-medium-emphasis mt-2"
+          >
+            Usuários desativados não poderão fazer login no sistema.
+          </p>
+        </v-card-text>
+        <v-card-actions class="pa-4">
+          <v-spacer></v-spacer>
+          <v-btn
+            variant="text"
+            @click="closeToggleStatusDialog"
+          >
+            Cancelar
+          </v-btn>
+          <v-btn
+            :color="userToToggle?.is_active ? 'error' : 'success'"
+            variant="flat"
+            :loading="isTogglingStatus"
+            @click="confirmToggleUserStatus"
+          >
+            {{ userToToggle?.is_active ? 'Desativar' : 'Ativar' }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -193,6 +245,9 @@ const authStore = useAuthStore()
 const users = ref<User[]>([])
 const isLoading = ref(false)
 const editRolesDialog = ref(false)
+const toggleStatusDialog = ref(false)
+const userToToggle = ref<User | null>(null)
+const isTogglingStatus = ref(false)
 const selectedUser = ref<User | null>(null)
 const selectedRoles = ref<string[]>([])
 const isUpdatingRoles = ref(false)
@@ -311,23 +366,37 @@ const saveUserRoles = async () => {
   }
 }
 
-const toggleUserStatus = async (user: User) => {
+const openToggleStatusDialog = (user: User) => {
+  userToToggle.value = user
+  toggleStatusDialog.value = true
+}
+
+const closeToggleStatusDialog = () => {
+  toggleStatusDialog.value = false
+  userToToggle.value = null
+}
+
+const confirmToggleUserStatus = async () => {
+  if (!userToToggle.value) return
+
+  isTogglingStatus.value = true
   try {
-    const updatedUser = await usersService.updateUser(user.id, {
-      is_active: !user.is_active,
+    const updatedUser = await usersService.updateUser(userToToggle.value.id, {
+      is_active: !userToToggle.value.is_active,
     })
-    
-    // Update user in list
+
     const index = users.value.findIndex(u => u.id === updatedUser.id)
     if (index !== -1) {
       users.value[index] = updatedUser
     }
-    
+
+    closeToggleStatusDialog()
     // TODO: Show success notification
   } catch (error) {
     console.error('Error updating user status:', error)
-    // TODO: Show error notification
     alert(error instanceof Error ? error.message : 'Erro ao atualizar status do usuário')
+  } finally {
+    isTogglingStatus.value = false
   }
 }
 
