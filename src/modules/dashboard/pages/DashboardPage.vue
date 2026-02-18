@@ -222,14 +222,46 @@
       <v-col cols="12" md="8">
         <v-card elevation="2" rounded="lg">
           <v-card-title class="d-flex align-center">
-            <v-icon class="mr-2" color="primary">mdi-chart-line</v-icon>
+            <v-icon class="mr-2" color="primary">mdi-chart-bar</v-icon>
             <span>Evolução Mensal</span>
             <v-spacer></v-spacer>
             <v-chip size="small" variant="tonal">Últimos 6 meses</v-chip>
           </v-card-title>
           <v-card-text class="pa-4">
+            <!-- Legenda clara no topo -->
+            <div class="evolution-legend mb-4">
+              <div class="evolution-legend-item">
+                <span class="evolution-legend-color" style="background: #1976d2"></span>
+                <span>Novos clientes</span>
+              </div>
+              <div class="evolution-legend-item">
+                <span class="evolution-legend-color" style="background: #2e7d32"></span>
+                <span>Vendas fechadas</span>
+              </div>
+              <div class="evolution-legend-item">
+                <span class="evolution-legend-color" style="background: #c62828"></span>
+                <span>Perdas</span>
+              </div>
+            </div>
             <div class="chart-container">
               <canvas ref="evolutionChart"></canvas>
+            </div>
+            <!-- Receita por mês em destaque -->
+            <div v-if="metrics?.monthly_trends?.length" class="evolution-revenue-section mt-4 pt-4">
+              <div class="text-subtitle-2 text-medium-emphasis mb-3">
+                <v-icon size="18" class="mr-1">mdi-cash</v-icon>
+                Receita por mês
+              </div>
+              <div class="evolution-revenue-grid">
+                <div
+                  v-for="(trend, index) in metrics.monthly_trends"
+                  :key="index"
+                  class="evolution-revenue-item"
+                >
+                  <div class="evolution-revenue-month">{{ trend.month }}</div>
+                  <div class="evolution-revenue-value">{{ formatCurrency(trend.revenue) }}</div>
+                </div>
+              </div>
             </div>
           </v-card-text>
         </v-card>
@@ -526,53 +558,46 @@ const refreshData = () => {
 
 const drawEvolutionChart = () => {
   if (!evolutionChart.value || !metrics.value) return
-  
+
   const canvas = evolutionChart.value
   const ctx = canvas.getContext('2d')
   if (!ctx) return
-  
+
   const trends = metrics.value.monthly_trends
   if (!trends.length) return
-  
-  // Get container dimensions
+
   const container = canvas.parentElement
   if (!container) return
-  
-  // Set canvas size with proper DPI scaling
+
   const dpr = window.devicePixelRatio || 1
   const containerWidth = container.clientWidth
-  const containerHeight = 400 // Increased height
-  const width = canvas.width = containerWidth * dpr
-  const height = canvas.height = containerHeight * dpr
-  
-  // Scale context for high DPI displays
+  const containerHeight = 280
+  canvas.width = containerWidth * dpr
+  canvas.height = containerHeight * dpr
+  canvas.style.width = `${containerWidth}px`
+  canvas.style.height = `${containerHeight}px`
+  ctx.setTransform(1, 0, 0, 1, 0, 0)
   ctx.scale(dpr, dpr)
-  
-  // Adjust padding for better spacing
-  const padding = { top: 40, right: 80, bottom: 70, left: 70 }
+
+  const padding = { top: 20, right: 20, bottom: 50, left: 50 }
   const chartWidth = containerWidth - padding.left - padding.right
   const chartHeight = containerHeight - padding.top - padding.bottom
-  
-  // Clear canvas
-  ctx.clearRect(0, 0, containerWidth, containerHeight)
-  
-  // Find max value for scaling (separate scales for counts and revenue)
+
   const maxCount = Math.max(
     ...trends.map(t => Math.max(t.clients, t.sales, t.losses)),
     1
   )
-  const maxRevenue = Math.max(
-    ...trends.map(t => t.revenue),
-    1
-  )
-  // Add some padding to max values for better visualization
-  const paddedMaxCount = maxCount * 1.1
-  const paddedMaxRevenue = maxRevenue * 1.1
-  const countScale = chartHeight / paddedMaxCount
-  const revenueScale = chartHeight / paddedMaxRevenue
-  
-  // Draw grid lines
-  ctx.strokeStyle = '#f5f5f5'
+  const paddedMax = Math.max(maxCount * 1.15, 5)
+  const numMonths = trends.length
+  const groupWidth = chartWidth / numMonths
+  const barGap = 6
+  const barsPerGroup = 3
+  const barWidth = (groupWidth - barGap * (barsPerGroup - 1)) / barsPerGroup
+
+  ctx.clearRect(0, 0, containerWidth, containerHeight)
+
+  // Grid horizontal
+  ctx.strokeStyle = '#eceff1'
   ctx.lineWidth = 1
   for (let i = 0; i <= 5; i++) {
     const y = padding.top + (chartHeight / 5) * i
@@ -581,143 +606,71 @@ const drawEvolutionChart = () => {
     ctx.lineTo(containerWidth - padding.right, y)
     ctx.stroke()
   }
-  
-  // Draw axes
-  ctx.strokeStyle = '#e0e0e0'
+
+  // Eixos
+  ctx.strokeStyle = '#90a4ae'
   ctx.lineWidth = 1.5
   ctx.beginPath()
-  // Y-axis (left)
   ctx.moveTo(padding.left, padding.top)
   ctx.lineTo(padding.left, containerHeight - padding.bottom)
-  // X-axis (bottom)
   ctx.lineTo(containerWidth - padding.right, containerHeight - padding.bottom)
   ctx.stroke()
-  
-  // Draw Y-axis labels (counts on left)
-  ctx.fillStyle = '#666'
-  ctx.font = '12px Roboto'
+
+  // Labels do eixo Y
+  ctx.fillStyle = '#546e7a'
+  ctx.font = '12px Roboto, sans-serif'
   ctx.textAlign = 'right'
+  ctx.textBaseline = 'middle'
   for (let i = 0; i <= 5; i++) {
-    const value = Math.round((paddedMaxCount / 5) * (5 - i))
+    const value = Math.round((paddedMax / 5) * (5 - i))
     const y = padding.top + (chartHeight / 5) * i
-    ctx.fillText(value.toString(), padding.left - 12, y + 4)
+    ctx.fillText(value.toString(), padding.left - 8, y)
   }
-  
-  // Draw revenue Y-axis labels (right side)
-  ctx.textAlign = 'left'
-  ctx.font = '12px Roboto'
-  for (let i = 0; i <= 5; i++) {
-    const value = Math.round((paddedMaxRevenue / 5) * (5 - i))
-    const y = padding.top + (chartHeight / 5) * i
-    let formatted = ''
-    if (value >= 1000000) {
-      formatted = `R$ ${(value / 1000000).toFixed(1)}M`
-    } else if (value >= 1000) {
-      formatted = `R$ ${(value / 1000).toFixed(1)}k`
-    } else {
-      formatted = `R$ ${value}`
-    }
-    ctx.fillText(formatted, containerWidth - padding.right + 12, y + 4)
+
+  // Cores das barras
+  const colors = {
+    clients: '#1976d2',
+    sales: '#2e7d32',
+    losses: '#c62828',
   }
-  
-  // Helper function to draw a line
-  const drawLine = (data: number[], color: string, scale: number, label: string, dashed = false) => {
-    ctx.strokeStyle = color
-    ctx.lineWidth = 3
-    if (dashed) {
-      ctx.setLineDash([8, 4])
-    } else {
-      ctx.setLineDash([])
-    }
-    ctx.beginPath()
-    trends.forEach((trend, index) => {
-      const x = padding.left + (chartWidth / (trends.length - 1)) * index
-      const y = containerHeight - padding.bottom - data[index] * scale
-      if (index === 0) {
-        ctx.moveTo(x, y)
-      } else {
-        ctx.lineTo(x, y)
+
+  // Desenhar barras agrupadas
+  trends.forEach((trend, monthIndex) => {
+    const groupCenter = padding.left + (monthIndex + 0.5) * groupWidth
+    const barStartX = groupCenter - groupWidth / 2 + barGap / 2
+
+    const datasets = [
+      { value: trend.clients, color: colors.clients },
+      { value: trend.sales, color: colors.sales },
+      { value: trend.losses, color: colors.losses },
+    ]
+
+    datasets.forEach((ds, barIndex) => {
+      const x = barStartX + barIndex * (barWidth + barGap)
+      const barHeight = (ds.value / paddedMax) * chartHeight
+      const y = containerHeight - padding.bottom - barHeight
+
+      ctx.fillStyle = ds.color
+      ctx.fillRect(x, y, barWidth, barHeight)
+
+      // Valor acima da barra
+      if (ds.value > 0) {
+        ctx.fillStyle = '#37474f'
+        ctx.font = '11px Roboto, sans-serif'
+        ctx.textAlign = 'center'
+        ctx.fillText(ds.value.toString(), x + barWidth / 2, y - 6)
       }
     })
-    ctx.stroke()
-    ctx.setLineDash([]) // Reset dash
-    
-    // Draw points
-    trends.forEach((trend, index) => {
-      const x = padding.left + (chartWidth / (trends.length - 1)) * index
-      const y = containerHeight - padding.bottom - data[index] * scale
-      ctx.fillStyle = color
-      ctx.beginPath()
-      ctx.arc(x, y, 5, 0, Math.PI * 2)
-      ctx.fill()
-      // Add white border to points
-      ctx.strokeStyle = '#fff'
-      ctx.lineWidth = 2
-      ctx.stroke()
-    })
-  }
-  
-  // Draw lines for different metrics
-  const clientsData = trends.map(t => t.clients)
-  const salesData = trends.map(t => t.sales)
-  const lossesData = trends.map(t => t.losses)
-  const revenueData = trends.map(t => t.revenue)
-  
-  // Draw clients line (blue)
-  drawLine(clientsData, '#1976d2', countScale, 'Clientes', false)
-  
-  // Draw sales line (green)
-  drawLine(salesData, '#4caf50', countScale, 'Vendas', false)
-  
-  // Draw losses line (red)
-  drawLine(lossesData, '#f44336', countScale, 'Perdas', false)
-  
-  // Draw revenue line (purple, right Y-axis scale, dashed)
-  drawLine(revenueData, '#9c27b0', revenueScale, 'Receita', true)
-  
-  // Draw month labels
-  ctx.fillStyle = '#666'
-  ctx.font = '13px Roboto'
+  })
+
+  // Labels dos meses
+  ctx.fillStyle = '#546e7a'
+  ctx.font = '13px Roboto, sans-serif'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'top'
   trends.forEach((trend, index) => {
-    const x = padding.left + (chartWidth / (trends.length - 1)) * index
-    ctx.fillText(trend.month, x, containerHeight - padding.bottom + 25)
-  })
-  
-  // Draw legend (moved to bottom right to avoid overlap)
-  const legendY = containerHeight - padding.bottom + 5
-  const legendItems = [
-    { label: 'Clientes', color: '#1976d2' },
-    { label: 'Vendas', color: '#4caf50' },
-    { label: 'Perdas', color: '#f44336' },
-    { label: 'Receita', color: '#9c27b0', style: 'dashed' },
-  ]
-  
-  let legendX = containerWidth - padding.right - 200
-  legendItems.forEach((item) => {
-    // Draw colored square or line
-    if (item.style === 'dashed') {
-      ctx.strokeStyle = item.color
-      ctx.lineWidth = 2
-      ctx.setLineDash([5, 5])
-      ctx.beginPath()
-      ctx.moveTo(legendX, legendY + 6)
-      ctx.lineTo(legendX + 20, legendY + 6)
-      ctx.stroke()
-      ctx.setLineDash([])
-    } else {
-      ctx.fillStyle = item.color
-      ctx.fillRect(legendX, legendY, 14, 14)
-    }
-    
-    // Draw label
-    ctx.fillStyle = '#333'
-    ctx.font = '12px Roboto'
-    ctx.textAlign = 'left'
-    ctx.fillText(item.label, legendX + 18, legendY + 1)
-    
-    legendX += 90
+    const x = padding.left + (index + 0.5) * groupWidth
+    ctx.fillText(trend.month, x, containerHeight - padding.bottom + 12)
   })
 }
 
@@ -958,16 +911,69 @@ onUnmounted(() => {
   border-left: 4px solid #f44336;
 }
 
+.evolution-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 12px 16px;
+  background: rgba(var(--v-theme-surface-variant), 0.3);
+  border-radius: 8px;
+}
+
+.evolution-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: rgb(var(--v-theme-on-surface));
+}
+
+.evolution-legend-color {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.evolution-revenue-section {
+  border-top: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+}
+
+.evolution-revenue-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 12px;
+}
+
+.evolution-revenue-item {
+  padding: 12px 16px;
+  background: rgba(var(--v-theme-surface-variant), 0.4);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.evolution-revenue-month {
+  font-size: 12px;
+  color: rgb(var(--v-theme-on-surface-variant));
+  margin-bottom: 4px;
+}
+
+.evolution-revenue-value {
+  font-weight: 600;
+  font-size: 14px;
+  color: rgb(var(--v-theme-success));
+}
+
 .chart-container {
   position: relative;
   width: 100%;
-  min-height: 400px;
+  min-height: 280px;
   overflow: visible;
 }
 
 .chart-container canvas {
   width: 100% !important;
-  height: 400px !important;
+  height: 280px !important;
   display: block;
 }
 
