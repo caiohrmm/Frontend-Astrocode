@@ -388,7 +388,6 @@
 
           <!-- Score de Visibilidade -->
           <v-card
-            v-if="property.visibility_score !== null"
             elevation="2"
             class="mb-4"
             rounded="lg"
@@ -401,10 +400,10 @@
               <div class="text-caption text-medium-emphasis mb-2">
                 Usado para ordenar a listagem de imóveis. Quanto maior, melhor a posição.
               </div>
-              <div class="d-flex align-center">
+              <div v-if="property.visibility_score !== null && property.visibility_score !== undefined" class="d-flex align-center">
                 <v-progress-linear
                   :model-value="property.visibility_score"
-                  color="primary"
+                  :color="getVisibilityColor(property.visibility_score)"
                   height="24"
                   rounded
                   class="mr-3"
@@ -412,6 +411,9 @@
                 <span class="text-h6 font-weight-bold">
                   {{ property.visibility_score }}/100
                 </span>
+              </div>
+              <div v-else class="text-body-2 text-medium-emphasis">
+                Não calculado. Salve o imóvel para atualizar o score.
               </div>
             </v-card-text>
           </v-card>
@@ -655,6 +657,12 @@ const getStatusIcon = (status: PropertyStatus): string => {
     UNAVAILABLE: 'mdi-close-circle',
   }
   return icons[status] || 'mdi-help-circle'
+}
+
+const getVisibilityColor = (score: number): string => {
+  if (score >= 80) return 'success'
+  if (score >= 50) return 'warning'
+  return 'error'
 }
 
 onMounted(() => {

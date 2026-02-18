@@ -161,6 +161,20 @@
           </v-chip>
         </template>
 
+        <template #item.visibility_score="{ item }">
+          <div v-if="item.visibility_score !== null && item.visibility_score !== undefined" class="d-flex align-center justify-center">
+            <v-progress-circular
+              :model-value="item.visibility_score"
+              :color="getVisibilityColor(item.visibility_score)"
+              size="36"
+              width="3"
+            >
+              <span class="text-caption font-weight-medium">{{ item.visibility_score }}</span>
+            </v-progress-circular>
+          </div>
+          <span v-else class="text-medium-emphasis">-</span>
+        </template>
+
         <template #item.price="{ item }">
           <div class="d-flex flex-column" style="gap: 4px;">
             <!-- Venda -->
@@ -343,6 +357,7 @@ const headers: DataTableHeader[] = [
   { title: 'Tipo', key: 'property_type', sortable: false, width: '140px' },
   { title: 'Negócio', key: 'business_type', sortable: false, width: '120px' },
   { title: 'Status', key: 'status', sortable: false, width: '120px' },
+  { title: 'Visibilidade', key: 'visibility_score', sortable: false, width: '120px', align: 'center' },
   { title: 'Valor', key: 'price', sortable: false, width: '280px' },
   { title: 'Ações', key: 'actions', sortable: false, align: 'end', width: '80px' },
 ]
@@ -413,6 +428,12 @@ const getStatusColor = (status: PropertyStatus): string => {
     UNAVAILABLE: 'error',
   }
   return colors[status] || 'grey'
+}
+
+const getVisibilityColor = (score: number): string => {
+  if (score >= 80) return 'success'
+  if (score >= 50) return 'warning'
+  return 'error'
 }
 
 const formatCurrency = (value: string): string => {
