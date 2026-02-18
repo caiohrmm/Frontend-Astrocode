@@ -125,6 +125,8 @@ export interface ListAttendancesParams {
   agent_id?: string | null
   property_id?: string | null
   status?: AttendanceStatus | null
+  /** If true, only attendances that can receive a new visit (no pending visit) */
+  available_for_visit?: boolean
 }
 
 class AttendancesService {
@@ -150,6 +152,9 @@ class AttendancesService {
     }
     if (params?.status) {
       queryParams.append('status', params.status)
+    }
+    if (params?.available_for_visit === true) {
+      queryParams.append('available_for_visit', 'true')
     }
     if (params?.started_from) {
       queryParams.append('started_from', params.started_from)

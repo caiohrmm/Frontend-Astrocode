@@ -599,64 +599,51 @@
             </v-card-text>
           </v-card>
 
-          <!-- Scheduled Visit -->
-          <v-card v-if="attendance.scheduled_visit_at" elevation="2" class="mb-4" rounded="lg">
+          <!-- Visita vinculada (um único card; o resumo IA monitora esta visita) -->
+          <v-card elevation="2" class="mb-4" rounded="lg">
             <v-card-title class="pa-4">
-              <v-icon class="mr-2" color="warning">mdi-calendar-clock</v-icon>
-              Visita Agendada
-            </v-card-title>
-            <v-card-text class="pa-4">
-              <div class="text-body-1 font-weight-medium mb-2">
-                {{ formatDateTime(attendance.scheduled_visit_at) }}
-              </div>
-              <v-alert
-                type="info"
-                variant="tonal"
-                density="compact"
-                class="mt-2"
-              >
-                Visita agendada para esta data/hora
-              </v-alert>
-            </v-card-text>
-          </v-card>
-
-          <!-- Linked Visits -->
-          <v-card v-if="linkedVisits.length > 0" elevation="2" class="mb-4" rounded="lg">
-            <v-card-title class="pa-4">
-              <v-icon class="mr-2" color="primary">mdi-calendar-multiple</v-icon>
-              Visitas Vinculadas
-              <v-chip size="small" color="primary" variant="flat" class="ml-2">
+              <v-icon class="mr-2" color="primary">mdi-calendar-check</v-icon>
+              Visita vinculada
+              <v-chip v-if="linkedVisits.length > 0" size="small" color="primary" variant="flat" class="ml-2">
                 {{ linkedVisits.length }}
               </v-chip>
             </v-card-title>
             <v-card-text class="pa-4">
-              <v-list density="comfortable">
-                <v-list-item
-                  v-for="visit in linkedVisits"
-                  :key="visit.id"
-                  :to="{ name: 'visits-edit', params: { id: visit.id } }"
-                  class="mb-2"
-                  style="border: 1px solid rgba(0,0,0,0.12); border-radius: 8px;"
-                >
-                  <template #prepend>
-                    <v-icon :color="getVisitStatusColor(visit.status)">
-                      {{ getVisitStatusIcon(visit.status) }}
-                    </v-icon>
-                  </template>
-                  <v-list-item-title class="font-weight-medium">
-                    {{ formatDateTime(visit.scheduled_at) }}
-                  </v-list-item-title>
-                  <v-list-item-subtitle>
-                    Status: {{ getVisitStatusLabel(visit.status) }}
-                    <span v-if="visit.property_id" class="ml-2">
-                      • Imóvel vinculado
-                    </span>
-                  </v-list-item-subtitle>
-                  <template #append>
-                    <v-icon>mdi-chevron-right</v-icon>
-                  </template>
-                </v-list-item>
-              </v-list>
+              <template v-if="linkedVisits.length > 0">
+                <v-alert type="info" variant="tonal" density="compact" class="mb-3">
+                  A IA considera esta visita no resumo do atendimento. Reagende ou altere o status pela edição da visita.
+                </v-alert>
+                <v-list density="comfortable">
+                  <v-list-item
+                    v-for="visit in linkedVisits"
+                    :key="visit.id"
+                    :to="{ name: 'visits-edit', params: { id: visit.id } }"
+                    class="mb-2"
+                    style="border: 1px solid rgba(0,0,0,0.12); border-radius: 8px;"
+                  >
+                    <template #prepend>
+                      <v-icon :color="getVisitStatusColor(visit.status)">
+                        {{ getVisitStatusIcon(visit.status) }}
+                      </v-icon>
+                    </template>
+                    <v-list-item-title class="font-weight-medium">
+                      {{ formatDateTime(visit.scheduled_at) }}
+                    </v-list-item-title>
+                    <v-list-item-subtitle>
+                      Status: {{ getVisitStatusLabel(visit.status) }}
+                      <span v-if="visit.property_id" class="ml-2">• Imóvel vinculado</span>
+                    </v-list-item-subtitle>
+                    <template #append>
+                      <v-icon>mdi-chevron-right</v-icon>
+                    </template>
+                  </v-list-item>
+                </v-list>
+              </template>
+              <template v-else>
+                <div class="text-body-2 text-medium-emphasis">
+                  Nenhuma visita vinculada. Crie uma visita a partir do formulário de visitas vinculando este atendimento.
+                </div>
+              </template>
             </v-card-text>
           </v-card>
 
@@ -978,9 +965,10 @@ const loadLinkedVisits = async () => {
   
   isLoadingVisits.value = true
   try {
-    // Get all visits and filter by attendance_id
-    const allVisits = await visitsService.getVisits({ limit: 1000 })
-    linkedVisits.value = allVisits.filter(v => v.attendance_id === attendance.value!.id)
+    linkedVisits.value = await visitsService.getVisits({
+      attendance_id: attendance.value.id,
+      limit: 100,
+    })
   } catch (err) {
     console.error('Error loading linked visits:', err)
     linkedVisits.value = []

@@ -26,7 +26,20 @@
       <v-row>
         <!-- Main Form Column -->
         <v-col cols="12" lg="8">
-          <v-card elevation="2" class="mb-4">
+          <!-- Quando vinculada ao atendimento: só reagendamento (data/hora e status) -->
+          <v-card v-if="visitLinkedToAttendance" elevation="2" class="mb-4">
+            <v-card-title class="d-flex align-center pa-4 border-b">
+              <v-icon class="mr-2" color="info">mdi-calendar-edit</v-icon>
+              Reagendamento
+            </v-card-title>
+            <v-card-text class="pa-4">
+              <v-alert type="info" variant="tonal" density="compact" class="mb-4">
+                Esta visita está vinculada a um atendimento. Você pode alterar apenas a data/hora e o status. O atendimento será atualizado automaticamente.
+              </v-alert>
+            </v-card-text>
+          </v-card>
+
+          <v-card v-if="!visitLinkedToAttendance" elevation="2" class="mb-4">
             <v-card-title class="d-flex align-center pa-4 border-b">
               <v-icon class="mr-2" color="primary">mdi-account-multiple</v-icon>
               Informações Principais
@@ -211,8 +224,8 @@
             </v-card-text>
           </v-card>
 
-          <!-- Notes Card -->
-          <v-card elevation="2">
+          <!-- Notes Card (oculto quando visita vinculada ao atendimento) -->
+          <v-card v-if="!visitLinkedToAttendance" elevation="2">
             <v-card-title class="d-flex align-center pa-4 border-b">
               <v-icon class="mr-2" color="primary">mdi-note-text</v-icon>
               Observações
@@ -468,6 +481,9 @@ const formData = ref<{
 // Computed
 const isEditMode = computed(() => !!route.params.id)
 
+/** Visita vinculada a atendimento: só permite editar data/hora e status (reagendamento) */
+const visitLinkedToAttendance = computed(() => !!formData.value.attendance_id)
+
 const brokerOptions = computed(() => {
   return brokers.value.map(b => ({
     title: b.full_name,
@@ -636,14 +652,16 @@ const handleSave = async () => {
     const scheduledDate = new Date(formData.value.scheduled_at)
     
     if (isEditMode.value) {
-      const updateData: VisitUpdate = {
-        client_id: formData.value.client_id || undefined,
-        broker_id: formData.value.broker_id || undefined,
-        property_id: formData.value.property_id || null,
-        scheduled_at: scheduledDate.toISOString(),
-        status: formData.value.status,
-        notes: formData.value.notes || null,
-      }
+      const updateData: VisitUpdate = visitLinkedToAttendance.value
+        ? { scheduled_at: scheduledDate.toISOString(), status: formData.value.status }
+        : {
+            client_id: formData.value.client_id || undefined,
+            broker_id: formData.value.broker_id || undefined,
+            property_id: formData.value.property_id || null,
+            scheduled_at: scheduledDate.toISOString(),
+            status: formData.value.status,
+            notes: formData.value.notes || null,
+          }
       await visitsService.updateVisit(route.params.id as string, updateData)
     } else {
       const createData: VisitCreate = {
@@ -716,15 +734,17 @@ const handleAttendanceSearch = async (_query: string, page: number = 1) => {
       skip: number
       client_id?: string
       status?: AttendanceStatus
+      available_for_visit?: boolean
     } = {
       limit: ATTENDANCES_PER_PAGE,
       skip: (page - 1) * ATTENDANCES_PER_PAGE,
+      status: 'ACTIVE',
+      // Só atendimentos que podem receber nova visita (sem visita pendente)
+      available_for_visit: true,
     }
     if (formData.value.client_id) {
       params.client_id = formData.value.client_id
     }
-    // Só listar atendimentos ACTIVE para criação de visitas
-    params.status = 'ACTIVE'
     const list = await attendancesService.getAttendances(params)
     if (page === 1) {
       attendances.value = list

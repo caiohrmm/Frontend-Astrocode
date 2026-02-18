@@ -47,6 +47,7 @@ export interface VisitFilters {
   client_id?: string
   broker_id?: string
   property_id?: string
+  attendance_id?: string
   status?: VisitStatus
   scheduled_from?: string
   scheduled_to?: string
@@ -64,6 +65,7 @@ class VisitsService {
     if (filters.client_id) params.append('client_id', filters.client_id)
     if (filters.broker_id) params.append('broker_id', filters.broker_id)
     if (filters.property_id) params.append('property_id', filters.property_id)
+    if (filters.attendance_id) params.append('attendance_id', filters.attendance_id)
     if (filters.status) params.append('status', filters.status)
     if (filters.scheduled_from) params.append('scheduled_from', filters.scheduled_from)
     if (filters.scheduled_to) params.append('scheduled_to', filters.scheduled_to)
