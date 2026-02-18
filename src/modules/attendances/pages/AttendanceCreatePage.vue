@@ -497,8 +497,11 @@ const handlePropertySearch = async (query: string, page: number) => {
   isLoadingProperties.value = true
   try {
     // Apenas imóveis publicados - vendidos/alugados não aparecem
-    const data = await propertiesService.listProperties({ limit: 1000, status: 'PUBLISHED' })
-    
+    const data = await propertiesService.listProperties({
+      limit: 1000,
+      available_only: true,
+    })
+
     // Filter by search query client-side
     let filtered = data
     if (query && query.trim()) {

@@ -124,6 +124,7 @@ export interface ListPropertiesParams {
   property_type?: PropertyType
   business_type?: BusinessType
   status?: PropertyStatus
+  available_only?: boolean
   city?: string
   state?: string
 }
@@ -151,6 +152,7 @@ class PropertiesService {
     if (params.property_type) queryParams.append('property_type', params.property_type)
     if (params.business_type) queryParams.append('business_type', params.business_type)
     if (params.status) queryParams.append('status', params.status)
+    if (params.available_only === true) queryParams.append('available_only', 'true')
     if (params.city) queryParams.append('city', params.city)
     if (params.state) queryParams.append('state', params.state)
     
