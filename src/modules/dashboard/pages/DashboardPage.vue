@@ -284,14 +284,17 @@
                 <v-icon size="18" class="mr-1">mdi-cash</v-icon>
                 Receita por mês
               </div>
-              <div class="evolution-revenue-grid">
-                <div
-                  v-for="(trend, index) in metrics.monthly_trends"
-                  :key="index"
-                  class="evolution-revenue-item"
-                >
-                  <div class="evolution-revenue-month">{{ trend.month }}</div>
-                  <div class="evolution-revenue-value">{{ formatCurrency(trend.revenue) }}</div>
+              <div class="evolution-revenue-carousel">
+                <div class="evolution-revenue-track">
+                  <div
+                    v-for="(trend, index) in revenueCarouselItems"
+                    :key="`${index}-${trend.month}-${trend.revenue}`"
+                    class="evolution-revenue-item"
+                    :class="getRevenueItemClass(trend.revenue)"
+                  >
+                    <span class="evolution-revenue-month">{{ trend.month }}</span>
+                    <span class="evolution-revenue-value">{{ formatCurrency(parseRevenue(trend.revenue)) }}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -577,7 +580,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { dashboardService, type DashboardMetrics } from '@/shared/services/dashboard.service'
 import { useAuthStore } from '@/app/store/auth.store'
 
@@ -731,6 +734,26 @@ const formatCurrency = (value: number): string => {
     minimumFractionDigits: 0,
   }).format(value)
 }
+
+const parseRevenue = (value: unknown): number => {
+  if (value === null || value === undefined) return 0
+  if (typeof value === 'number' && !Number.isNaN(value)) return value
+  const s = String(value).replace(',', '.').replace(/[^\d.-]/g, '')
+  const n = parseFloat(s)
+  return Number.isNaN(n) ? 0 : n
+}
+
+const getRevenueItemClass = (revenue: unknown): string => {
+  const r = parseRevenue(revenue)
+  if (r > 0) return 'evolution-revenue-positive'
+  if (r < 0) return 'evolution-revenue-negative'
+  return 'evolution-revenue-zero'
+}
+
+const revenueCarouselItems = computed(() => {
+  const trends = metrics.value?.monthly_trends || []
+  return [...trends, ...trends]
+})
 
 const getSourceLabel = (source: string): string => {
   const labels: Record<string, string> = {
@@ -993,29 +1016,94 @@ onUnmounted(() => {
   border-top: 1px solid rgba(var(--v-theme-on-surface), 0.08);
 }
 
-.evolution-revenue-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+.evolution-revenue-carousel {
+  overflow: hidden;
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 5%,
+    black 95%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 5%,
+    black 95%,
+    transparent 100%
+  );
+}
+
+.evolution-revenue-track {
+  display: flex;
   gap: 12px;
+  width: max-content;
+  animation: evolution-revenue-scroll 25s linear infinite;
+}
+
+.evolution-revenue-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes evolution-revenue-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 .evolution-revenue-item {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   padding: 12px 16px;
-  background: rgba(var(--v-theme-surface-variant), 0.4);
   border-radius: 8px;
-  text-align: center;
+  font-size: 14px;
+  min-width: 140px;
+}
+
+.evolution-revenue-item.evolution-revenue-positive {
+  background: rgba(46, 125, 50, 0.18) !important;
+  border-left: 4px solid #2e7d32 !important;
+}
+
+.evolution-revenue-item.evolution-revenue-zero {
+  background: rgba(158, 158, 158, 0.08) !important;
+  border-left: 4px solid rgba(158, 158, 158, 0.35) !important;
+}
+
+.evolution-revenue-item.evolution-revenue-negative {
+  background: rgba(198, 40, 40, 0.15) !important;
+  border-left: 4px solid #c62828 !important;
 }
 
 .evolution-revenue-month {
-  font-size: 12px;
-  color: rgb(var(--v-theme-on-surface-variant));
-  margin-bottom: 4px;
+  font-size: 13px;
+  color: rgb(var(--v-theme-on-surface));
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .evolution-revenue-value {
-  font-weight: 600;
+  font-weight: 700;
   font-size: 14px;
-  color: rgb(var(--v-theme-success));
+  white-space: nowrap;
+}
+
+.evolution-revenue-item.evolution-revenue-positive .evolution-revenue-value {
+  color: #1b5e20 !important;
+}
+
+.evolution-revenue-item.evolution-revenue-zero .evolution-revenue-value {
+  color: rgba(0, 0, 0, 0.6) !important;
+}
+
+.evolution-revenue-item.evolution-revenue-negative .evolution-revenue-value {
+  color: #b71c1c !important;
 }
 
 .chart-container {
@@ -1023,6 +1111,8 @@ onUnmounted(() => {
   width: 100%;
   min-height: 280px;
   overflow: visible;
+  background: #ffffff;
+  border-radius: 8px;
 }
 
 .chart-container canvas {
