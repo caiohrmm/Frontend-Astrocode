@@ -63,8 +63,8 @@
           Proprietário
         </v-tab>
         <v-tab value="ai">
-          <v-icon start>mdi-robot</v-icon>
-          IA & Matching
+          <v-icon start>mdi-chart-line</v-icon>
+          Visibilidade
         </v-tab>
         <v-tab value="media">
           <v-icon start>mdi-image</v-icon>
@@ -556,50 +556,68 @@
               </v-row>
             </v-window-item>
 
-            <!-- Tab: IA & Matching -->
-            <v-window-item value="ai">
-              <v-row>
+            <!-- Tab: Visibilidade -->
+            <v-window-item value="ai" class="visibilidade-tab">
+              <v-row align="stretch">
                 <!-- Score de Visibilidade -->
-                <v-col cols="12" md="6">
-                  <v-card variant="outlined" class="pa-4">
-                    <div class="d-flex align-center mb-3">
-                      <v-icon color="primary" class="mr-2">mdi-chart-line</v-icon>
+                <v-col cols="12" md="6" class="d-flex">
+                  <v-card elevation="2" rounded="lg" class="pa-5 visibility-score-card flex-grow-1 d-flex flex-column">
+                    <div class="d-flex align-center mb-2">
+                      <v-icon color="primary" class="mr-2" size="22">mdi-chart-line</v-icon>
                       <span class="text-subtitle-1 font-weight-medium">Score de Visibilidade</span>
                     </div>
-                    <div class="text-center mb-3">
-                      <div class="text-h3 font-weight-bold" :class="getScoreColor(calculatedScore)">
-                        {{ calculatedScore }}
+                    <div class="text-caption text-medium-emphasis mb-4">
+                      Usado para ordenar a listagem de imóveis. Quanto maior o score, melhor a posição.
+                    </div>
+                    <div class="text-center mb-4 d-flex justify-center">
+                      <div
+                        class="score-ring"
+                        :style="scoreRingStyle"
+                      >
+                        <div class="score-ring-inner">
+                          <span class="text-h4 font-weight-bold" :class="getScoreColor(calculatedScore)">
+                            {{ calculatedScore }}
+                          </span>
+                          <div class="text-caption text-medium-emphasis">de 100 pontos</div>
+                        </div>
                       </div>
-                      <div class="text-caption text-medium-emphasis">de 100 pontos</div>
                     </div>
                     <v-progress-linear
                       :model-value="calculatedScore"
                       :color="getScoreColorName(calculatedScore)"
-                      height="12"
+                      height="8"
                       rounded
-                      class="mb-3"
+                      class="mb-4"
                     ></v-progress-linear>
                     <v-alert
                       :type="getScoreAlertType(calculatedScore)"
                       variant="tonal"
                       density="compact"
+                      class="mb-3"
                     >
                       {{ getScoreMessage(calculatedScore) }}
                     </v-alert>
+                    <div class="text-caption text-medium-emphasis">
+                      O score é calculado e salvo automaticamente ao salvar o imóvel.
+                    </div>
                   </v-card>
                 </v-col>
 
                 <!-- Completude do Cadastro -->
-                <v-col cols="12" md="6">
-                  <v-card variant="outlined" class="pa-4">
+                <v-col cols="12" md="6" class="d-flex">
+                  <v-card elevation="2" rounded="lg" class="pa-5 completeness-card flex-grow-1 d-flex flex-column">
                     <div class="d-flex align-center mb-3">
-                      <v-icon color="success" class="mr-2">mdi-check-circle</v-icon>
+                      <v-icon color="success" class="mr-2" size="22">mdi-check-circle</v-icon>
                       <span class="text-subtitle-1 font-weight-medium">Completude do Cadastro</span>
                     </div>
-                    <v-list density="compact">
-                      <v-list-item v-for="item in completenessItems" :key="item.label">
+                    <v-list density="compact" class="completeness-list flex-grow-1">
+                      <v-list-item
+                        v-for="item in completenessItems"
+                        :key="item.label"
+                        class="completeness-item"
+                      >
                         <template #prepend>
-                          <v-icon :color="item.complete ? 'success' : 'grey'" size="20">
+                          <v-icon :color="item.complete ? 'success' : 'grey-lighten-1'" size="22">
                             {{ item.complete ? 'mdi-check-circle' : 'mdi-circle-outline' }}
                           </v-icon>
                         </template>
@@ -608,98 +626,16 @@
                         </v-list-item-title>
                       </v-list-item>
                     </v-list>
-                    <div class="text-center mt-2">
+                    <div class="d-flex justify-end mt-3">
                       <v-chip
                         :color="completenessPercentage >= 80 ? 'success' : completenessPercentage >= 50 ? 'warning' : 'error'"
                         variant="flat"
                         size="small"
+                        class="completeness-chip"
                       >
                         {{ completenessPercentage }}% completo
                       </v-chip>
                     </div>
-                  </v-card>
-                </v-col>
-
-                <!-- Perfil do Cliente Ideal -->
-                <v-col cols="12">
-                  <v-card variant="outlined" class="pa-4">
-                    <div class="d-flex align-center justify-space-between mb-3">
-                      <div class="d-flex align-center">
-                        <v-icon color="primary" class="mr-2">mdi-account-search</v-icon>
-                        <span class="text-subtitle-1 font-weight-medium">Perfil do Cliente Ideal</span>
-                      </div>
-                      <v-btn
-                        color="primary"
-                        variant="tonal"
-                        size="small"
-                        prepend-icon="mdi-robot"
-                        @click="generateIdealClientProfile"
-                        :loading="isGeneratingProfile"
-                      >
-                        Gerar com IA
-                      </v-btn>
-                    </div>
-                    <v-textarea
-                      v-model="formData.ideal_client_profile"
-                      label="Perfil do Cliente Ideal"
-                      variant="outlined"
-                      rows="4"
-                      auto-grow
-                      prepend-inner-icon="mdi-account-heart"
-                      hint="Descreva o perfil ideal de cliente para este imóvel. Clique em 'Gerar com IA' para sugestão automática."
-                      persistent-hint
-                    ></v-textarea>
-                  </v-card>
-                </v-col>
-
-                <!-- Clientes Compatíveis -->
-                <v-col cols="12">
-                  <v-card variant="outlined" class="pa-4">
-                    <div class="d-flex align-center justify-space-between mb-3">
-                      <div class="d-flex align-center">
-                        <v-icon color="success" class="mr-2">mdi-account-group</v-icon>
-                        <span class="text-subtitle-1 font-weight-medium">Clientes Compatíveis</span>
-                      </div>
-                      <v-btn
-                        v-if="isEditMode"
-                        color="primary"
-                        variant="tonal"
-                        size="small"
-                        prepend-icon="mdi-magnify"
-                        @click="findMatchingClients"
-                        :loading="isLoadingMatchingClients"
-                      >
-                        Buscar Clientes
-                      </v-btn>
-                    </div>
-                    <div v-if="matchingClients.length > 0">
-                      <v-list density="compact">
-                        <v-list-item
-                          v-for="client in matchingClients"
-                          :key="client.id"
-                          :to="{ name: 'clients-details', params: { id: client.id } }"
-                        >
-                          <template #prepend>
-                            <v-avatar color="primary" size="36">
-                              <span class="text-caption text-white">{{ getInitials(client.name) }}</span>
-                            </v-avatar>
-                          </template>
-                          <v-list-item-title>{{ client.name }}</v-list-item-title>
-                          <v-list-item-subtitle>
-                            <span v-if="client.current_city_interest">{{ client.current_city_interest }}</span>
-                            <span v-if="client.current_budget_max"> • Até R$ {{ Number(client.current_budget_max).toLocaleString('pt-BR') }}</span>
-                          </v-list-item-subtitle>
-                          <template #append>
-                            <v-chip color="success" variant="tonal" size="x-small">
-                              {{ client.matchScore }}% match
-                            </v-chip>
-                          </template>
-                        </v-list-item>
-                      </v-list>
-                    </div>
-                    <v-alert v-else type="info" variant="tonal" density="compact">
-                      {{ isEditMode ? 'Clique em "Buscar Clientes" para encontrar clientes compatíveis com este imóvel.' : 'Salve o imóvel primeiro para buscar clientes compatíveis.' }}
-                    </v-alert>
                   </v-card>
                 </v-col>
               </v-row>
@@ -740,14 +676,8 @@ import { useRoute, useRouter } from 'vue-router'
 import type { VForm } from 'vuetify/components'
 import { propertiesService, type Property, type PropertyCreate, type PropertyUpdate, type AddressData } from '@/shared/services/properties.service'
 import { usersService, type User } from '@/shared/services/users.service'
-import { clientsService, type Client } from '@/shared/services/clients.service'
 import { formatCurrency, parseCurrency, formatCurrencyInput, formatCurrencyInputRealTime, parseCurrencyInputRealTime, formatPhone, parsePhone } from '@/shared/utils/masks'
 import PropertyImageUpload from '@/shared/components/PropertyImageUpload.vue'
-
-// Extended client type with match score
-interface MatchingClient extends Client {
-  matchScore: number
-}
 
 const route = useRoute()
 const router = useRouter()
@@ -804,9 +734,6 @@ const brazilianStates = [
 ]
 
 // AI & Matching
-const isGeneratingProfile = ref(false)
-const isLoadingMatchingClients = ref(false)
-const matchingClients = ref<MatchingClient[]>([])
 
 const isEditMode = computed(() => !!route.params.id)
 
@@ -947,37 +874,59 @@ const rules = {
   },
 }
 
-// AI & Matching Computed
+// AI & Matching Computed - aligned with backend visibility_score_service
 const calculatedScore = computed(() => {
   let score = 0
   const f = formData.value
-  
-  // Basic info (30 points max)
-  if (f.title) score += 10
-  if (f.description && f.description.length > 50) score += 10
-  if (f.main_image_url) score += 10
-  
-  // Location (20 points max)
-  if (f.city) score += 5
-  if (f.neighborhood) score += 5
-  if (f.street) score += 5
-  if (f.zip_code) score += 5
-  
-  // Characteristics (25 points max)
-  if (f.area_total) score += 5
-  if (f.bedrooms) score += 5
-  if (f.bathrooms) score += 5
-  if (f.parking_spaces !== null && f.parking_spaces !== undefined) score += 5
-  if (f.has_elevator || f.furnished) score += 5
-  
-  // Financial (15 points max)
-  if (f.price || f.rent_price) score += 10
-  if (f.condo_fee !== null || f.iptu !== null) score += 5
-  
-  // Commercial (5 points max)
+
+  // Informações básicas (25 pts)
+  if (f.title && f.title.trim().length >= 5) score += 5
+  if (f.description) {
+    const len = f.description.trim().length
+    if (len >= 100) score += 10
+    else if (len >= 50) score += 5
+  }
+  if (f.code && f.code.trim()) score += 5
+  if (f.main_image_url && f.main_image_url.trim()) score += 5
+
+  // Localização (20 pts)
+  if (f.city && f.city.trim()) score += 5
+  if (f.neighborhood && f.neighborhood.trim()) score += 5
+  const streetOk = f.street && f.street.trim()
+  const numberOk = f.number && String(f.number).trim()
+  if (streetOk && numberOk) score += 5
+  else if (streetOk || numberOk) score += 3
+  if (f.zip_code && String(f.zip_code).replace(/-/g, '').length >= 8) score += 5
+
+  // Características (25 pts máx)
+  let charScore = 0
+  const areaTotal = parseFloat(String(f.area_total || 0)) || 0
+  const areaBuilt = parseFloat(String(f.area_built || 0)) || 0
+  if (areaTotal > 0) charScore += 5
+  else if (areaBuilt > 0) charScore += 3
+  if ((f.bedrooms || 0) > 0) charScore += 5
+  if ((f.bathrooms || 0) > 0) charScore += 5
+  if (f.parking_spaces !== null && f.parking_spaces !== undefined) charScore += 5
+  else if (['APARTMENT', 'HOUSE'].includes(f.property_type)) charScore += 2
+  if (f.has_elevator || f.furnished) charScore += 5
+  else if (f.floor !== null && f.floor !== undefined) charScore += 2
+  score += Math.min(charScore, 25)
+
+  // Financeiro (20 pts máx)
+  const priceVal = parseFloat(String(f.price || 0)) || parseFloat(String(f.rent_price || 0)) || 0
+  let finScore = 0
+  if (priceVal > 0) finScore += 10
+  const hasCondo = f.condo_fee !== null && f.condo_fee !== undefined && String(f.condo_fee).trim()
+  const hasIptu = f.iptu !== null && f.iptu !== undefined && String(f.iptu).trim()
+  if (hasCondo || hasIptu) finScore += 5
+  if (priceVal > 0) finScore += 5
+  score += Math.min(finScore, 20)
+
+  // Comercial (10 pts)
   if (f.status === 'PUBLISHED') score += 5
-  
-  return Math.min(score, 100)
+  if (f.assigned_agent_id) score += 5
+
+  return Math.min(100, Math.max(0, score))
 })
 
 const completenessItems = computed(() => {
@@ -1021,141 +970,21 @@ const getScoreMessage = (score: number): string => {
   return 'Baixa visibilidade. Complete os campos obrigatórios e adicione mais informações.'
 }
 
+// Gradient vermelho no anel (vermelho escuro → coral)
+const scoreRingStyle = computed(() => {
+  const pct = calculatedScore.value
+  const mid = Math.max(1, pct * 0.5)
+  return {
+    background: `conic-gradient(from -90deg, #b71c1c 0%, #e53935 ${mid}%, #ff6b6b ${pct}%, rgba(0,0,0,0.05) ${pct}%)`,
+  }
+})
+
 const getInitials = (name: string): string => {
   const parts = name.trim().split(' ')
   if (parts.length >= 2) {
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
   }
   return name.substring(0, 2).toUpperCase()
-}
-
-const generateIdealClientProfile = () => {
-  isGeneratingProfile.value = true
-  
-  try {
-    const f = formData.value
-    const parts: string[] = []
-    
-    // Interest type based on business type
-    if (f.business_type === 'SALE' || f.business_type === 'BOTH') {
-      parts.push('compradores')
-    }
-    if (f.business_type === 'RENT' || f.business_type === 'BOTH') {
-      if (parts.length > 0) parts[0] += ' ou inquilinos'
-      else parts.push('inquilinos')
-    }
-    
-    // Property type preferences
-    const propertyTypeLabels: Record<string, string> = {
-      HOUSE: 'casas',
-      APARTMENT: 'apartamentos',
-      LAND: 'terrenos',
-      COMMERCIAL: 'imóveis comerciais',
-      RURAL: 'propriedades rurais'
-    }
-    const propType = propertyTypeLabels[f.property_type] || 'imóveis'
-    
-    // Build profile
-    let profile = `Ideal para ${parts.join(' ')} interessados em ${propType}`
-    
-    // Location
-    if (f.city) {
-      profile += ` na região de ${f.city}`
-      if (f.state) profile += `/${f.state}`
-    }
-    
-    // Characteristics
-    const characteristics: string[] = []
-    if (f.bedrooms && f.bedrooms > 0) characteristics.push(`${f.bedrooms} quarto${f.bedrooms > 1 ? 's' : ''}`)
-    if (f.bathrooms && f.bathrooms > 0) characteristics.push(`${f.bathrooms} banheiro${f.bathrooms > 1 ? 's' : ''}`)
-    if (f.parking_spaces && f.parking_spaces > 0) characteristics.push(`${f.parking_spaces} vaga${f.parking_spaces > 1 ? 's' : ''} de garagem`)
-    if (f.furnished) characteristics.push('mobiliado')
-    if (f.has_elevator) characteristics.push('com elevador')
-    
-    if (characteristics.length > 0) {
-      profile += `. Características: ${characteristics.join(', ')}`
-    }
-    
-    // Budget
-    const priceValue = Number(f.price) || Number(f.rent_price) || 0
-    if (priceValue > 0) {
-      const minBudget = priceValue * 0.8
-      const maxBudget = priceValue * 1.2
-      profile += `. Orçamento estimado: R$ ${minBudget.toLocaleString('pt-BR')} a R$ ${maxBudget.toLocaleString('pt-BR')}`
-    }
-    
-    // Area
-    if (f.area_total) {
-      profile += `. Área: ${f.area_total}m²`
-    }
-    
-    formData.value.ideal_client_profile = profile
-  } finally {
-    isGeneratingProfile.value = false
-  }
-}
-
-const findMatchingClients = async () => {
-  if (!isEditMode.value) return
-  
-  isLoadingMatchingClients.value = true
-  matchingClients.value = []
-  
-  try {
-    // Get all clients
-    const clients = await clientsService.getClients({ limit: 1000 })
-    
-    // Calculate match score for each client
-    const scoredClients: MatchingClient[] = clients
-      .map(client => {
-        let score = 0
-        const f = formData.value
-        
-        // City match (40 points)
-        if (client.current_city_interest && f.city) {
-          if (client.current_city_interest.toLowerCase() === f.city.toLowerCase()) {
-            score += 40
-          }
-        }
-        
-        // Property type match (20 points)
-        if (client.current_property_type && f.property_type) {
-          if (client.current_property_type === f.property_type) {
-            score += 20
-          }
-        }
-        
-        // Interest type match (20 points)
-        if (client.current_interest_type && f.business_type) {
-          const isMatch = 
-            (client.current_interest_type === 'BUY' && (f.business_type === 'SALE' || f.business_type === 'BOTH')) ||
-            (client.current_interest_type === 'RENT' && (f.business_type === 'RENT' || f.business_type === 'BOTH'))
-          if (isMatch) score += 20
-        }
-        
-        // Budget match (20 points)
-        const clientBudgetMax = client.current_budget_max ? parseFloat(client.current_budget_max) : null
-        const propertyPrice = Number(f.price) || Number(f.rent_price) || 0
-        if (clientBudgetMax && propertyPrice > 0) {
-          if (propertyPrice <= clientBudgetMax) {
-            score += 20
-          } else if (propertyPrice <= clientBudgetMax * 1.2) {
-            score += 10 // Within 20% above budget
-          }
-        }
-        
-        return { ...client, matchScore: score }
-      })
-      .filter(c => c.matchScore > 0)
-      .sort((a, b) => b.matchScore - a.matchScore)
-      .slice(0, 5) // Top 5 matches
-    
-    matchingClients.value = scoredClients
-  } catch (error) {
-    console.error('Error finding matching clients:', error)
-  } finally {
-    isLoadingMatchingClients.value = false
-  }
 }
 
 // CEP Functions
@@ -1398,8 +1227,6 @@ const handleSave = async () => {
       status: formData.value.status,
       owner_name: formData.value.owner_name || null,
       owner_contact: formData.value.owner_contact || null,
-      ideal_client_profile: formData.value.ideal_client_profile || null,
-      // Ensure main_image_url is included if it exists
       // Use the value directly from formData, don't convert empty strings to null here
       // The backend will handle null/empty string conversion
       main_image_url: formData.value.main_image_url || null,
@@ -1797,5 +1624,46 @@ onMounted(async () => {
 
 :deep(.v-input__details) {
   overflow: visible !important;
+}
+
+/* Visibilidade tab - cards sem borda, mesmo tamanho, estilo moderno */
+.visibilidade-tab :deep(.visibility-score-card),
+.visibilidade-tab :deep(.completeness-card) {
+  border: none !important;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+  min-height: 380px;
+}
+
+/* Score ring - gradiente vermelho, espaçamento interno */
+.score-ring {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  box-sizing: border-box;
+}
+
+.score-ring-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: rgb(var(--v-theme-surface));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.visibilidade-tab :deep(.completeness-list .completeness-item) {
+  min-height: 44px;
+}
+
+.visibilidade-tab :deep(.completeness-item .v-list-item__prepend) {
+  padding-right: 12px;
 }
 </style>

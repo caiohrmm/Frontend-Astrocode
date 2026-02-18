@@ -386,55 +386,33 @@
             </v-card-text>
           </v-card>
 
-          <!-- AI & Matching -->
+          <!-- Score de Visibilidade -->
           <v-card
-            v-if="property.visibility_score !== null || property.ideal_client_profile"
+            v-if="property.visibility_score !== null"
             elevation="2"
             class="mb-4"
             rounded="lg"
           >
             <v-card-title class="d-flex align-center pa-4">
-              <v-icon class="mr-2" color="primary">mdi-robot</v-icon>
-              IA & Matching
+              <v-icon class="mr-2" color="primary">mdi-chart-line</v-icon>
+              Score de Visibilidade
             </v-card-title>
             <v-card-text class="pa-4">
-              <v-row>
-                <v-col
-                  v-if="property.visibility_score !== null"
-                  cols="12" md="6"
-                >
-                  <div class="mb-3">
-                    <div class="text-body-2 text-medium-emphasis mb-2">
-                      Score de Visibilidade
-                    </div>
-                    <div class="d-flex align-center">
-                      <v-progress-linear
-                        :model-value="property.visibility_score"
-                        color="primary"
-                        height="24"
-                        rounded
-                        class="mr-3"
-                      ></v-progress-linear>
-                      <span class="text-h6 font-weight-bold">
-                        {{ property.visibility_score }}/100
-                      </span>
-                    </div>
-                  </div>
-                </v-col>
-                <v-col
-                  v-if="property.ideal_client_profile"
-                  cols="12"
-                >
-                  <div class="text-body-2 text-medium-emphasis mb-2">
-                    Perfil do Cliente Ideal
-                  </div>
-                  <v-card variant="outlined" class="pa-3">
-                    <p class="text-body-1 mb-0">
-                      {{ property.ideal_client_profile }}
-                    </p>
-                  </v-card>
-                </v-col>
-              </v-row>
+              <div class="text-caption text-medium-emphasis mb-2">
+                Usado para ordenar a listagem de imóveis. Quanto maior, melhor a posição.
+              </div>
+              <div class="d-flex align-center">
+                <v-progress-linear
+                  :model-value="property.visibility_score"
+                  color="primary"
+                  height="24"
+                  rounded
+                  class="mr-3"
+                ></v-progress-linear>
+                <span class="text-h6 font-weight-bold">
+                  {{ property.visibility_score }}/100
+                </span>
+              </div>
             </v-card-text>
           </v-card>
         </v-col>
