@@ -642,20 +642,7 @@
                   <v-list-item-title>Atualizado em</v-list-item-title>
                   <v-list-item-subtitle>{{ formatDateTime(attendance.updated_at) }}</v-list-item-subtitle>
                 </v-list-item>
-                <v-list-item>
-                  <template #prepend>
-                    <v-icon>mdi-calendar-plus</v-icon>
-                  </template>
-                  <v-list-item-title>Criado em</v-list-item-title>
-                  <v-list-item-subtitle>{{ formatDateTime(attendance.created_at) }}</v-list-item-subtitle>
-                </v-list-item>
-                <v-list-item>
-                  <template #prepend>
-                    <v-icon>mdi-calendar-edit</v-icon>
-                  </template>
-                  <v-list-item-title>Atualizado em</v-list-item-title>
-                  <v-list-item-subtitle>{{ formatDateTime(attendance.updated_at) }}</v-list-item-subtitle>
-                </v-list-item>
+                
               </v-list>
             </v-card-text>
           </v-card>
