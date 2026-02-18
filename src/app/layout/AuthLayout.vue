@@ -1,8 +1,11 @@
 <template>
   <v-app>
     <v-main>
-      <v-container fluid class="fill-height d-flex align-center justify-center">
-        <div class="w-100" style="max-width: 450px;">
+      <v-container
+        fluid
+        class="auth-layout-container fill-height"
+      >
+        <div class="auth-layout-inner">
           <router-view />
         </div>
       </v-container>
@@ -15,8 +18,24 @@
 </script>
 
 <style scoped>
-.fill-height {
+.auth-layout-container {
   min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.auth-layout-inner {
+  width: 100%;
+  max-width: 450px;
+  min-width: 0; /* evita overflow em flex */
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>
 

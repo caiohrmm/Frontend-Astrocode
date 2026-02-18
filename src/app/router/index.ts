@@ -22,6 +22,24 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/forgot-password',
+    name: 'forgot-password',
+    component: () => import('@/modules/auth/pages/ForgotPasswordPage.vue'),
+    meta: {
+      layout: 'auth',
+      requiresAuth: false, // Public route
+    },
+  },
+  {
+    path: '/reset-password',
+    name: 'reset-password',
+    component: () => import('@/modules/auth/pages/ResetPasswordPage.vue'),
+    meta: {
+      layout: 'auth',
+      requiresAuth: false, // Public route
+    },
+  },
+  {
     path: '/auth/google/callback',
     name: 'oauth-callback',
     component: () => import('@/modules/auth/pages/OAuthCallbackPage.vue'),
@@ -255,8 +273,8 @@ router.beforeEach(async (to, _from, next) => {
     }
   }
   
-  // If user is authenticated and trying to access login/register, redirect appropriately
-  if ((to.name === 'login' || to.name === 'register') && authStore.isAuthenticated) {
+  // If user is authenticated and trying to access login/register/forgot-password, redirect appropriately
+  if ((to.name === 'login' || to.name === 'register' || to.name === 'forgot-password') && authStore.isAuthenticated) {
     // Redirect to dashboard if user is gestor, otherwise to clients
     const userRoles = authStore.userRoles
     if (userRoles.includes('gestor')) {

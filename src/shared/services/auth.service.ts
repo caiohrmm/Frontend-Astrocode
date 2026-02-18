@@ -105,6 +105,23 @@ class AuthService {
   }
 
   /**
+   * Request password reset - sends email with reset link
+   */
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    return apiClient.post<{ message: string }>('/auth/forgot-password', { email })
+  }
+
+  /**
+   * Reset password with token from email
+   */
+  async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
+    return apiClient.post<{ message: string }>('/auth/reset-password', {
+      token,
+      new_password: newPassword,
+    })
+  }
+
+  /**
    * Handle Google OAuth callback
    * This is called after Google redirects back with a code
    */

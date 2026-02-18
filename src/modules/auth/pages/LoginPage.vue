@@ -1,7 +1,7 @@
 <template>
   <v-card
     class="login-card"
-    elevation="8"
+    elevation="0"
     rounded="xl"
   >
     <v-card-title class="text-center pa-8 pb-4">
@@ -55,6 +55,16 @@
           @click:clear="email = ''"
         ></v-text-field>
 
+        <div class="d-flex justify-end mb-2">
+          <v-btn
+            variant="text"
+            size="small"
+            class="text-caption"
+            :to="{ name: 'forgot-password' }"
+          >
+            Esqueci minha senha
+          </v-btn>
+        </div>
         <v-text-field
           v-model="password"
           :label="'Senha'"
@@ -222,6 +232,7 @@ const goToRegister = () => {
 .login-card {
   width: 100%;
   margin: 0 auto;
+  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .google-btn {
