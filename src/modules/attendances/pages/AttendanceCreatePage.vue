@@ -69,7 +69,7 @@
                 <v-col cols="12" md="6">
                   <v-select v-model="formData.agent_id" :items="agentOptions" :loading="isLoadingAgents"
                     label="Agente Responsável *" variant="outlined" :rules="[rules.required]"
-                    prepend-inner-icon="mdi-account-tie" hint="Selecione o agente que realizou o atendimento"
+                    prepend-inner-icon="mdi-account-tie" hint="Selecione o agente que vai realizar o atendimento"
                     persistent-hint item-title="title" item-value="value"></v-select>
                 </v-col>
 
