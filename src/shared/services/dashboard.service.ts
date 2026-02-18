@@ -152,25 +152,26 @@ class DashboardService {
         ? scores.reduce((a, b) => a + b, 0) / scores.length
         : 0
       
-      // Conversion rate
-      const conversionRate = totalClients > 0
-        ? (wonClients / totalClients) * 100
+      // Activity metrics
+      const totalAttendances = attendances.length
+      const totalVisits = visits.length
+      
+      // Conversion rate = vendas concluídas / total de atendimentos
+      const conversionRate = totalAttendances > 0
+        ? (salesStats.completed_count / totalAttendances) * 100
         : 0
       
       // Loss rate
       const lossRate = totalClients > 0
         ? (lostClients / totalClients) * 100
         : 0
-      
-      // Activity metrics
-      const totalAttendances = attendances.length
-      const totalVisits = visits.length
       const now = new Date()
       const upcomingVisits = visits.filter(v => {
         if (!v.scheduled_at) return false
         const scheduled = new Date(v.scheduled_at)
         return scheduled >= now && scheduled <= new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
       }).length
+      
       
       const totalProperties = properties.length
       const availableProperties = properties.filter(p => 

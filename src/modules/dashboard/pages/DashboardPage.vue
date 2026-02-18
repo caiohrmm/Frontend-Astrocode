@@ -71,7 +71,15 @@
           <v-card-text>
             <div class="d-flex align-center justify-space-between">
               <div>
-                <div class="text-caption text-medium-emphasis mb-1">Total de Clientes</div>
+                <div class="text-caption text-medium-emphasis mb-1 d-flex align-center">
+                  Total de Clientes
+                  <v-tooltip location="top" max-width="280">
+                    <template #activator="{ props }">
+                      <v-icon v-bind="props" size="16" color="grey" class="ml-1">mdi-information-outline</v-icon>
+                    </template>
+                    <span>Total de clientes cadastrados no sistema. "Ativos" são leads que ainda não foram ganhos, perdidos ou inativados.</span>
+                  </v-tooltip>
+                </div>
                 <div class="text-h4 font-weight-bold">{{ metrics?.total_clients || 0 }}</div>
                 <div class="text-caption mt-1">
                   <v-icon size="14" class="mr-1">mdi-account-multiple</v-icon>
@@ -96,7 +104,15 @@
           <v-card-text>
             <div class="d-flex align-center justify-space-between">
               <div>
-                <div class="text-caption text-medium-emphasis mb-1">Vendas Concluídas</div>
+                <div class="text-caption text-medium-emphasis mb-1 d-flex align-center">
+                  Vendas Concluídas
+                  <v-tooltip location="top" max-width="280">
+                    <template #activator="{ props }">
+                      <v-icon v-bind="props" size="16" color="grey" class="ml-1">mdi-information-outline</v-icon>
+                    </template>
+                    <span>Quantidade de vendas ou aluguéis com status COMPLETED. O valor total é a soma de todas as vendas concluídas.</span>
+                  </v-tooltip>
+                </div>
                 <div class="text-h4 font-weight-bold">{{ metrics?.sales_stats.completed_count || 0 }}</div>
                 <div class="text-caption mt-1 text-success">
                   <v-icon size="14" class="mr-1">mdi-trending-up</v-icon>
@@ -121,11 +137,19 @@
           <v-card-text>
             <div class="d-flex align-center justify-space-between">
               <div>
-                <div class="text-caption text-medium-emphasis mb-1">Taxa de Conversão</div>
+                <div class="text-caption text-medium-emphasis mb-1 d-flex align-center">
+                  Taxa de Conversão
+                  <v-tooltip location="top" max-width="320">
+                    <template #activator="{ props }">
+                      <v-icon v-bind="props" size="16" color="grey" class="ml-1">mdi-information-outline</v-icon>
+                    </template>
+                    <span>Percentual de atendimentos que resultaram em venda: (Vendas Concluídas ÷ Total de Atendimentos) × 100. Indica quantos atendimentos convertem em negócio.</span>
+                  </v-tooltip>
+                </div>
                 <div class="text-h4 font-weight-bold">{{ metrics?.conversion_rate || 0 }}%</div>
                 <div class="text-caption mt-1">
                   <v-icon size="14" class="mr-1">mdi-chart-line</v-icon>
-                  {{ metrics?.won_clients || 0 }} ganhos
+                  {{ metrics?.sales_stats?.completed_count || 0 }} vendas / {{ metrics?.total_attendances || 0 }} atendimentos
                 </div>
               </div>
               <v-avatar size="64" color="info" variant="tonal">
@@ -146,7 +170,15 @@
           <v-card-text>
             <div class="d-flex align-center justify-space-between">
               <div>
-                <div class="text-caption text-medium-emphasis mb-1">Lead Score Médio</div>
+                <div class="text-caption text-medium-emphasis mb-1 d-flex align-center">
+                  Lead Score Médio
+                  <v-tooltip location="top" max-width="300">
+                    <template #activator="{ props }">
+                      <v-icon v-bind="props" size="16" color="grey" class="ml-1">mdi-information-outline</v-icon>
+                    </template>
+                    <span>Média dos lead scores (0 a 100) de todos os clientes. O score considera interesse, urgência, orçamento e intenção para indicar o potencial do lead.</span>
+                  </v-tooltip>
+                </div>
                 <div class="text-h4 font-weight-bold">{{ metrics?.avg_lead_score || 0 }}</div>
                 <div class="text-caption mt-1">
                   <v-icon size="14" class="mr-1">mdi-star</v-icon>
@@ -382,6 +414,12 @@
           <v-card-title class="d-flex align-center">
             <v-icon class="mr-2" color="info">mdi-lightbulb-on</v-icon>
             <span>Insights Inteligentes</span>
+            <v-tooltip location="top" max-width="320">
+              <template #activator="{ props }">
+                <v-icon v-bind="props" size="18" color="grey" class="ml-1">mdi-information-outline</v-icon>
+              </template>
+              <span>Recomendações automáticas baseadas nos dados: clientes de alta urgência sem contato recente, oportunidades de alto valor, e visitas agendadas para amanhã.</span>
+            </v-tooltip>
           </v-card-title>
           <v-card-text>
             <div class="insights-list">
@@ -417,6 +455,12 @@
           <v-card-title class="d-flex align-center">
             <v-icon class="mr-2" color="success">mdi-trending-up</v-icon>
             <span>Top Oportunidades</span>
+            <v-tooltip location="top" max-width="320">
+              <template #activator="{ props }">
+                <v-icon v-bind="props" size="18" color="grey" class="ml-1">mdi-information-outline</v-icon>
+              </template>
+              <span>Clientes com lead score ≥ 70 que ainda não foram ganhos, perdidos ou inativados. Ordenados por score (maior primeiro). Até 5 itens.</span>
+            </v-tooltip>
             <v-spacer></v-spacer>
             <v-btn
               variant="text"
@@ -475,6 +519,12 @@
           <v-card-title class="d-flex align-center">
             <v-icon class="mr-2" color="warning">mdi-alert</v-icon>
             <span>Clientes em Risco</span>
+            <v-tooltip location="top" max-width="320">
+              <template #activator="{ props }">
+                <v-icon v-bind="props" size="18" color="grey" class="ml-1">mdi-information-outline</v-icon>
+              </template>
+              <span>Clientes com urgência ALTA ou IMEDIATA que já tiveram contato, mas estão sem contato há mais de 7 dias. Exclui ganhos, perdidos e inativos. Até 5 itens.</span>
+            </v-tooltip>
             <v-spacer></v-spacer>
             <v-btn
               variant="text"
