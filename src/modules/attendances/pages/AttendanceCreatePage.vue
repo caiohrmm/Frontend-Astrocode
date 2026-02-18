@@ -80,7 +80,7 @@
                     label="Propriedade (Opcional)"
                     dialog-title="Buscar Propriedade"
                     icon="mdi-home"
-                    icon-color="success"
+                    icon-color="primary"
                     item-icon="mdi-home"
                     placeholder="Clique para buscar propriedade..."
                     hint="Selecione a propriedade relacionada, se aplicável"
