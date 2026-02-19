@@ -1,4 +1,4 @@
-# 🎨 Frontend - Sistema CRM Imobiliário com Inteligência Artificial
+# 🎨 Frontend – Sistema CRM Imobiliário com Inteligência Artificial
 
 <div align="center">
 
@@ -15,839 +15,298 @@
 
 ## 📋 Índice
 
-- [Visão Geral](#-visão-geral)
-- [Stack Tecnológico](#-stack-tecnológico)
-- [Estrutura do Projeto](#-estrutura-do-projeto)
-- [Funcionalidades Principais](#-funcionalidades-principais)
-- [Integrações de APIs](#-integrações-de-apis)
-- [Rotas e Proteção de Acesso](#-rotas-e-proteção-de-acesso)
-- [Componentes Reutilizáveis](#-componentes-reutilizáveis)
-- [Máscaras de Entrada](#-máscaras-de-entrada)
-- [Instalação e Configuração](#-instalação-e-configuração)
-- [Scripts Disponíveis](#-scripts-disponíveis)
-- [Arquitetura de Estado](#-arquitetura-de-estado)
-- [Destaques Técnicos](#-destaques-técnicos)
+- [1. Visão geral](#1-visão-geral)
+- [2. Arquitetura e tecnologias](#2-arquitetura-e-tecnologias)
+- [3. Estrutura do projeto e instalação](#3-estrutura-do-projeto-e-instalação)
+- [4. Funcionalidades por módulo](#4-funcionalidades-por-módulo)
+- [5. Rotas e proteção de acesso](#5-rotas-e-proteção-de-acesso)
+- [6. Integrações de APIs externas](#6-integrações-de-apis-externas)
+- [7. Componentes reutilizáveis](#7-componentes-reutilizáveis)
+- [8. Máscaras de entrada e estado](#8-máscaras-de-entrada-e-estado)
+- [9. Deploy na Vercel](#9-deploy-na-vercel)
+- [10. Destaques técnicos](#10-destaques-técnicos)
+- [Documentação adicional](#-documentação-adicional)
 
 ---
 
-## 🎯 Visão Geral
+## 1. Visão geral
 
-Frontend completo desenvolvido para o sistema CRM imobiliário, oferecendo uma interface moderna, responsiva e intuitiva para gestão de clientes, imóveis, atendimentos, visitas e vendas. A aplicação integra profundamente com a Inteligência Artificial do backend, proporcionando uma experiência fluida e automatizada.
+Frontend do **CRM imobiliário** com **IA integrada**, oferecendo interface responsiva para gestão de **clientes**, **imóveis**, **atendimentos** (ciclos), **visitas**, **vendas** e **perdas**. A aplicação consome a API do backend e reflete as regras de negócio: um único ciclo de atendimento ativo (ACTIVE) por cliente, visitas/vendas/perdas vinculadas ao cliente e ao ciclo, e atualização de perfil e lead score com base no ciclo ativo.
 
-### Características Principais
+### Características principais
 
-- ✅ **Interface Moderna** com Material Design (Vuetify 3)
-- ✅ **Totalmente Responsiva** para desktop, tablet e mobile
-- ✅ **TypeScript** para type safety e melhor DX
-- ✅ **Componentes Reutilizáveis** e bem estruturados
-- ✅ **Integração com APIs Externas** para facilitar cadastros
-- ✅ **Máscaras de Entrada** em tempo real (como apps bancários)
-- ✅ **Proteção de Rotas** baseada em roles (RBAC)
-- ✅ **Feedback Visual** com loading states e notificações
-- ✅ **Detecção Automática** de visitas e propriedades pela IA
+- **Interface moderna** com Material Design (Vuetify 3) e TypeScript.
+- **Totalmente responsiva** (desktop, tablet e mobile).
+- **Proteção de rotas** por autenticação e por role (RBAC: gestor vs atendente).
+- **Integração com IA**: resumos de atendimento, detecção de visitas/imóveis, jornada do cliente, chat com IA, recomendações.
+- **Integrações externas** no cadastro de imóveis (ViaCEP, Google Geocoding, IBGE, Nominatim).
+- **Máscaras de entrada** em tempo real (moeda, telefone, CEP).
+- **Deploy** preparado para **Vercel** (SPA com rewrites).
 
 ---
 
-## 🏗️ Stack Tecnológico
+## 2. Arquitetura e tecnologias
 
-### Core
+### Stack
 
-- **Vue.js 3.5** - Framework JavaScript progressivo com Composition API
-- **TypeScript 5.9** - Superset JavaScript com tipagem estática
-- **Vite 7.2** - Build tool e dev server ultra-rápido
-- **Vue Router 4.6** - Roteamento oficial do Vue.js
-- **Pinia 3.0** - Gerenciamento de estado moderno (sucessor do Vuex)
+| Camada | Tecnologia |
+|--------|------------|
+| **Framework** | Vue.js 3.5 (Composition API) |
+| **Linguagem** | TypeScript 5.9 |
+| **Build** | Vite 7.2 |
+| **Roteamento** | Vue Router 4.6 |
+| **Estado** | Pinia 3.0 |
+| **UI** | Vuetify 3.11, Material Design Icons |
+| **HTTP** | Fetch nativo (cliente centralizado em `api.ts`) |
 
-### UI Framework
+### Integração com o backend
 
-- **Vuetify 3.11** - Framework de componentes Material Design
-- **Material Design Icons** - Biblioteca de ícones completa
-
-### Utilitários
-
-- **Fetch API** - Para chamadas HTTP (nativo do navegador)
-- **Composition API** - Padrão moderno do Vue 3
+- Todas as chamadas passam pelo cliente em `src/shared/services/api.ts`, que adiciona o token JWT e trata erros.
+- Variável de ambiente: `VITE_API_BASE_URL` (URL da API FastAPI). Em produção (ex.: Vercel), configurar para a URL do backend.
 
 ---
 
-## 📁 Estrutura do Projeto
+## 3. Estrutura do projeto e instalação
+
+### Estrutura de pastas (principal)
 
 ```
-frontend/
+src/
+├── app/
+│   ├── layout/
+│   │   ├── AppLayout.vue          # Layout principal (sidebar, barra, menu usuário)
+│   │   └── AuthLayout.vue         # Layout de login/registro/recuperação de senha
+│   ├── router/
+│   │   └── index.ts               # Rotas e guards (auth + requiresManager)
+│   └── store/
+│       ├── auth.store.ts          # Pinia: token, user, roles, login/logout
+│       └── index.ts
 │
-├── src/
-│   ├── app/                          # Configuração da aplicação
-│   │   ├── layout/
-│   │   │   ├── AppLayout.vue        # Layout principal (com sidebar)
-│   │   │   └── AuthLayout.vue       # Layout de autenticação
-│   │   ├── router/
-│   │   │   └── index.ts             # Configuração de rotas e guards
-│   │   └── store/
-│   │       ├── auth.store.ts        # Store de autenticação (Pinia)
-│   │       └── index.ts              # Configuração do Pinia
-│   │
-│   ├── modules/                      # Módulos da aplicação
-│   │   ├── auth/                     # Módulo de autenticação
-│   │   │   └── pages/
-│   │   │       ├── LoginPage.vue
-│   │   │       ├── RegisterPage.vue
-│   │   │       └── OAuthCallbackPage.vue
-│   │   │
-│   │   ├── dashboard/                # Dashboard gerencial
-│   │   │   └── pages/
-│   │   │       └── DashboardPage.vue
-│   │   │
-│   │   ├── clients/                  # Módulo de clientes
-│   │   │   └── pages/
-│   │   │       ├── ClientsListPage.vue
-│   │   │       └── ClientDetailsPage.vue
-│   │   │
-│   │   ├── attendances/              # Módulo de atendimentos
-│   │   │   └── pages/
-│   │   │       ├── AttendanceListPage.vue
-│   │   │       ├── AttendanceCreatePage.vue
-│   │   │       └── AttendanceDetailsPage.vue
-│   │   │
-│   │   ├── properties/               # Módulo de imóveis
-│   │   │   └── pages/
-│   │   │       ├── PropertiesListPage.vue
-│   │   │       ├── PropertyFormPage.vue
-│   │   │       └── PropertyDetailsPage.vue
-│   │   │
-│   │   ├── visits/                   # Módulo de visitas
-│   │   │   └── pages/
-│   │   │       ├── VisitsListPage.vue
-│   │   │       ├── VisitFormPage.vue
-│   │   │       └── VisitDetailsPage.vue
-│   │   │
-│   │   ├── sales/                     # Módulo de vendas
-│   │   │   └── pages/
-│   │   │       └── SalesListPage.vue
-│   │   │
-│   │   ├── losses/                    # Módulo de perdas
-│   │   │   └── pages/
-│   │   │       └── LossAnalysisPage.vue
-│   │   │
-│   │   └── users/                     # Módulo de usuários
-│   │       └── pages/
-│   │           └── UsersPage.vue
-│   │
-│   ├── shared/                        # Código compartilhado
-│   │   ├── components/                # Componentes reutilizáveis
-│   │   │   ├── AiChatWidget.vue      # Widget de chat com IA
-│   │   │   ├── ClientAttendanceCycles.vue
-│   │   │   ├── ClientCreateDialog.vue
-│   │   │   ├── ClientJourneyPanel.vue
-│   │   │   ├── ClientStateDerivationInfo.vue
-│   │   │   ├── ClientUpdateSuggestionsDialog.vue
-│   │   │   ├── LeadClassificationCard.vue
-│   │   │   ├── PropertyImageUpload.vue
-│   │   │   ├── SearchSelectDialog.vue  # Dialog de busca e seleção
-│   │   │   └── VisitDetectionDialog.vue # Dialog de detecção de visita
-│   │   │
-│   │   ├── services/                  # Serviços de API
-│   │   │   ├── api.ts                # Cliente HTTP base
-│   │   │   ├── aiChat.service.ts
-│   │   │   ├── aiSummaries.service.ts
-│   │   │   ├── attendances.service.ts
-│   │   │   ├── auth.service.ts
-│   │   │   ├── clients.service.ts
-│   │   │   ├── dashboard.service.ts
-│   │   │   ├── journey.service.ts
-│   │   │   ├── losses.service.ts
-│   │   │   ├── properties.service.ts
-│   │   │   ├── sales.service.ts
-│   │   │   ├── users.service.ts
-│   │   │   └── visits.service.ts
-│   │   │
-│   │   └── utils/                     # Utilitários
-│   │       └── masks.ts              # Máscaras de entrada
-│   │
-│   ├── plugins/
-│   │   └── vuetify.ts                # Configuração do Vuetify
-│   │
-│   ├── App.vue                       # Componente raiz
-│   └── main.ts                       # Entry point
+├── modules/
+│   ├── auth/                      # Login, registro, forgot/reset password, OAuth callback
+│   ├── dashboard/                 # Dashboard gerencial (gestores)
+│   ├── clients/                   # Listagem e detalhes do cliente
+│   ├── attendances/               # Listagem, criação e detalhes de atendimento
+│   ├── properties/                # Listagem, formulário e detalhes de imóveis
+│   ├── visits/                    # Listagem, formulário e detalhes de visitas
+│   ├── sales/                     # Listagem e gestão de vendas (gestores)
+│   ├── losses/                    # Análise de perdas (gestores)
+│   └── users/                     # Gestão de usuários (gestores)
 │
-├── public/                           # Arquivos estáticos
-├── index.html                        # HTML principal
-├── package.json                      # Dependências
-├── tsconfig.json                     # Configuração TypeScript
-├── vite.config.ts                    # Configuração Vite
-└── README.md                         # Este arquivo
+├── shared/
+│   ├── components/                # Componentes reutilizáveis (ver tópico 7)
+│   ├── services/                  # api.ts, auth, clients, attendances, properties, visits, sales, losses, users, dashboard, aiChat, aiSummaries, journey
+│   └── utils/
+│       └── masks.ts               # Máscaras de moeda, telefone, CEP
+│
+├── plugins/
+│   └── vuetify.ts
+├── App.vue
+└── main.ts
 ```
+
+### Instalação
+
+1. **Pré-requisitos:** Node.js 18+, npm ou yarn.
+2. **Dependências:**
+   ```bash
+   npm install
+   ```
+3. **Variáveis de ambiente:** criar `.env` na raiz (ou usar `.env.example` como base):
+   ```env
+   VITE_API_BASE_URL=http://localhost:8000
+   ```
+   Em produção, definir `VITE_API_BASE_URL` com a URL do backend (ex.: API na Vercel ou outro host).
+4. **Desenvolvimento:**
+   ```bash
+   npm run dev
+   ```
+   Aplicação em `http://localhost:5173`.
+5. **Build:**
+   ```bash
+   npm run build
+   ```
+   Saída em `dist/`.
+6. **Preview da build:**
+   ```bash
+   npm run preview
+   ```
 
 ---
 
-## ⚙️ Funcionalidades Principais
+## 4. Funcionalidades por módulo
 
-### 1. Autenticação e Autorização
+Alinhado às regras de negócio do backend: cliente como centro; ciclos de atendimento (um ACTIVE por cliente); visitas, vendas e perdas vinculadas ao cliente e ao atendimento.
 
-- **Login com email/senha**
-- **Login com Google OAuth**
-- **Proteção de rotas** baseada em autenticação
-- **Controle de acesso** baseado em roles (RBAC)
-- **Guards de navegação** automáticos
-- **Persistência de sessão** via localStorage
+### Autenticação
 
-### 2. Gestão de Clientes
+- **Login** com e-mail/senha e **login com Google OAuth** (redirect para backend, callback em `/auth/google/callback`).
+- **Registro público** (`/register`): novos usuários recebem role **atendente**.
+- **Esqueci a senha** e **redefinir senha** (fluxo via backend).
+- **Persistência de sessão** via token em `localStorage`; guard valida token e carrega usuário ao acessar rotas protegidas.
 
-- **Listagem** com filtros e busca
-- **Criação** com classificação automática pela IA
-- **Detalhes completos** com:
-  - Timeline de eventos
-  - Ciclos de atendimento
-  - Jornada do cliente (análise IA)
-  - Propriedades recomendadas
-  - Insights da IA
-- **Campos controlados pela IA** (read-only) com indicação visual
-- **Atualizações incrementais** do perfil pela IA
+### Clientes
 
-### 3. Gestão de Atendimentos
+- **Listagem** com filtros e busca.
+- **Criação** (dialog) com classificação automática pela IA (lead score, estado derivado).
+- **Detalhes** com timeline de eventos, ciclos de atendimento, jornada do cliente (IA), propriedades recomendadas, insights e campos controlados pela IA (read-only). Atualizações incrementais do perfil sugeridas pela IA.
 
-- **Criação/edição** de atendimentos
-- **Análise automática pela IA** ao salvar
-- **Detecção automática de visitas** com modal de confirmação
-- **Detecção automática de imóveis** mencionados
-- **Vinculação automática** de propriedades
-- **Resumo gerado pela IA** exibido em tempo real
-- **Recomendações de propriedades** baseadas no atendimento
-- **Próximos passos sugeridos** pela IA
+### Atendimentos
 
-### 4. Gestão de Imóveis
+- **Listagem** e **criação** de atendimento (vinculado a cliente e propriedade quando aplicável).
+- **Detalhes** do atendimento: edição no próprio detalhe (rota `/attendances/:id/edit` redireciona para detalhes). Ao salvar, análise pela IA (resumo, intenção, próximos passos). **Detecção automática de visitas** e **de imóveis** mencionados: modal de confirmação e criação/navegação para visita com dados preenchidos.
 
-- **Formulário completo** com abas organizadas:
-  - Geral (código, tipo, título, descrição)
-  - **Localização** (com integrações de APIs - ver seção dedicada)
-  - Características (área, quartos, banheiros, etc)
-  - Financeiro (preços, condomínio, IPTU)
-  - Comercial (status, agente, visibilidade)
-  - Proprietário
-  - IA & Matching
-  - Mídia (upload de imagens)
-- **Listagem** com filtros avançados
-- **Visualização detalhada** com mapa do Google Maps
-- **Upload de imagens** via Cloudinary
-- **Máscaras de moeda** em tempo real
+### Imóveis
 
-### 5. Gestão de Visitas
+- **Listagem** com filtros.
+- **Formulário** completo (abas: geral, localização com integrações – tópico 6 –, características, financeiro, comercial, proprietário, IA & Matching, mídia). Upload de imagens via Cloudinary.
+- **Detalhes** com mapa (Google Maps quando disponível). Máscaras de moeda em tempo real.
 
-- **Listagem** com visualização por calendário
-- **Criação/edição** de visitas
-- **Status tracking** (Agendada, Realizada, Cancelada, Remarcada)
-- **Detecção automática** via IA nos atendimentos
-- **Modal de confirmação** quando IA detecta intenção de visita
-- **Navegação direta** para criação de visita
+### Visitas
 
-### 6. Gestão de Vendas
+- **Listagem** (incluindo visualização por calendário quando aplicável) e **formulário** de criação/edição.
+- Status (agendada, realizada, cancelada, remarcada). Visitas vinculadas a cliente e atendimento; detecção de intenção de visita pela IA no atendimento com modal e criação rápida.
 
-- **Listagem** com estatísticas
-- **Criação** com múltiplos métodos de pagamento
-- **Máscaras de moeda** em tempo real
-- **Busca inteligente** de clientes e imóveis
-- **Cálculo automático** de comissões
-- **Filtros** por tipo, status, cliente
+### Vendas e perdas (gestores)
 
-### 7. Dashboard Gerencial
+- **Vendas:** listagem, criação com múltiplos métodos de pagamento, máscaras de moeda, busca de cliente/imóvel, comissões. Fechamento de ciclo e aplicação de lead score no cliente (regra do backend).
+- **Perdas:** registro de perdas com motivo e feedback, análise estatística. Fechamento de ciclo e lead score (regra do backend).
 
-- **Métricas principais** (Total Clientes, Valor Total de Vendas, Taxa de Conversão, Lead Score Médio)
-- **Funil de vendas** visual
-- **Gráfico de crescimento** de clientes (últimos 6 meses)
-- **Distribuição de origem** de leads
-- **Top 5 corretores** por performance
-- **Insights da IA**
-- **Alertas e oportunidades**
-- **Clientes em risco**
+### Dashboard e usuários (gestores)
 
-### 8. Análise de Perdas
-
-- **Registro de perdas** com motivo e feedback
-- **Análise estatística** de perdas
-- **Visualização** de tendências
-
-### 9. Gestão de Usuários (Apenas Gestores)
-
-- **Listagem** de usuários
-- **Atribuição de roles**
-- **Criação** de novos usuários
+- **Dashboard:** métricas (clientes, valor de vendas, taxa de conversão, lead score médio), funil, gráficos, origem de leads, top corretores, insights da IA, alertas e clientes em risco.
+- **Usuários:** listagem, criação e atribuição de roles (gestor/atendente).
 
 ---
 
-## 🌐 Integrações de APIs
+## 5. Rotas e proteção de acesso
 
-### Formulário de Imóveis - Aba Localização
+- **Rotas públicas:** `/login`, `/register`, `/forgot-password`, `/reset-password`, `/auth/google/callback`.
+- **Rotas protegidas (autenticação):** todas as demais. Sem token ou com token inválido → redirect para `/login`.
+- **Rotas exclusivas para gestor** (`meta.requiresManager: true`): `/` (dashboard), `/users`, `/sales`, `/losses`. Usuário sem role `gestor` → redirect para `/clients`.
 
-O formulário de imóveis possui uma aba de **Localização** com integrações inteligentes para facilitar o cadastro:
+### Tabela resumida
 
-#### 1. **ViaCEP API** - Busca por CEP
+| Rota | Componente | Requer auth | Apenas gestor |
+|------|------------|-------------|----------------|
+| `/login`, `/register`, `/forgot-password`, `/reset-password`, `/auth/google/callback` | AuthLayout + páginas correspondentes | Não | Não |
+| `/` | DashboardPage | Sim | Sim |
+| `/clients`, `/clients/:id` | ClientsListPage, ClientDetailsPage | Sim | Não |
+| `/attendances`, `/attendances/create`, `/attendances/:id` | AttendanceListPage, AttendanceCreatePage, AttendanceDetailsPage | Sim | Não |
+| `/attendances/:id/edit` | Redireciona para `AttendanceDetailsPage` | Sim | Não |
+| `/properties`, `/properties/create`, `/properties/:id`, `/properties/:id/edit` | PropertiesListPage, PropertyFormPage, PropertyDetailsPage | Sim | Não |
+| `/visits`, `/visits/create`, `/visits/:id`, `/visits/:id/edit` | VisitsListPage, VisitFormPage, VisitDetailsPage | Sim | Não |
+| `/sales` | SalesListPage | Sim | Sim |
+| `/losses` | LossAnalysisPage | Sim | Sim |
+| `/users` | UsersPage | Sim | Sim |
 
-**Funcionalidade:**
-- Busca automática de endereço a partir do CEP
-- Preenchimento automático de:
-  - Rua/Logradouro
-  - Bairro
-  - Cidade
-  - Estado (UF)
-  - CEP formatado
+### Guards
 
-**Como funciona:**
-1. Usuário digita o CEP (com ou sem formatação)
-2. Sistema formata automaticamente para `00000-000`
-3. Ao pressionar Enter ou clicar em "Buscar", faz requisição para `https://viacep.com.br/ws/{cep}/json/`
-4. Preenche automaticamente os campos do formulário
-5. Opcionalmente busca coordenadas geográficas via Nominatim
-
-**Implementação:**
-```typescript
-// src/modules/properties/pages/PropertyFormPage.vue
-const handleSearchCep = async () => {
-  const cep = cepSearch.value.replace(/\D/g, '')
-  const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`)
-  const data = await response.json()
-  // Preenche campos automaticamente
-}
-```
-
-#### 2. **Google Geocoding API** - Busca por Endereço
-
-**Funcionalidade:**
-- Busca endereço completo a partir de texto livre
-- Suporta:
-  - Endereços completos ("Rua X, 123, Bairro Y, Cidade Z")
-  - Nomes de lugares ("Shopping Center, São Paulo")
-  - URLs do Google Maps (detecta e extrai coordenadas)
-- Retorna:
-  - Endereço completo parseado
-  - Coordenadas geográficas (latitude/longitude)
-  - CEP (quando disponível)
-
-**Como funciona:**
-1. Usuário digita endereço ou URL do Google Maps
-2. Sistema envia para backend que processa via Google Geocoding API
-3. Backend retorna dados estruturados
-4. Formulário é preenchido automaticamente
-
-**Implementação:**
-```typescript
-// Via backend: /properties/geocode/address
-const handleGeocodeAddress = async () => {
-  const addressData = await propertiesService.geocodeAddress(addressSearch.value)
-  // Preenche campos com dados geocodificados
-}
-```
-
-#### 3. **IBGE API** - Lista de Cidades por Estado
-
-**Funcionalidade:**
-- Carrega automaticamente lista de cidades quando estado é selecionado
-- Lista ordenada alfabeticamente
-- Autocomplete para facilitar seleção
-
-**Como funciona:**
-1. Usuário seleciona estado (UF)
-2. Sistema busca cidades via `https://servicodados.ibge.gov.br/api/v1/localidades/estados/{uf}/municipios`
-3. Lista de cidades é carregada no campo de seleção
-4. Usuário pode buscar e selecionar cidade
-
-**Implementação:**
-```typescript
-const loadCitiesForState = async (uf: string) => {
-  const response = await fetch(
-    `https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios?orderBy=nome`
-  )
-  const data = await response.json()
-  availableCities.value = data.map((city: { nome: string }) => city.nome)
-}
-```
-
-#### 4. **Nominatim (OpenStreetMap)** - Coordenadas Geográficas
-
-**Funcionalidade:**
-- Busca coordenadas geográficas quando CEP é encontrado via ViaCEP
-- Fallback gratuito para obter latitude/longitude
-- Não requer API key
-
-**Como funciona:**
-- Após buscar CEP via ViaCEP, sistema tenta obter coordenadas via Nominatim
-- Se bem-sucedido, preenche campos de latitude/longitude
-- Se falhar, não impede o cadastro (coordenadas são opcionais)
-
-**Benefícios das Integrações:**
-
-✅ **Redução de erros** - Dados preenchidos automaticamente são mais precisos  
-✅ **Economia de tempo** - Não precisa digitar endereço completo manualmente  
-✅ **Melhor UX** - Interface intuitiva com feedback visual  
-✅ **Dados completos** - Coordenadas geográficas para integração com mapas  
-✅ **Validação automática** - CEP e endereços são validados pelas APIs  
+- `router.beforeEach`: verifica `requiresAuth`; se necessário, valida token e chama `fetchCurrentUser`; em seguida verifica `requiresManager` e roles. Usuário autenticado em `/login` ou `/register` é redirecionado para dashboard (gestor) ou `/clients` (atendente).
 
 ---
 
-## 🔒 Rotas e Proteção de Acesso
+## 6. Integrações de APIs externas
 
-### Sistema de Rotas
+Usadas principalmente no **formulário de imóveis**, aba **Localização**:
 
-A aplicação utiliza **Vue Router 4** com guards de navegação para proteger rotas baseadas em autenticação e roles.
+| Integração | Uso |
+|------------|-----|
+| **ViaCEP** | Busca por CEP → preenchimento de logradouro, bairro, cidade, UF. CEP formatado `00000-000`. |
+| **Google Geocoding** | Via backend: busca por endereço ou URL do Google Maps → endereço parseado e coordenadas. |
+| **IBGE** | Lista de cidades por UF (`/api/v1/localidades/estados/{uf}/municipios`). |
+| **Nominatim (OSM)** | Fallback para coordenadas após ViaCEP (sem API key). |
 
-### Rotas Públicas
+Benefícios: menos erros de digitação, dados padronizados e coordenadas para mapas.
 
-| Rota | Componente | Descrição |
-|------|------------|-----------|
-| `/login` | `LoginPage.vue` | Página de login |
-| `/register` | `RegisterPage.vue` | Registro de usuário (apenas gestores) |
-| `/auth/google/callback` | `OAuthCallbackPage.vue` | Callback OAuth Google |
+---
 
-### Rotas Protegidas (Requerem Autenticação)
+## 7. Componentes reutilizáveis
 
-| Rota | Componente | Descrição |
-|------|------------|-----------|
-| `/clients` | `ClientsListPage.vue` | Listagem de clientes |
-| `/clients/:id` | `ClientDetailsPage.vue` | Detalhes do cliente |
-| `/attendances` | `AttendanceListPage.vue` | Listagem de atendimentos |
-| `/attendances/create` | `AttendanceCreatePage.vue` | Criar atendimento |
-| `/attendances/:id` | `AttendanceDetailsPage.vue` | Detalhes do atendimento |
-| `/attendances/:id/edit` | `AttendanceCreatePage.vue` | Editar atendimento |
-| `/properties` | `PropertiesListPage.vue` | Listagem de imóveis |
-| `/properties/create` | `PropertyFormPage.vue` | Criar imóvel |
-| `/properties/:id` | `PropertyDetailsPage.vue` | Detalhes do imóvel |
-| `/properties/:id/edit` | `PropertyFormPage.vue` | Editar imóvel |
-| `/visits` | `VisitsListPage.vue` | Listagem de visitas |
-| `/visits/create` | `VisitFormPage.vue` | Criar visita |
-| `/visits/:id` | `VisitDetailsPage.vue` | Detalhes da visita |
-| `/visits/:id/edit` | `VisitFormPage.vue` | Editar visita |
+| Componente | Descrição |
+|------------|-----------|
+| **SearchSelectDialog** | Dialog de busca e seleção (clientes, imóveis, corretores): debounce, paginação, loading, empty state, seleção única ou múltipla. |
+| **VisitDetectionDialog** | Exibido quando a IA detecta intenção de visita no atendimento; confirma e cria visita ou leva ao formulário com dados preenchidos. |
+| **ClientCreateDialog** | Criação/edição de cliente; máscara de telefone; classificação pela IA. |
+| **ClientAttendanceCycles** | Exibição dos ciclos de atendimento do cliente (ACTIVE e históricos). |
+| **ClientStateDerivationInfo** | Explicação do estado derivado do cliente (IA). |
+| **ClientUpdateSuggestionsDialog** | Sugestões de atualização de perfil pela IA. |
+| **LeadClassificationCard** | Exibição da classificação do lead (IA). |
+| **AttendanceJourneyPanel** | Painel da jornada do cliente no contexto do atendimento (estágio, próximas ações, saúde do relacionamento). |
+| **AiChatWidget** | Chat com IA sobre o cliente (contexto enviado ao backend). |
+| **PropertyImageUpload** | Upload de imagens de imóveis (Cloudinary), preview e validação. |
 
-### Rotas Exclusivas para Gestores
+---
 
-Estas rotas requerem autenticação **E** role de **gestor**:
+## 8. Máscaras de entrada e estado
 
-| Rota | Componente | Descrição | Meta |
-|------|------------|-----------|------|
-| `/` | `DashboardPage.vue` | Dashboard gerencial | `requiresManager: true` |
-| `/users` | `UsersPage.vue` | Gestão de usuários | `requiresManager: true` |
-| `/sales` | `SalesListPage.vue` | Gestão de vendas | `requiresManager: true` |
-| `/losses` | `LossAnalysisPage.vue` | Análise de perdas | `requiresManager: true` |
+### Máscaras (`shared/utils/masks.ts`)
 
-### Navigation Guards
+- **Moeda (tempo real):** formatação em pt-BR (ex.: `12.345,67`); usada em imóveis (preço, condomínio, IPTU) e vendas (valor da venda, métodos de pagamento).
+- **Telefone:** fixo `(11) 3456-7890`, celular `(11) 98765-4321`.
+- **CEP:** `00000-000`.
 
-O sistema implementa guards que:
+### Estado (Pinia)
 
-1. **Verificam autenticação** antes de acessar rotas protegidas
-2. **Validam token** e carregam dados do usuário
-3. **Verificam roles** para rotas exclusivas de gestor
-4. **Redirecionam** automaticamente:
-   - Não autenticado → `/login`
-   - Sem role de gestor tentando acessar rota de gestor → `/clients`
-   - Autenticado tentando acessar login → Dashboard ou Clients
+- **Auth store** (`auth.store.ts`): `token`, `user`, `userRoles`, `isAuthenticated`; ações `login`, `register`, `logout`, `fetchCurrentUser`, `setToken`, `getToken`, `initialize`. Getters: `isManager`, `hasRole(roleName)`.
+- Token sincronizado com `apiClient` e `localStorage`; interceptors do cliente adicionam `Authorization: Bearer <token>` nas requisições.
 
-**Implementação:**
-```typescript
-// src/app/router/index.ts
-router.beforeEach(async (to, _from, next) => {
-  const authStore = useAuthStore()
-  
-  // Verifica se rota requer autenticação
-  if (to.meta.requiresAuth !== false) {
-    // Valida token e carrega usuário
-    if (!authStore.isAuthenticated) {
-      next({ name: 'login' })
-      return
-    }
-    
-    // Verifica se rota requer role de gestor
-    if (to.meta.requiresManager) {
-      if (!authStore.userRoles.includes('gestor')) {
-        next({ name: 'clients' })
-        return
-      }
-    }
+---
+
+## 9. Deploy na Vercel
+
+A aplicação é um **SPA** (Vue Router em modo history). Para funcionar na Vercel, todas as rotas devem servir `index.html`; arquivos estáticos (JS, CSS, imagens) continuam sendo servidos normalmente.
+
+### Configuração no repositório
+
+- **vercel.json** na raiz já contém o rewrite necessário:
+  ```json
+  {
+    "rewrites": [
+      { "source": "/(.*)", "destination": "/index.html" }
+    ]
   }
-  
-  next()
-})
-```
+  ```
+- Build: comando padrão `npm run build` (Vite); diretório de saída: `dist/` (a Vercel detecta automaticamente para projetos Vite).
+
+### Variáveis de ambiente na Vercel
+
+- **VITE_API_BASE_URL:** URL base da API do backend (ex.: `https://sua-api.vercel.app` ou outro host).
+- Configurar em: Project → Settings → Environment Variables (Production/Preview conforme necessário).
+
+### Deploy
+
+- Conectar o repositório à Vercel; o build e o output serão detectados.
+- Após o deploy, acessar a URL fornecida pela Vercel; garantir que o backend esteja acessível pela URL definida em `VITE_API_BASE_URL` (e CORS configurado para o domínio do frontend).
 
 ---
 
-## 🧩 Componentes Reutilizáveis
+## 10. Destaques técnicos
 
-### 1. SearchSelectDialog
-
-**Descrição:** Dialog de busca e seleção genérico para clientes, imóveis, corretores, etc.
-
-**Features:**
-- Busca com debounce
-- Paginação automática
-- Loading states
-- Empty states
-- Seleção única ou múltipla
-
-**Uso:**
-```vue
-<SearchSelectDialog
-  v-model="showDialog"
-  title="Buscar Cliente"
-  :items="searchItems"
-  :loading="isLoading"
-  :total-items="totalItems"
-  @search="handleSearch"
-  @select="handleSelect"
-/>
-```
-
-### 2. VisitDetectionDialog
-
-**Descrição:** Modal exibido quando IA detecta intenção de visita em um atendimento.
-
-**Features:**
-- Exibe dados detectados (data, hora, imóvel, notas)
-- Botão de confirmação que cria visita automaticamente
-- Navegação direta para formulário de visita
-
-### 3. ClientCreateDialog
-
-**Descrição:** Dialog para criar/editar clientes.
-
-**Features:**
-- Validação de formulário
-- Máscara de telefone em tempo real
-- Classificação automática pela IA
-
-### 4. PropertyImageUpload
-
-**Descrição:** Componente para upload de imagens de imóveis.
-
-**Features:**
-- Preview de imagem
-- Upload via Cloudinary
-- Validação de tipo e tamanho
-
-### 5. AiChatWidget
-
-**Descrição:** Widget de chat com IA sobre clientes.
-
-**Features:**
-- Interface de chat
-- Contexto completo do cliente
-- Respostas da IA em tempo real
-
-### 6. ClientJourneyPanel
-
-**Descrição:** Painel exibindo análise completa da jornada do cliente pela IA.
-
-**Features:**
-- Estágio atual da jornada
-- Próximas ações sugeridas
-- Saúde do relacionamento
+- **Composition API** e `<script setup>` em todos os componentes; TypeScript em todo o projeto.
+- **Cliente HTTP centralizado** (`api.ts`): token automático, tratamento de 422 e erros padronizados.
+- **Lazy loading** de rotas (`import()` no router); code splitting e tree shaking via Vite.
+- **Responsividade** com breakpoints do Vuetify (xs a xl).
+- **UX:** loading states, snackbars, validação em tempo real, empty states.
+- **Integração com IA:** resumos, detecção de visitas/imóveis, jornada, chat e recomendações alinhados aos endpoints e regras do backend.
 
 ---
 
-## 💰 Máscaras de Entrada
-
-### Máscara de Moeda em Tempo Real
-
-**Funcionalidade:** Formatação automática de valores monetários enquanto o usuário digita, similar a aplicativos bancários.
-
-**Características:**
-- Formatação em tempo real: `1234567` → `12.345,67`
-- Trata últimos 2 dígitos como centavos
-- Mantém posição do cursor
-- Suporte a valores grandes
-
-**Implementação:**
-```typescript
-// src/shared/utils/masks.ts
-export function formatCurrencyInputRealTime(value: string): string {
-  const digits = value.replace(/\D/g, '')
-  const numValue = parseInt(digits, 10) / 100
-  return new Intl.NumberFormat('pt-BR', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(numValue)
-}
-```
-
-**Uso:**
-```vue
-<v-text-field
-  v-model="priceFormatted"
-  @input="handlePriceInput($event)"
-  @blur="handlePriceBlur()"
-/>
-```
-
-**Onde é usado:**
-- Formulário de imóveis (Preço de Venda, Preço de Aluguel, Condomínio, IPTU)
-- Formulário de vendas (Valor da Venda, Valores dos Métodos de Pagamento)
-
-### Máscara de Telefone
-
-**Funcionalidade:** Formatação automática de números de telefone brasileiros.
-
-**Formato:**
-- Fixo: `(11) 3456-7890`
-- Celular: `(11) 98765-4321`
-
-**Uso:**
-```vue
-<v-text-field
-  v-model="phoneFormatted"
-  @input="handlePhoneInput"
-  @blur="formData.phone = parsePhone(phoneFormatted)"
-/>
-```
-
-### Máscara de CEP
-
-**Funcionalidade:** Formatação automática de CEP.
-
-**Formato:** `00000-000`
-
----
-
-## 🚀 Instalação e Configuração
-
-### Pré-requisitos
-
-- **Node.js 18+**
-- **npm** ou **yarn**
-
-### 1. Instalar Dependências
-
-```bash
-npm install
-```
-
-### 2. Configurar Variáveis de Ambiente
-
-Crie um arquivo `.env` na raiz do projeto:
-
-```env
-# URL do backend
-VITE_API_URL=http://localhost:8000
-
-# URL do frontend (para OAuth callback)
-VITE_FRONTEND_URL=http://localhost:5173
-```
-
-### 3. Executar em Desenvolvimento
-
-```bash
-npm run dev
-```
-
-A aplicação estará disponível em `http://localhost:5173`
-
-### 4. Build para Produção
-
-```bash
-npm run build
-```
-
-Os arquivos otimizados estarão em `dist/`
-
-### 5. Preview da Build
-
-```bash
-npm run preview
-```
-
----
-
-## 📜 Scripts Disponíveis
-
-| Script | Descrição |
-|--------|-----------|
-| `npm run dev` | Inicia servidor de desenvolvimento com hot-reload |
-| `npm run build` | Gera build de produção otimizado |
-| `npm run preview` | Preview da build de produção localmente |
-
----
-
-## 🗂️ Arquitetura de Estado
-
-### Pinia Stores
-
-#### Auth Store (`auth.store.ts`)
-
-**Estado:**
-- `token`: Token JWT
-- `user`: Dados do usuário atual
-- `userRoles`: Roles do usuário
-- `isAuthenticated`: Status de autenticação
-
-**Ações:**
-- `login(email, password)`: Login com email/senha
-- `loginWithGoogle()`: Iniciar OAuth Google
-- `logout()`: Fazer logout
-- `fetchCurrentUser()`: Buscar dados do usuário atual
-- `setToken(token)`: Definir token
-- `getToken()`: Obter token do localStorage
-
-**Getters:**
-- `isManager`: Verifica se usuário é gestor
-- `isAuthenticated`: Verifica se está autenticado
-
----
-
-## 🎨 Destaques Técnicos
-
-### 1. Composition API
-
-Todos os componentes utilizam **Composition API** do Vue 3, proporcionando:
-- Melhor organização do código
-- Reutilização de lógica
-- Type safety com TypeScript
-- Performance otimizada
-
-### 2. TypeScript
-
-- **100% tipado** com TypeScript
-- Interfaces para todos os modelos de dados
-- Type safety em serviços e componentes
-- Autocomplete completo no IDE
-
-### 3. Componentes Reutilizáveis
-
-- **SearchSelectDialog**: Busca genérica reutilizável
-- **Máscaras**: Funções utilitárias para formatação
-- **Services**: Camada de abstração para APIs
-
-### 4. Responsividade
-
-- **Mobile-first** approach
-- **Breakpoints** do Vuetify
-- **Layout adaptativo** com grid system
-
-### 5. Performance
-
-- **Code splitting** automático pelo Vite
-- **Lazy loading** de rotas
-- **Tree shaking** de dependências não utilizadas
-- **Otimização de imagens** via Cloudinary
-
-### 6. UX/UI
-
-- **Loading states** em todas as operações assíncronas
-- **Feedback visual** com snackbars e alerts
-- **Validação em tempo real** de formulários
-- **Empty states** informativos
-- **Animações suaves** com transições do Vue
-
-### 7. Integração com Backend
-
-- **Cliente HTTP centralizado** (`api.ts`)
-- **Interceptors** para adicionar token automaticamente
-- **Tratamento de erros** padronizado
-- **Refresh token** (implementável)
-
-### 8. Detecção Automática pela IA
-
-- **VisitDetectionDialog**: Exibido quando IA detecta intenção de visita
-- **Navegação automática** para criação de visita
-- **Preenchimento automático** de dados detectados
-
----
-
-## 🔄 Fluxo de Dados
-
-```
-Usuário (Interface)
-    ↓
-Componente Vue
-    ↓
-Service (API Client)
-    ↓
-Backend API
-    ↓
-Resposta
-    ↓
-Store (Pinia) - Opcional
-    ↓
-Componente (Reatividade)
-```
-
----
-
-## 📱 Responsividade
-
-A aplicação é totalmente responsiva com breakpoints:
-
-- **xs**: < 600px (Mobile)
-- **sm**: 600px - 960px (Tablet)
-- **md**: 960px - 1264px (Desktop pequeno)
-- **lg**: 1264px - 1904px (Desktop)
-- **xl**: > 1904px (Desktop grande)
-
----
-
-## 🎯 Melhores Práticas Implementadas
-
-✅ **Separação de responsabilidades** (components, services, utils)  
-✅ **Reutilização de código** (componentes e funções compartilhadas)  
-✅ **Type safety** (TypeScript em todo o projeto)  
-✅ **Validação de formulários** (regras e feedback visual)  
-✅ **Tratamento de erros** (try/catch e mensagens amigáveis)  
-✅ **Loading states** (feedback durante operações assíncronas)  
-✅ **Acessibilidade** (labels, ARIA, navegação por teclado)  
-✅ **Performance** (lazy loading, code splitting)  
-
----
-
-## 🚀 Próximos Passos / Melhorias Futuras
-
-- [ ] Testes unitários com Vitest
-- [ ] Testes E2E com Playwright
-- [ ] PWA (Progressive Web App)
-- [ ] Notificações push
-- [ ] Modo offline
-- [ ] Internacionalização (i18n)
-- [ ] Tema dark/light
-- [ ] Exportação de relatórios (PDF/Excel)
-
----
-
-## 📝 Notas de Desenvolvimento
-
-### Estrutura de Serviços
-
-Todos os serviços seguem o mesmo padrão:
-
-```typescript
-class ServiceName {
-  async methodName(params): Promise<ReturnType> {
-    return apiClient.get|post|put|delete<ReturnType>(url, data)
-  }
-}
-
-export const serviceName = new ServiceName()
-```
-
-### Padrão de Componentes
-
-Componentes utilizam Composition API com `<script setup>`:
-
-```vue
-<script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-// Lógica do componente
-</script>
-```
-
----
-
-## 📚 Documentação Adicional
-
-- [Vue.js 3 Documentation](https://vuejs.org/)
-- [Vuetify 3 Documentation](https://vuetifyjs.com/)
-- [Vue Router Documentation](https://router.vuejs.org/)
-- [Pinia Documentation](https://pinia.vuejs.org/)
-- [Vite Documentation](https://vitejs.dev/)
+## 📚 Documentação adicional
+
+- [Vue.js 3](https://vuejs.org/)
+- [Vuetify 3](https://vuetifyjs.com/)
+- [Vue Router](https://router.vuejs.org/)
+- [Pinia](https://pinia.vuejs.org/)
+- [Vite](https://vitejs.dev/)
+- [Vercel – Rewrites](https://vercel.com/docs/edge-network/rewrites)
 
 ---
 
 <div align="center">
 
-**Desenvolvido com ❤️ usando Vue.js 3, TypeScript e Vuetify**
+**Desenvolvido com Vue.js 3, TypeScript e Vuetify**
 
-[⬆ Voltar ao topo](#-frontend---sistema-crm-imobiliário-com-inteligência-artificial)
+[⬆ Voltar ao topo](#-frontend--sistema-crm-imobiliário-com-inteligência-artificial)
 
 </div>
