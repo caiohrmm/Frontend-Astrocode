@@ -66,7 +66,7 @@
               v-if="attendance.status === 'ACTIVE'"
               color="info"
               prepend-icon="mdi-check-circle"
-              @click="handleCompleteAttendance"
+              @click="showCompleteDialog = true"
               :loading="isCompleting"
             >
               Marcar como Concluído
@@ -797,6 +797,61 @@
       </v-card>
     </v-dialog>
 
+    <!-- Complete Attendance Confirmation Dialog -->
+    <v-dialog v-model="showCompleteDialog" max-width="520" persistent>
+      <v-card>
+        <v-card-title class="d-flex align-center pt-4">
+          <v-avatar color="info" variant="tonal" size="40" class="mr-3">
+            <v-icon>mdi-check-circle</v-icon>
+          </v-avatar>
+          Encerrar ciclo como concluído
+        </v-card-title>
+        <v-card-text class="pb-2">
+          <p class="text-body-1 mb-3">
+            Este botão <strong>encerra o ciclo de atendimento</strong> sem registrar venda nem perda.
+            Nenhum dado de venda ou motivo de perda será solicitado.
+          </p>
+          <v-alert type="info" variant="tonal" density="comfortable" class="mb-3">
+            <div class="text-body-2">
+              <strong>Quando usar:</strong>
+              <ul class="mt-2 mb-0 pl-4">
+                <li>O ciclo terminou sem fechamento (ex.: cliente adiou, não respondeu mais)</li>
+                <li>Você quer apenas fechar o ciclo e não preencher venda ou perda agora</li>
+              </ul>
+            </div>
+          </v-alert>
+          <v-alert type="warning" variant="tonal" density="compact">
+            <div class="text-body-2">
+              <strong>Teve venda ou perda?</strong> Use os botões <strong>Registrar Venda</strong> ou
+              <strong>Registrar Perda</strong> no topo da página — assim o sistema mantém o histórico correto e o lead score.
+            </div>
+          </v-alert>
+          <p class="text-body-2 text-medium-emphasis mt-3 mb-0">
+            Deseja encerrar este ciclo como concluído?
+          </p>
+        </v-card-text>
+        <v-card-actions class="pt-0 pb-4 px-4">
+          <v-spacer></v-spacer>
+          <v-btn
+            variant="text"
+            @click="showCompleteDialog = false"
+            :disabled="isCompleting"
+          >
+            Cancelar
+          </v-btn>
+          <v-btn
+            color="info"
+            variant="flat"
+            prepend-icon="mdi-check-circle"
+            @click="confirmCompleteAttendance"
+            :loading="isCompleting"
+          >
+            Sim, encerrar ciclo
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- Delete Confirmation Dialog -->
     <v-dialog v-model="showDeleteDialog" max-width="500" persistent>
       <v-card>
@@ -887,6 +942,7 @@ const isCompleting = ref(false)
 const isDeleting = ref(false)
 const isAddingConversation = ref(false)
 const showDeleteDialog = ref(false)
+const showCompleteDialog = ref(false)
 const showAddConversationDialog = ref(false)
 const newConversationContent = ref('')
 const error = ref<string | null>(null)
@@ -1068,24 +1124,27 @@ const goToRecommendedProperty = (propertyId: string) => {
   router.push({ name: 'properties-details', params: { id: propertyId } })
 }
 
-// Complete attendance
+// Complete attendance (called after user confirms in dialog)
 const handleCompleteAttendance = async () => {
   if (!attendance.value) return
 
   isCompleting.value = true
   try {
-    // Update attendance status to COMPLETED
-    // This will trigger AI processing on the backend
     const updatedAttendance = await attendancesService.updateAttendance(attendance.value.id, {
       status: 'COMPLETED',
     })
 
     attendance.value = updatedAttendance
+    showCompleteDialog.value = false
 
-    // Wait a bit and then load AI summary
+    showSnackbar(
+      'success',
+      'Ciclo encerrado como concluído. A IA irá gerar o resumo final.',
+      'mdi-check-circle'
+    )
+
     setTimeout(async () => {
       await loadAISummary()
-      // Poll for AI summary if still processing
       if (aiSummary.value?.status === 'PROCESSING' || aiSummary.value?.status === 'PENDING') {
         pollAISummary()
       }
@@ -1096,6 +1155,10 @@ const handleCompleteAttendance = async () => {
   } finally {
     isCompleting.value = false
   }
+}
+
+const confirmCompleteAttendance = () => {
+  handleCompleteAttendance()
 }
 
 // Add conversation to active cycle

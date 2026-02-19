@@ -179,7 +179,6 @@
   :rules="[rules.required, rules.minLength, rules.maxLength]" 
   :rows="8" 
   prepend-inner-icon="mdi-text"
-  hint="Descreva o conteúdo da conversa. Se houver um ciclo ativo com objetivo similar, este conteúdo será adicionado ao ciclo existente. Caso contrário, um novo ciclo será criado."
   persistent-hint 
   counter
   :maxlength="100000"
