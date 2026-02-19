@@ -1622,8 +1622,19 @@
                             <h3 class="text-h6 font-weight-bold mb-1">Sugestão de Próximos Passos</h3>
                             <div class="text-caption text-medium-emphasis">
                               Ações recomendadas pela IA
+                              <template v-if="aggregatedInsights.useActiveCycleOnly"> (ciclo atual)</template>
                             </div>
                           </div>
+                          <v-chip
+                            v-if="aggregatedInsights.urgencyFromCycle"
+                            :color="getUrgencyColor(aggregatedInsights.urgencyFromCycle)"
+                            variant="flat"
+                            size="small"
+                            class="ml-auto"
+                          >
+                            <v-icon start size="14">mdi-clock-alert</v-icon>
+                            Urgência neste ciclo: {{ getUrgencyLabel(aggregatedInsights.urgencyFromCycle) }}
+                          </v-chip>
                         </div>
                       </div>
                       <div class="insight-card-content">
@@ -1895,9 +1906,20 @@ const aggregatedInsights = computed(() => {
     }
   }
 
-  // For calculations, prefer COMPLETED summaries, but use PROCESSING if that's all we have
-  const completedSummaries = availableSummaries.filter(s => s.status === 'COMPLETED')
-  const summariesForCalculation = completedSummaries.length > 0 ? completedSummaries : availableSummaries
+  // When client has an ACTIVE attendance, prefer insights from the current cycle (not past COMPLETED/sale)
+  const activeAttendanceIds = clientAttendances.value
+    .filter(a => a.status === 'ACTIVE')
+    .map(a => a.id)
+  const summariesFromActiveCycle = availableSummaries.filter(s =>
+    activeAttendanceIds.length > 0 && activeAttendanceIds.includes(s.attendance_id)
+  )
+  const useActiveCycleOnly =
+    activeAttendanceIds.length > 0 && summariesFromActiveCycle.length > 0
+
+  // For calculations: when there's an active cycle with summaries, use only those; otherwise use all
+  const baseSummaries = useActiveCycleOnly ? summariesFromActiveCycle : availableSummaries
+  const completedSummaries = baseSummaries.filter(s => s.status === 'COMPLETED')
+  const summariesForCalculation = completedSummaries.length > 0 ? completedSummaries : baseSummaries
 
   // Sentiment Analysis
   const sentimentCounts: Record<Sentiment, number> = {
@@ -1995,37 +2017,38 @@ const aggregatedInsights = computed(() => {
     new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   )[0]
 
-  // Next Steps (aggregate from attendances ai_next_steps)
+  // Next Steps: prefer current ACTIVE cycle; only use COMPLETED when no ACTIVE has steps
   const allNextSteps: string[] = []
 
-  // First, try to get from attendances ai_next_steps field
-  clientAttendances.value
+  const activeWithSteps = clientAttendances.value
+    .filter(a => a.status === 'ACTIVE' && a.ai_next_steps)
+    .sort((a, b) => new Date((b.updated_at || b.created_at)).getTime() - new Date((a.updated_at || a.created_at)).getTime())
+  const completedWithSteps = clientAttendances.value
     .filter(a => a.status === 'COMPLETED' && a.ai_next_steps)
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .forEach(attendance => {
-      if (attendance.ai_next_steps) {
-        // Parse the ai_next_steps field and extract individual steps
-        const lines = attendance.ai_next_steps.split('\n')
-        lines.forEach(line => {
-          const trimmed = line.trim()
-          // Skip lines that look like metadata (e.g., "Tipo de interesse: BUY")
-          if (trimmed.match(/^(Tipo de interesse|Urgência|Interest type|Urgency):/i)) {
-            return
+    .sort((a, b) => new Date(b.updated_at || b.created_at).getTime() - new Date(a.updated_at || a.created_at).getTime())
+
+  const attendancesForNextSteps = activeWithSteps.length > 0 ? activeWithSteps : completedWithSteps
+
+  attendancesForNextSteps.forEach(attendance => {
+    if (attendance.ai_next_steps) {
+      const lines = attendance.ai_next_steps.split('\n')
+      lines.forEach(line => {
+        const trimmed = line.trim()
+        if (trimmed.match(/^(Tipo de interesse|Urgência|Interest type|Urgency):/i)) {
+          return
+        }
+        const match = trimmed.match(/^(?:-|\*|\d+\.)\s*(.+)/)
+        if (match) {
+          const step = match[1].trim()
+          if (step && step.length > 10 && !allNextSteps.includes(step)) {
+            allNextSteps.push(step)
           }
-          // Extract list items
-          const match = trimmed.match(/^(?:-|\*|\d+\.)\s*(.+)/)
-          if (match) {
-            const step = match[1].trim()
-            if (step && step.length > 10 && !allNextSteps.includes(step)) {
-              allNextSteps.push(step)
-            }
-          } else if (trimmed.length > 20 && !trimmed.includes(':') && !allNextSteps.includes(trimmed)) {
-            // Also include non-list paragraphs that look like action items
-            allNextSteps.push(trimmed)
-          }
-        })
-      }
-    })
+        } else if (trimmed.length > 20 && !trimmed.includes(':') && !allNextSteps.includes(trimmed)) {
+          allNextSteps.push(trimmed)
+        }
+      })
+    }
+  })
 
   // Generate smart suggestions based on client profile if no AI steps
   if (allNextSteps.length === 0 && client.value) {
@@ -2082,6 +2105,13 @@ const aggregatedInsights = computed(() => {
     }
   }
 
+  // When showing active-cycle-only insights, expose urgency from the cycle summary
+  // so the UI can show it even if client.current_urgency_level hasn't been refetched yet
+  const urgencyFromCycle =
+    useActiveCycleOnly && mostRecentSummary?.urgency_level_detected
+      ? mostRecentSummary.urgency_level_detected
+      : null
+
   return {
     clientSummary: mostRecentSummary?.summary_text || null,
     sentimentAnalysis: {
@@ -2092,6 +2122,8 @@ const aggregatedInsights = computed(() => {
     averageLeadScore,
     nextSteps: allNextSteps.slice(0, 6), // Top 6 next steps
     leadScoreExplanation,
+    urgencyFromCycle,
+    useActiveCycleOnly,
   }
 })
 
