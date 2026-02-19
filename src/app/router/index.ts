@@ -152,11 +152,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/attendances/:id/edit',
     name: 'attendances-edit',
-    component: () => import('@/modules/attendances/pages/AttendanceCreatePage.vue'),
-    meta: {
-      layout: 'app',
-      requiresAuth: true,
-    },
+    redirect: (to) => ({ name: 'attendances-details', params: { id: to.params.id } }),
   },
   {
     path: '/visits',

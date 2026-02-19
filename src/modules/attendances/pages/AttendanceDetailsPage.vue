@@ -80,14 +80,15 @@
             >
               Adicionar Conversa
             </v-btn>
-            <!-- Edit Button -->
+            <!-- Alterar imóvel (única edição permitida) -->
             <v-btn
-              color="primary"
-              prepend-icon="mdi-pencil"
-              @click="handleEdit"
-              :loading="isDeleting"
+              color="secondary"
+              variant="tonal"
+              prepend-icon="mdi-home-edit"
+              @click="openChangePropertyDialog"
+              :loading="isUpdatingProperty"
             >
-              Editar
+              Alterar imóvel
             </v-btn>
             <!-- Delete Button -->
             <v-btn
@@ -718,80 +719,180 @@
       </v-row>
     </div>
 
-    <!-- Add Conversation Dialog -->
-    <v-dialog v-model="showAddConversationDialog" max-width="700" persistent>
+    <!-- Add Conversation Dialog (step: write → confirm) -->
+    <v-dialog
+      v-model="showAddConversationDialog"
+      max-width="700"
+      persistent
+      @update:model-value="(v) => { if (!v) addConversationStep = 'write' }"
+    >
       <v-card>
         <v-card-title class="d-flex align-center">
           <v-icon color="primary" class="mr-3">mdi-message-plus</v-icon>
-          Adicionar Conversa ao Ciclo
+          {{ addConversationStep === 'confirm' ? 'Confirmar conversa' : 'Adicionar Conversa ao Ciclo' }}
         </v-card-title>
         <v-card-text>
-          <v-alert type="info" variant="tonal" density="comfortable" class="mb-4">
-            <div class="text-body-2">
-              Esta conversa será adicionada ao ciclo atual. O objetivo permanece o mesmo:
-              <strong class="ml-1">{{ attendance?.objective || 'Não definido' }}</strong>
-            </div>
-          </v-alert>
-          <v-textarea
-            v-model="newConversationContent"
-            label="Nova Conversa *"
-            variant="outlined"
-            :rows="6"
-            prepend-inner-icon="mdi-text"
-            hint="Descreva o conteúdo da nova conversa"
-            persistent-hint
-            counter
-            :maxlength="100000"
-            :rules="[rules.required, rules.minLength, rules.maxLength]"
-            :error-messages="newConversationErrorMessages"
-            :error="newConversationErrorMessages.length > 0"
-          >
-            <template #counter="{ value, maxLength }">
-              <span :class="getCounterColor(value ?? 0, maxLength ?? 100000)">
-                {{ formatCounter(value ?? 0, maxLength ?? 100000) }}
-              </span>
-            </template>
-          </v-textarea>
-          <!-- Warning when approaching limit -->
-          <v-alert
-            v-if="newConversationLength > 90000"
-            type="warning"
-            variant="tonal"
-            density="compact"
-            class="mt-2"
-          >
-            <div class="d-flex align-center">
-              <v-icon size="18" class="mr-2">mdi-alert</v-icon>
-              <div>
-                <div class="text-body-2 font-weight-medium">
-                  Você está próximo do limite de 100.000 caracteres
-                </div>
-                <div class="text-caption">
-                  Restam {{ (100000 - newConversationLength).toLocaleString('pt-BR') }} caracteres.
-                  O conteúdo será truncado automaticamente pela IA se exceder o limite.
+          <!-- Step 1: Write -->
+          <template v-if="addConversationStep === 'write'">
+            <v-alert type="info" variant="tonal" density="comfortable" class="mb-4">
+              <div class="text-body-2">
+                Esta conversa será adicionada ao ciclo atual. O objetivo permanece o mesmo:
+                <strong class="ml-1">{{ attendance?.objective || 'Não definido' }}</strong>
+              </div>
+            </v-alert>
+            <v-textarea
+              v-model="newConversationContent"
+              label="Nova Conversa *"
+              variant="outlined"
+              :rows="6"
+              prepend-inner-icon="mdi-text"
+              hint="Descreva o conteúdo da nova conversa. Na próxima tela você poderá revisar antes de enviar."
+              persistent-hint
+              counter
+              :maxlength="100000"
+              :rules="[rules.required, rules.minLength, rules.maxLength]"
+              :error-messages="newConversationErrorMessages"
+              :error="newConversationErrorMessages.length > 0"
+            >
+              <template #counter="{ value, maxLength }">
+                <span :class="getCounterColor(value ?? 0, maxLength ?? 100000)">
+                  {{ formatCounter(value ?? 0, maxLength ?? 100000) }}
+                </span>
+              </template>
+            </v-textarea>
+            <v-alert
+              v-if="newConversationLength > 90000"
+              type="warning"
+              variant="tonal"
+              density="compact"
+              class="mt-2"
+            >
+              <div class="d-flex align-center">
+                <v-icon size="18" class="mr-2">mdi-alert</v-icon>
+                <div>
+                  <div class="text-body-2 font-weight-medium">
+                    Você está próximo do limite de 100.000 caracteres
+                  </div>
+                  <div class="text-caption">
+                    Restam {{ (100000 - newConversationLength).toLocaleString('pt-BR') }} caracteres.
+                  </div>
                 </div>
               </div>
+            </v-alert>
+          </template>
+          <!-- Step 2: Confirm (read before adding) -->
+          <template v-else>
+            <v-alert type="warning" variant="tonal" density="comfortable" class="mb-4">
+              <div class="text-body-2">
+                <strong>Revise o texto abaixo.</strong> Este conteúdo será adicionado ao ciclo e a IA reprocessará o atendimento. Confirme apenas se estiver correto.
+              </div>
+            </v-alert>
+            <div class="conversation-preview pa-3 rounded-lg bg-surface-variant">
+              <div class="text-body-2 text-medium-emphasis mb-2">O que será adicionado:</div>
+              <div class="text-body-1 conversation-preview-text" style="white-space: pre-wrap;">{{ newConversationContent.trim() }}</div>
             </div>
-          </v-alert>
+          </template>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn
-            variant="text"
-            @click="showAddConversationDialog = false"
-            :disabled="isAddingConversation"
+          <template v-if="addConversationStep === 'write'">
+            <v-btn
+              variant="text"
+              @click="showAddConversationDialog = false"
+              :disabled="isAddingConversation"
+            >
+              Cancelar
+            </v-btn>
+            <v-btn
+              color="primary"
+              variant="flat"
+              prepend-icon="mdi-arrow-right"
+              @click="addConversationStep = 'confirm'"
+              :disabled="!newConversationContent || newConversationContent.trim().length < 10 || newConversationLength > 100000"
+            >
+              Revisar e continuar
+            </v-btn>
+          </template>
+          <template v-else>
+            <v-btn
+              variant="text"
+              @click="addConversationStep = 'write'"
+              :disabled="isAddingConversation"
+            >
+              Voltar
+            </v-btn>
+            <v-btn
+              color="primary"
+              variant="flat"
+              prepend-icon="mdi-check"
+              @click="handleAddConversation"
+              :loading="isAddingConversation"
+            >
+              Confirmar e adicionar
+            </v-btn>
+          </template>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Alterar imóvel vinculado (modal específico) -->
+    <v-dialog v-model="showChangePropertyDialog" max-width="560" persistent>
+      <v-card>
+        <v-card-title class="d-flex align-center">
+          <v-icon color="secondary" class="mr-3">mdi-home-edit</v-icon>
+          Alterar imóvel vinculado
+        </v-card-title>
+        <v-card-text>
+          <p class="text-body-2 text-medium-emphasis mb-4">
+            Este é o único dado do atendimento que pode ser alterado. O imóvel vinculado é monitorado pela IA no resumo e nas ações.
+          </p>
+          <SearchSelectDialog
+            v-model="changePropertySelectedId"
+            label="Imóvel vinculado ao ciclo"
+            dialog-title="Buscar imóvel"
+            icon="mdi-home"
+            icon-color="secondary"
+            item-icon="mdi-home"
+            placeholder="Clique para buscar imóvel..."
+            hint="Selecione o imóvel ou limpe para desvincular"
+            :persistent-hint="true"
+            :clearable="true"
+            :items="propertySearchItems"
+            :total-items="propertiesTotalItems"
+            :items-per-page="propertiesPerPage"
+            :is-loading="isLoadingProperties"
+            display-field="title"
+            @search="handleChangePropertySearch"
+            @select="handleChangePropertySelect"
           >
+            <template #item-prepend="{ item }">
+              <v-avatar color="success" size="40" class="mr-3" rounded="lg">
+                <v-img v-if="item.main_image_url" :src="item.main_image_url" cover></v-img>
+                <v-icon v-else color="white">mdi-home</v-icon>
+              </v-avatar>
+            </template>
+            <template #item-title="{ item }">
+              {{ item.title }}
+            </template>
+            <template #item-subtitle="{ item }">
+              <span>Código: {{ item.code }}</span>
+              <span v-if="item.city" class="ml-2">• {{ item.city }}</span>
+            </template>
+          </SearchSelectDialog>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn variant="text" @click="showChangePropertyDialog = false" :disabled="isUpdatingProperty">
             Cancelar
           </v-btn>
           <v-btn
-            color="primary"
+            color="secondary"
             variant="flat"
-            prepend-icon="mdi-content-save"
-            @click="handleAddConversation"
-            :loading="isAddingConversation"
-            :disabled="!newConversationContent || newConversationContent.trim().length < 10 || newConversationLength > 100000"
+            prepend-icon="mdi-check"
+            :loading="isUpdatingProperty"
+            @click="confirmChangeProperty"
           >
-            Adicionar Conversa
+            Salvar imóvel
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -931,6 +1032,7 @@ import { salesService } from '@/shared/services/sales.service'
 import { lossesService } from '@/shared/services/losses.service'
 import { visitsService, type Visit } from '@/shared/services/visits.service'
 import { formatPhone } from '@/shared/utils/masks'
+import SearchSelectDialog from '@/shared/components/SearchSelectDialog.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -944,7 +1046,15 @@ const isAddingConversation = ref(false)
 const showDeleteDialog = ref(false)
 const showCompleteDialog = ref(false)
 const showAddConversationDialog = ref(false)
+const addConversationStep = ref<'write' | 'confirm'>('write')
 const newConversationContent = ref('')
+const showChangePropertyDialog = ref(false)
+const isUpdatingProperty = ref(false)
+const changePropertySelectedId = ref<string | null>(null)
+const propertySearchItems = ref<Array<{ id: string; title: string; code?: string; city?: string; main_image_url?: string }>>([])
+const propertiesTotalItems = ref(0)
+const propertiesPerPage = 10
+const isLoadingProperties = ref(false)
 const error = ref<string | null>(null)
 
 // Snackbar state
@@ -1576,9 +1686,75 @@ const getVisitStatusLabel = (status: string): string => {
 }
 
 // Edit attendance
-const handleEdit = () => {
-  if (attendance.value) {
-    router.push({ name: 'attendances-edit', params: { id: attendance.value.id } })
+// --- Alterar imóvel (única edição permitida) ---
+const openChangePropertyDialog = () => {
+  changePropertySelectedId.value = attendance.value?.property_id ?? null
+  showChangePropertyDialog.value = true
+  handleChangePropertySearch('', 1)
+}
+
+const handleChangePropertySearch = async (query: string, page: number) => {
+  isLoadingProperties.value = true
+  try {
+    const data = await propertiesService.listProperties({
+      limit: 1000,
+      available_only: true,
+    })
+    let filtered = data
+    if (query?.trim()) {
+      const q = query.toLowerCase().trim()
+      filtered = data.filter(
+        (p) =>
+          p.title?.toLowerCase().includes(q) ||
+          p.code?.toLowerCase().includes(q) ||
+          p.city?.toLowerCase().includes(q) ||
+          (p.neighborhood && p.neighborhood.toLowerCase().includes(q))
+      )
+    }
+    const start = (page - 1) * propertiesPerPage
+    const paginated = filtered.slice(start, start + propertiesPerPage)
+    propertySearchItems.value = paginated.map((p) => ({
+      id: p.id,
+      title: p.title,
+      code: p.code,
+      city: p.city,
+      neighborhood: p.neighborhood,
+      main_image_url: p.main_image_url,
+    }))
+    propertiesTotalItems.value = filtered.length
+  } catch (e) {
+    console.error('Error searching properties:', e)
+    propertySearchItems.value = []
+    propertiesTotalItems.value = 0
+  } finally {
+    isLoadingProperties.value = false
+  }
+}
+
+const handleChangePropertySelect = () => {
+  // Selection is bound to changePropertySelectedId
+}
+
+const confirmChangeProperty = async () => {
+  if (!attendance.value) return
+  isUpdatingProperty.value = true
+  try {
+    const updated = await attendancesService.updateAttendance(attendance.value.id, {
+      property_id: changePropertySelectedId.value || null,
+    })
+    attendance.value = updated
+    property.value =
+      updated.property_id != null
+        ? await propertiesService.getPropertyById(updated.property_id)
+        : null
+    showChangePropertyDialog.value = false
+    showSnackbar('success', 'Imóvel vinculado atualizado.', 'mdi-home-edit')
+  } catch (err: any) {
+    console.error('Error updating property:', err)
+    error.value = err.response?.data?.detail || err.message || 'Erro ao atualizar imóvel'
+    showSnackbar('error', error.value, 'mdi-alert-circle')
+  } finally {
+    isUpdatingProperty.value = false
   }
 }
 
