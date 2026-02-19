@@ -428,8 +428,10 @@ const suggestedQuestions = computed(() => {
       suggestions.push('Qual o orçamento deste cliente?')
     }
     if (availableContext.value.attendance_id) {
-      suggestions.push('O que foi discutido neste atendimento?')
-      suggestions.push('Qual o resumo deste atendimento?')
+      suggestions.push('Me dê um resumo completo deste atendimento com todo o contexto')
+      suggestions.push('Qual o estado atual do atendimento e do imóvel vinculado?')
+      suggestions.push('Teve venda ou perda? Tem visita agendada?')
+      suggestions.push('Quais os próximos passos sugeridos pela IA?')
     }
   }
   
