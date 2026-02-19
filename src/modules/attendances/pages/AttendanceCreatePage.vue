@@ -153,14 +153,20 @@
                   </v-text-field>
                 </v-col>
 
-                <!-- Status -->
-                <v-col cols="12" md="6">
-                  <v-select v-model="formData.status" :items="statusOptions" label="Status" variant="outlined"
-                    prepend-inner-icon="mdi-flag" hint="Status do ciclo de atendimento" persistent-hint item-title="title"
-                    item-value="value"></v-select>
+                <!-- Status (apenas na edição: novo atendimento sempre inicia ATIVO) -->
+                <v-col v-if="isEditMode" cols="12" md="6">
+                  <v-select
+                    v-model="formData.status"
+                    :items="statusOptions"
+                    label="Status do ciclo"
+                    variant="outlined"
+                    prepend-inner-icon="mdi-flag"
+                    hint="Altere para Concluído, Perdido ou Abandonado quando o ciclo encerrar."
+                    persistent-hint
+                    item-title="title"
+                    item-value="value"
+                  />
                 </v-col>
-
-              
 
                 <!-- Conteúdo do Atendimento * -->
                 <v-col cols="12">
