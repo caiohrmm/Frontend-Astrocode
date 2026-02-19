@@ -20,13 +20,7 @@
               </v-btn>
 
               <div class="d-flex align-center ga-2">
-                <v-btn variant="flat" color="success" size="small" prepend-icon="mdi-handshake" @click="openSaleDialog">
-                  Registrar Venda
-                </v-btn>
-                <v-btn variant="flat" color="warning" size="small" prepend-icon="mdi-account-remove"
-                  @click="openLossDialog">
-                  Registrar Perda
-                </v-btn>
+               
                 <v-btn variant="tonal" color="white" size="small" prepend-icon="mdi-pencil" @click="handleEditClick">
                   Editar
                 </v-btn>
