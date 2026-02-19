@@ -35,6 +35,10 @@ export interface AISummary {
     mentions?: string[]
     city?: string
     property_type?: string
+    /** Imóvel comprado/alugado quando atendimento concluído com venda */
+    property_purchased?: string
+    /** Imóvel do atendimento quando encerrado como perda */
+    property_lost?: string
   } | null
   detected_intent: DetectedIntent | null
   interest_type_detected: string | null

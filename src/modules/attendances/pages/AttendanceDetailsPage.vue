@@ -304,11 +304,38 @@
                     </v-card>
                   </v-col>
                 </v-row>
+
+                <!-- Imóvel do negócio (venda ou perda) -->
+                <v-card-text
+                  v-if="(aiSummary.detected_intent === 'SALE_COMPLETED' && aiSummary.key_points?.property_purchased) || (aiSummary.detected_intent === 'LOSS_REGISTERED' && aiSummary.key_points?.property_lost)"
+                  class="pa-4 pt-0"
+                >
+                  <v-alert
+                    :color="aiSummary.detected_intent === 'SALE_COMPLETED' ? 'success' : 'warning'"
+                    variant="tonal"
+                    density="comfortable"
+                    class="mb-0"
+                  >
+                    <div class="d-flex align-center">
+                      <v-icon start size="24">
+                        {{ aiSummary.detected_intent === 'SALE_COMPLETED' ? 'mdi-handshake' : 'mdi-hand-back-right' }}
+                      </v-icon>
+                      <div>
+                        <div class="font-weight-medium">
+                          {{ aiSummary.detected_intent === 'SALE_COMPLETED' ? 'Imóvel comprado/alugado' : 'Imóvel do atendimento (perda)' }}
+                        </div>
+                        <div class="text-body-2 mt-1">
+                          {{ aiSummary.key_points?.property_purchased || aiSummary.key_points?.property_lost }}
+                        </div>
+                      </div>
+                    </div>
+                  </v-alert>
+                </v-card-text>
               </v-card-text>
 
               <!-- Detected Preferences -->
               <v-card-text
-                v-if="aiSummary.interest_type_detected || aiSummary.budget_min_detected || aiSummary.budget_max_detected"
+                v-if="aiSummary.interest_type_detected || aiSummary.budget_min_detected || aiSummary.budget_max_detected || aiSummary.key_points?.city || aiSummary.key_points?.property_type || aiSummary.key_points?.property_purchased || aiSummary.key_points?.property_lost"
                 class="pa-4 pt-0"
               >
                 <v-expansion-panels variant="accordion" class="mb-2">
@@ -319,6 +346,20 @@
                     </v-expansion-panel-title>
                     <v-expansion-panel-text>
                       <v-list density="compact">
+                        <v-list-item v-if="aiSummary.key_points?.property_purchased">
+                          <template #prepend>
+                            <v-icon color="success">mdi-handshake</v-icon>
+                          </template>
+                          <v-list-item-title>Imóvel comprado/alugado</v-list-item-title>
+                          <v-list-item-subtitle>{{ aiSummary.key_points.property_purchased }}</v-list-item-subtitle>
+                        </v-list-item>
+                        <v-list-item v-if="aiSummary.key_points?.property_lost">
+                          <template #prepend>
+                            <v-icon color="warning">mdi-hand-back-right</v-icon>
+                          </template>
+                          <v-list-item-title>Imóvel do atendimento (perda)</v-list-item-title>
+                          <v-list-item-subtitle>{{ aiSummary.key_points.property_lost }}</v-list-item-subtitle>
+                        </v-list-item>
                         <v-list-item v-if="aiSummary.interest_type_detected">
                           <template #prepend>
                             <v-icon>mdi-hand-pointing-right</v-icon>

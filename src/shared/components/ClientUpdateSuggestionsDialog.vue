@@ -154,6 +154,8 @@ interface AISummaryProps {
   key_points?: {
     city?: string | null
     property_type?: string | null
+    property_purchased?: string | null
+    property_lost?: string | null
     topics?: string[]
     requirements?: string[]
     mentions?: string[]

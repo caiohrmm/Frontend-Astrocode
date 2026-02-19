@@ -1530,6 +1530,18 @@
                                     <v-icon size="18" color="success" class="mr-2">mdi-format-list-bulleted</v-icon>
                                     Pontos-chave
                                   </div>
+                                  <div v-if="summary.key_points.property_purchased" class="mb-2">
+                                    <v-chip size="small" variant="flat" color="success" class="mr-2">
+                                      <v-icon start size="14">mdi-handshake</v-icon>
+                                      Imóvel comprado/alugado: {{ summary.key_points.property_purchased }}
+                                    </v-chip>
+                                  </div>
+                                  <div v-if="summary.key_points.property_lost" class="mb-2">
+                                    <v-chip size="small" variant="flat" color="warning" class="mr-2">
+                                      <v-icon start size="14">mdi-hand-back-right</v-icon>
+                                      Imóvel (perda): {{ summary.key_points.property_lost }}
+                                    </v-chip>
+                                  </div>
                                   <div class="d-flex flex-wrap ga-2">
                                     <template v-if="summary.key_points.topics">
                                       <v-chip v-for="topic in summary.key_points.topics" :key="topic" size="small"
