@@ -3209,10 +3209,8 @@ const createLoss = async () => {
     closeLossDialog()
     // Reload client to get updated status
     await loadClient()
-    alert('Perda registrada. A IA irá analisar este caso para gerar insights.')
   } catch (error: any) {
     console.error('Error creating loss:', error)
-    alert(`Erro ao registrar perda: ${error?.message || 'Erro desconhecido'}`)
   } finally {
     isCreatingLoss.value = false
   }
