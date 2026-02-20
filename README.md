@@ -9,6 +9,8 @@
 [![Vuetify](https://img.shields.io/badge/Vuetify-3.11-1867C0?logo=vuetify&logoColor=white)](https://vuetifyjs.com)
 [![Vite](https://img.shields.io/badge/Vite-7.2-646CFF?logo=vite&logoColor=white)](https://vitejs.dev)
 
+**Aplicação em produção (Vercel):** [https://frontend-astrocode.vercel.app/](https://frontend-astrocode.vercel.app/)
+
 </div>
 
 ---
@@ -277,6 +279,7 @@ A aplicação é um **SPA** (Vue Router em modo history). Para funcionar na Verc
 ### Deploy
 
 - Conectar o repositório à Vercel; o build e o output serão detectados.
+- **Aplicação em produção:** [https://frontend-astrocode.vercel.app/](https://frontend-astrocode.vercel.app/)
 - Após o deploy, acessar a URL fornecida pela Vercel; garantir que o backend esteja acessível pela URL definida em `VITE_API_BASE_URL` (e CORS configurado para o domínio do frontend).
 
 ---
