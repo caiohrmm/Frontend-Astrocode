@@ -2240,21 +2240,22 @@ const loadProfileBasedProperties = async () => {
         if (!cityMatch) return false
       }
 
-      // Match budget
+      // Match budget: include properties at or below max (show cheaper options too; only exclude above max)
       const minBudget = client.value?.current_budget_min ? parseFloat(client.value.current_budget_min) : null
       const maxBudget = client.value?.current_budget_max ? parseFloat(client.value.current_budget_max) : null
 
-      if (minBudget || maxBudget) {
+      if (minBudget != null || maxBudget != null) {
         const priceValue = client.value?.current_interest_type === 'RENT'
           ? property.rent_price
           : property.price
 
-        const price = typeof priceValue === 'string' ? parseFloat(priceValue) : priceValue
+        const price = priceValue != null && priceValue !== '' ? parseFloat(String(priceValue)) : NaN
+        if (!Number.isFinite(price)) return false
 
-        if (price) {
-          if (minBudget && price < minBudget) return false
-          if (maxBudget && price > maxBudget) return false
-        }
+        const maxWithTolerance = maxBudget != null ? maxBudget * 1.2 : null
+        if (maxWithTolerance != null && price > maxWithTolerance) return false
+        const minPermissive = minBudget != null ? minBudget * 0.6 : null
+        if (minPermissive != null && price < minPermissive) return false
       }
 
       return true
