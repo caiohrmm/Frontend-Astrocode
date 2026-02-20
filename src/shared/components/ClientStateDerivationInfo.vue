@@ -58,7 +58,7 @@
       <!-- Info Alert -->
       <v-alert type="info" variant="tonal" density="compact" class="mt-3">
         <div class="text-caption">
-          <v-icon size="16" class="mr-1">mdi-information</v-icon>
+        
           O perfil deste cliente é atualizado automaticamente pela IA com base nos sinais consolidados de todos os ciclos de atendimento.
           O sistema usa lógica anti-oscilação para manter estabilidade.
         </div>

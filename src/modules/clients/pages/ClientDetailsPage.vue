@@ -1454,7 +1454,7 @@
                       </div>
                       <div class="insight-card-content">
                         <v-alert type="info" variant="tonal" density="comfortable" class="mt-0">
-                          <v-icon start size="18">mdi-information</v-icon>
+                         
                           <span class="text-body-2">Nenhuma propriedade encontrada que corresponda ao perfil de interesse do cliente. Cadastre mais propriedades ou ajuste o perfil de interesse.</span>
                         </v-alert>
                       </div>
@@ -1716,7 +1716,7 @@ import {
 } from '@/shared/services/clients.service'
 import { usersService, type User } from '@/shared/services/users.service'
 import { aiSummariesService, type AISummary, type Sentiment, type DetectedIntent } from '@/shared/services/aiSummaries.service'
-import { propertiesService, type Property } from '@/shared/services/properties.service'
+import { propertiesService, type ListPropertiesParams, type Property } from '@/shared/services/properties.service'
 import { salesService, type PaymentMethod, type PaymentMethodItem, PaymentMethod as PaymentMethodEnum, SaleType } from '@/shared/services/sales.service'
 import {
   lossesService,
@@ -2199,10 +2199,25 @@ const loadProfileBasedProperties = async () => {
   if (!hasInterestProfile.value) return
 
   try {
-    // Get all properties and filter based on client profile
-    const allProperties = await propertiesService.listProperties({ limit: 100 })
+    // Request properties with client filters so backend returns relevant set (e.g. city Ourinhos)
+    const listParams: ListPropertiesParams = {
+      limit: 100,
+      status: 'PUBLISHED',
+    }
+    if (client.value.current_city_interest) {
+      listParams.city = client.value.current_city_interest
+    }
+    if (client.value.current_property_type) {
+      listParams.property_type = client.value.current_property_type
+    }
+    if (client.value.current_interest_type === 'BUY') {
+      listParams.business_type = 'SALE'
+    } else if (client.value.current_interest_type === 'RENT') {
+      listParams.business_type = 'RENT'
+    }
+    const allProperties = await propertiesService.listProperties(listParams)
 
-    // Filter properties based on client preferences
+    // Filter properties based on client preferences (budget and any extra client-side filter)
     const filtered = allProperties.filter(property => {
       // Only published properties
       if (property.status !== 'PUBLISHED') return false
@@ -3381,7 +3396,9 @@ const getPropertyStatusLabel = (status: string): string => {
 
 onMounted(async () => {
   await loadClient()
-  
+  // Precarregar recomendações de propriedades (IA + API + perfil) para que apareçam ao abrir a aba Insights
+  loadAIInsights()
+
   // Check if loss dialog should be opened from query params (when loss is detected)
   if (route.query.showLossDialog === 'true') {
     // Pre-fill loss form with detected information
