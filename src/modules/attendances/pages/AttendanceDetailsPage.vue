@@ -432,47 +432,62 @@
                       v-if="recommendedPropertiesMap[propertyId]"
                       variant="outlined"
                       class="h-100"
-                      @click="goToRecommendedProperty(propertyId)"
-                      style="cursor: pointer"
                     >
                       <v-card-text class="pa-3">
                         <div class="d-flex align-center">
-                          <v-avatar
-                            v-if="recommendedPropertiesMap[propertyId].main_image_url"
-                            size="56"
-                            class="mr-3"
-                            rounded="lg"
+                          <div
+                            class="d-flex align-center flex-grow-1"
+                            style="cursor: pointer"
+                            @click="goToRecommendedProperty(propertyId)"
                           >
-                            <v-img
-                              :src="recommendedPropertiesMap[propertyId].main_image_url"
-                              cover
-                            ></v-img>
-                          </v-avatar>
-                          <v-avatar
-                            v-else
-                            color="primary"
-                            size="56"
-                            class="mr-3"
-                            rounded="lg"
-                          >
-                            <v-icon color="white">mdi-home</v-icon>
-                          </v-avatar>
-                          <div class="flex-grow-1">
-                            <div class="text-body-2 font-weight-medium mb-1">
-                              {{ recommendedPropertiesMap[propertyId].title }}
-                            </div>
-                            <div class="text-caption text-medium-emphasis mb-1">
-                              {{ recommendedPropertiesMap[propertyId].code }}
-                            </div>
-                            <v-chip
-                              :color="getPropertyStatusColor(recommendedPropertiesMap[propertyId].status)"
-                              variant="flat"
-                              size="x-small"
+                            <v-avatar
+                              v-if="recommendedPropertiesMap[propertyId].main_image_url"
+                              size="56"
+                              class="mr-3"
+                              rounded="lg"
                             >
-                              {{ getPropertyStatusLabel(recommendedPropertiesMap[propertyId].status) }}
-                            </v-chip>
+                              <v-img
+                                :src="recommendedPropertiesMap[propertyId].main_image_url"
+                                cover
+                              ></v-img>
+                            </v-avatar>
+                            <v-avatar
+                              v-else
+                              color="primary"
+                              size="56"
+                              class="mr-3"
+                              rounded="lg"
+                            >
+                              <v-icon color="white">mdi-home</v-icon>
+                            </v-avatar>
+                            <div class="flex-grow-1">
+                              <div class="text-body-2 font-weight-medium mb-1">
+                                {{ recommendedPropertiesMap[propertyId].title }}
+                              </div>
+                              <div class="text-caption text-medium-emphasis mb-1">
+                                {{ recommendedPropertiesMap[propertyId].code }}
+                              </div>
+                              <v-chip
+                                :color="getPropertyStatusColor(recommendedPropertiesMap[propertyId].status)"
+                                variant="flat"
+                                size="x-small"
+                              >
+                                {{ getPropertyStatusLabel(recommendedPropertiesMap[propertyId].status) }}
+                              </v-chip>
+                            </div>
+                            <v-icon color="primary">mdi-chevron-right</v-icon>
                           </div>
-                          <v-icon color="primary">mdi-chevron-right</v-icon>
+                          <v-btn
+                            v-if="attendance.status === 'ACTIVE' && !attendance.property_id"
+                            color="primary"
+                            variant="flat"
+                            size="small"
+                            class="ml-2"
+                            :loading="isLinkingPropertyId === propertyId"
+                            @click.stop="linkPropertyToAttendance(propertyId)"
+                          >
+                            Vincular
+                          </v-btn>
                         </div>
                       </v-card-text>
                     </v-card>
@@ -638,6 +653,61 @@
             </v-card-text>
             <v-card-text v-else class="pa-4">
               <v-skeleton-loader type="list-item"></v-skeleton-loader>
+            </v-card-text>
+          </v-card>
+
+          <!-- Propriedades Recomendadas (quando ainda não há imóvel vinculado) -->
+          <v-card
+            v-else-if="attendance.status === 'ACTIVE' && recommendedProperties.length > 0"
+            elevation="2"
+            class="mb-4"
+            rounded="lg"
+          >
+            <v-card-title class="pa-4 d-flex align-center">
+              <v-icon class="mr-2" color="success">mdi-home-heart</v-icon>
+              Propriedades Recomendadas
+              <v-chip color="success" variant="flat" size="small" class="ml-2">
+                {{ recommendedProperties.length }}
+              </v-chip>
+            </v-card-title>
+            <v-card-text class="pa-4 pt-0">
+              <p class="text-caption text-medium-emphasis mb-3">
+                Vincule um imóvel ao atendimento para registrar o interesse do cliente. A IA atualizará os insights automaticamente.
+              </p>
+              <v-list density="comfortable">
+                <v-list-item
+                  v-for="prop in recommendedProperties"
+                  :key="prop.id"
+                  class="mb-2"
+                  style="border: 1px solid rgba(0,0,0,0.08); border-radius: 8px;"
+                >
+                  <template #prepend>
+                    <v-avatar v-if="prop.main_image_url" size="48" rounded="lg">
+                      <v-img :src="prop.main_image_url" cover></v-img>
+                    </v-avatar>
+                    <v-avatar v-else color="primary" size="48" rounded="lg">
+                      <v-icon color="white">mdi-home</v-icon>
+                    </v-avatar>
+                  </template>
+                  <v-list-item-title class="font-weight-medium text-body-2">
+                    {{ prop.title }}
+                  </v-list-item-title>
+                  <v-list-item-subtitle>
+                    {{ prop.code }} · {{ prop.city }}{{ prop.price != null && prop.price !== '' ? ' · ' + formatCurrency(Number(prop.price)) : '' }}
+                  </v-list-item-subtitle>
+                  <template #append>
+                    <v-btn
+                      color="primary"
+                      variant="flat"
+                      size="small"
+                      :loading="isLinkingPropertyId === prop.id"
+                      @click="linkPropertyToAttendance(prop.id)"
+                    >
+                      Vincular
+                    </v-btn>
+                  </template>
+                </v-list-item>
+              </v-list>
             </v-card-text>
           </v-card>
 
@@ -1050,6 +1120,7 @@ const addConversationStep = ref<'write' | 'confirm'>('write')
 const newConversationContent = ref('')
 const showChangePropertyDialog = ref(false)
 const isUpdatingProperty = ref(false)
+const isLinkingPropertyId = ref<string | null>(null)
 const changePropertySelectedId = ref<string | null>(null)
 const propertySearchItems = ref<Array<{ id: string; title: string; code?: string; city?: string; main_image_url?: string }>>([])
 const propertiesTotalItems = ref(0)
@@ -1113,11 +1184,14 @@ const loadAttendance = async () => {
       property.value = propertyData.value
     }
 
-    // Load AI summary if attendance is completed
-    if (attendance.value.status === 'COMPLETED') {
-      await loadAISummary()
+    // Load AI summary (for both ACTIVE and COMPLETED, so we get recommendations when ACTIVE)
+    await loadAISummary()
+
+    // When ACTIVE and no property linked, load client recommendations for "Vincular" card
+    if (attendance.value.status === 'ACTIVE' && !attendance.value.property_id && client.value) {
+      await loadClientRecommendationsForLinking()
     }
-    
+
     // Load linked visits
     await loadLinkedVisits()
   } catch (err: any) {
@@ -1148,21 +1222,33 @@ const loadAISummary = async () => {
   }
 }
 
-// Load recommended properties
+// Load recommended properties (by IDs, e.g. from AI summary)
 const loadRecommendedProperties = async (propertyIds: string[]) => {
   try {
-    const propertiesPromises = propertyIds.map(id => 
+    const propertiesPromises = propertyIds.map(id =>
       propertiesService.getPropertyById(id).catch(() => null)
     )
     const propertiesResults = await Promise.allSettled(propertiesPromises)
-    
+
     recommendedProperties.value = propertiesResults
-      .filter((result): result is PromiseFulfilledResult<Property> => 
+      .filter((result): result is PromiseFulfilledResult<Property> =>
         result.status === 'fulfilled' && result.value !== null
       )
       .map(result => result.value)
   } catch (err) {
     console.error('Error loading recommended properties:', err)
+  }
+}
+
+// Load client-based recommendations when no property linked (for "Vincular" card)
+const loadClientRecommendationsForLinking = async () => {
+  if (!attendance.value?.client_id || recommendedProperties.value.length > 0) return
+  try {
+    const list = await clientsService.getRecommendedProperties(attendance.value.client_id, 6)
+    recommendedProperties.value = Array.isArray(list) ? list : []
+  } catch (err) {
+    console.error('Error loading client recommendations for linking:', err)
+    recommendedProperties.value = []
   }
 }
 
@@ -1755,6 +1841,27 @@ const confirmChangeProperty = async () => {
     showSnackbar('error', error.value, 'mdi-alert-circle')
   } finally {
     isUpdatingProperty.value = false
+  }
+}
+
+// Vincular propriedade recomendada ao atendimento (adiciona conversa automática e atualiza IA no backend)
+const linkPropertyToAttendance = async (propertyId: string) => {
+  if (!attendance.value) return
+  isLinkingPropertyId.value = propertyId
+  try {
+    const updated = await attendancesService.updateAttendance(attendance.value.id, {
+      property_id: propertyId,
+    })
+    attendance.value = updated
+    property.value = await propertiesService.getPropertyById(propertyId)
+    recommendedProperties.value = []
+    await loadAISummary()
+    showSnackbar('success', 'Imóvel vinculado. Insights atualizados automaticamente.', 'mdi-home-check')
+  } catch (err: any) {
+    console.error('Error linking property:', err)
+    showSnackbar('error', err.response?.data?.detail || err.message || 'Erro ao vincular imóvel', 'mdi-alert-circle')
+  } finally {
+    isLinkingPropertyId.value = null
   }
 }
 
