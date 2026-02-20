@@ -1023,6 +1023,18 @@
       </v-card>
     </v-dialog>
 
+    <!-- Visit Detection Dialog (quando a IA detecta intenção de agendar visita) -->
+    <VisitDetectionDialog
+      v-model="showVisitDetectionDialog"
+      :visit-info="detectedVisitInfo"
+      :client-id="attendance?.client_id ?? ''"
+      :agent-id="attendance?.agent_id ?? ''"
+      :property-id="attendance?.property_id ?? null"
+      :attendance-id="attendance?.id ?? null"
+      @confirmed="handleVisitDetectionConfirmed"
+      @cancelled="handleVisitDetectionCancelled"
+    />
+
     <!-- Delete Confirmation Dialog -->
     <v-dialog v-model="showDeleteDialog" max-width="500" persistent>
       <v-card>
@@ -1094,7 +1106,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { attendancesService, type Attendance, type AttendanceStatus } from '@/shared/services/attendances.service'
+import { attendancesService, type Attendance, type AttendanceStatus, type DetectedVisitInfo } from '@/shared/services/attendances.service'
 import { clientsService, type Client } from '@/shared/services/clients.service'
 import { propertiesService, type Property } from '@/shared/services/properties.service'
 import { aiSummariesService, type AISummary, type Sentiment, type DetectedIntent } from '@/shared/services/aiSummaries.service'
@@ -1103,6 +1115,7 @@ import { lossesService } from '@/shared/services/losses.service'
 import { visitsService, type Visit } from '@/shared/services/visits.service'
 import { formatPhone } from '@/shared/utils/masks'
 import SearchSelectDialog from '@/shared/components/SearchSelectDialog.vue'
+import VisitDetectionDialog from '@/shared/components/VisitDetectionDialog.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -1119,6 +1132,8 @@ const showAddConversationDialog = ref(false)
 const addConversationStep = ref<'write' | 'confirm'>('write')
 const newConversationContent = ref('')
 const showChangePropertyDialog = ref(false)
+const showVisitDetectionDialog = ref(false)
+const detectedVisitInfo = ref<DetectedVisitInfo | null>(null)
 const isUpdatingProperty = ref(false)
 const isLinkingPropertyId = ref<string | null>(null)
 const changePropertySelectedId = ref<string | null>(null)
@@ -1422,6 +1437,17 @@ const handleAddConversation = async () => {
       return
     }
 
+    // Check if visit was detected - show dialog to confirm and create visit
+    if (updatedAttendance.detected_visit && updatedAttendance.detected_visit.detected) {
+      detectedVisitInfo.value = updatedAttendance.detected_visit
+      showVisitDetectionDialog.value = true
+      attendance.value = await attendancesService.getAttendanceById(updatedAttendance.id)
+      newConversationContent.value = ''
+      showAddConversationDialog.value = false
+      isAddingConversation.value = false
+      return
+    }
+
     // Show feedback based on cycle action
     if (updatedAttendance.cycle_action === 'NEW_CYCLE_CREATED') {
       if (updatedAttendance.previous_cycle_id) {
@@ -1462,6 +1488,19 @@ const handleAddConversation = async () => {
   } finally {
     isAddingConversation.value = false
   }
+}
+
+// Visit detection dialog callbacks
+const handleVisitDetectionConfirmed = () => {
+  detectedVisitInfo.value = null
+  showVisitDetectionDialog.value = false
+  loadLinkedVisits()
+  showSnackbar('success', 'Visita criada. Você pode editar os detalhes na tela da visita.', 'mdi-calendar-check')
+}
+
+const handleVisitDetectionCancelled = () => {
+  detectedVisitInfo.value = null
+  showVisitDetectionDialog.value = false
 }
 
 // Raw content validation
