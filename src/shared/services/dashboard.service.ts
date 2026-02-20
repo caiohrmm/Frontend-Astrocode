@@ -3,7 +3,6 @@
  * Aggregates data from multiple endpoints for dashboard visualization
  */
 
-import { apiClient } from './api'
 import { clientsService, type Client } from './clients.service'
 import { salesService, type SaleStats } from './sales.service'
 import { lossesService, type LossStats } from './losses.service'
@@ -96,7 +95,7 @@ class DashboardService {
   /**
    * Get comprehensive dashboard metrics
    */
-  async getDashboardMetrics(startDate?: string, endDate?: string): Promise<DashboardMetrics> {
+  async getDashboardMetrics(_startDate?: string, _endDate?: string): Promise<DashboardMetrics> {
     try {
       // Fetch all data in parallel
       const [
@@ -348,7 +347,7 @@ class DashboardService {
   
   private calculateInsights(
     clients: Client[],
-    attendances: any[],
+    _attendances: any[],
     visits: any[]
   ): DashboardInsights {
     // Top opportunities (high lead score, not won/lost)

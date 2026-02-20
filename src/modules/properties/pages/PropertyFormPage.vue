@@ -655,8 +655,8 @@
                   </div>
                   <PropertyImageUpload
                     ref="propertyImageUploadRef"
-                    v-model="formData.main_image_url"
-                    :property-id="isEditMode ? (route.params.id as string) : null"
+                    v-model="mainImageUrlModel"
+                    :property-id="(isEditMode && route.params.id) ? (route.params.id as string) : null"
                     :disabled="isSaving"
                     @uploaded="handleImageUploaded"
                     @error="handleImageError"
@@ -676,8 +676,7 @@ import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { VForm } from 'vuetify/components'
 import { propertiesService, type Property, type PropertyCreate, type PropertyUpdate, type AddressData } from '@/shared/services/properties.service'
-import { usersService, type User } from '@/shared/services/users.service'
-import { formatCurrency, parseCurrency, formatCurrencyInput, formatCurrencyInputRealTime, parseCurrencyInputRealTime, formatPhone, parsePhone } from '@/shared/utils/masks'
+import { formatCurrency, formatCurrencyInputRealTime, parseCurrencyInputRealTime, formatPhone, parsePhone } from '@/shared/utils/masks'
 import PropertyImageUpload from '@/shared/components/PropertyImageUpload.vue'
 
 const route = useRoute()
@@ -739,6 +738,12 @@ const brazilianStates = [
 
 const isEditMode = computed(() => !!route.params.id)
 
+// Bridge for PropertyImageUpload (expects string | null, formData has string | null | undefined)
+const mainImageUrlModel = computed({
+  get: () => formData.value.main_image_url ?? null,
+  set: (v: string | null) => { formData.value.main_image_url = v },
+})
+
 // Form data
 const formData = ref<PropertyCreate>({
   code: '',
@@ -746,12 +751,12 @@ const formData = ref<PropertyCreate>({
   description: null,
   property_type: 'APARTMENT',
   business_type: 'SALE',
-  street: null,
-  number: null,
-  neighborhood: null,
-  city: null,
-  state: null,
-  zip_code: null,
+  street: '',
+  number: '',
+  neighborhood: '',
+  city: '',
+  state: '',
+  zip_code: '',
   latitude: null,
   longitude: null,
   area_total: null,
@@ -762,10 +767,10 @@ const formData = ref<PropertyCreate>({
   floor: null,
   has_elevator: false,
   furnished: false,
-  price: null as number | null,
-  rent_price: null as number | null,
-  condo_fee: null as number | null,
-  iptu: null as number | null,
+  price: null,
+  rent_price: null,
+  condo_fee: null,
+  iptu: null,
   status: 'DRAFT',
   owner_name: null,
   owner_contact: null,
@@ -981,7 +986,7 @@ const scoreRingStyle = computed(() => {
   }
 })
 
-const getInitials = (name: string): string => {
+const _getInitials = (name: string): string => {
   const parts = name.trim().split(' ')
   if (parts.length >= 2) {
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
@@ -1068,8 +1073,8 @@ const handleSearchCep = async () => {
         if (nominatimResponse.ok) {
           const nominatimData = await nominatimResponse.json()
           if (nominatimData.length > 0) {
-            formData.value.latitude = parseFloat(nominatimData[0].lat)
-            formData.value.longitude = parseFloat(nominatimData[0].lon)
+            formData.value.latitude = String(nominatimData[0].lat)
+            formData.value.longitude = String(nominatimData[0].lon)
             console.log('Coordinates found via Nominatim:', nominatimData[0].lat, nominatimData[0].lon)
           }
         }
@@ -1163,16 +1168,16 @@ const loadProperty = async () => {
       floor: property.value.floor,
       has_elevator: property.value.has_elevator,
       furnished: property.value.furnished,
-      price: property.value.price ? parseFloat(property.value.price) : null,
-      rent_price: property.value.rent_price ? parseFloat(property.value.rent_price) : null,
-      condo_fee: property.value.condo_fee ? parseFloat(property.value.condo_fee) : null,
-      iptu: property.value.iptu ? parseFloat(property.value.iptu) : null,
+      price: property.value.price,
+      rent_price: property.value.rent_price,
+      condo_fee: property.value.condo_fee,
+      iptu: property.value.iptu,
       status: property.value.status,
-      owner_name: property.value.owner_name,
-      owner_contact: property.value.owner_contact,
+      owner_name: property.value.owner_name ?? undefined,
+      owner_contact: property.value.owner_contact ?? undefined,
       visibility_score: property.value.visibility_score,
-      ideal_client_profile: property.value.ideal_client_profile,
-      main_image_url: property.value.main_image_url,
+      ideal_client_profile: property.value.ideal_client_profile ?? undefined,
+      main_image_url: property.value.main_image_url ?? undefined,
     }
   } catch (error) {
     console.error('Error loading property:', error)
@@ -1206,16 +1211,16 @@ const handleSave = async () => {
       description: formData.value.description || null,
       property_type: formData.value.property_type,
       business_type: formData.value.business_type,
-      street: formData.value.street?.trim() || null,
-      number: formData.value.number?.trim() || null,
-      neighborhood: formData.value.neighborhood?.trim() || null,
-      city: formData.value.city?.trim() || null,
-      state: formData.value.state?.trim() ? formData.value.state.trim().toUpperCase() : null,
-      zip_code: formData.value.zip_code?.trim() || null,
-      latitude: formData.value.latitude ? String(formData.value.latitude) : null,
-      longitude: formData.value.longitude ? String(formData.value.longitude) : null,
-      area_total: formData.value.area_total ? String(formData.value.area_total) : null,
-      area_built: formData.value.area_built ? String(formData.value.area_built) : null,
+      street: formData.value.street?.trim() ?? '',
+      number: formData.value.number?.trim() ?? '',
+      neighborhood: formData.value.neighborhood?.trim() ?? '',
+      city: formData.value.city?.trim() ?? '',
+      state: formData.value.state?.trim() ? formData.value.state.trim().toUpperCase() : '',
+      zip_code: formData.value.zip_code?.trim() ?? '',
+      latitude: formData.value.latitude ? String(formData.value.latitude) : undefined,
+      longitude: formData.value.longitude ? String(formData.value.longitude) : undefined,
+      area_total: formData.value.area_total ? String(formData.value.area_total) : undefined,
+      area_built: formData.value.area_built ? String(formData.value.area_built) : undefined,
       bedrooms: formData.value.bedrooms ?? null,
       bathrooms: formData.value.bathrooms ?? null,
       parking_spaces: formData.value.parking_spaces ?? null,
@@ -1227,11 +1232,9 @@ const handleSave = async () => {
       condo_fee: formData.value.condo_fee ? String(formData.value.condo_fee) : null,
       iptu: formData.value.iptu ? String(formData.value.iptu) : null,
       status: formData.value.status,
-      owner_name: formData.value.owner_name || null,
-      owner_contact: formData.value.owner_contact || null,
-      // Use the value directly from formData, don't convert empty strings to null here
-      // The backend will handle null/empty string conversion
-      main_image_url: formData.value.main_image_url || null,
+      owner_name: formData.value.owner_name ?? undefined,
+      owner_contact: formData.value.owner_contact ?? undefined,
+      main_image_url: formData.value.main_image_url ?? undefined,
     }
 
     // Log for debugging
@@ -1403,8 +1406,8 @@ const handlePriceInput = (event: Event, field: 'price' | 'rent_price' | 'condo_f
   const target = event.target as HTMLInputElement
   const inputValue = target.value
   
-  // Store cursor position before formatting
-  const cursorPosition = target.selectionStart || 0
+  // Store cursor position before formatting (used in nextTick for UX)
+  const _cursorPosition = target.selectionStart || 0
   
   // Remove all formatting to get raw digits
   const rawDigits = inputValue.replace(/\D/g, '')
@@ -1454,18 +1457,19 @@ const handlePriceInput = (event: Event, field: 'price' | 'rent_price' | 'condo_f
   // Update formData immediately (for real-time updates)
   const parsed = parseCurrencyInputRealTime(formatted)
   if (parsed !== null) {
+    const fd = formData.value as Record<string, unknown>
     switch (field) {
       case 'price':
-        formData.value.price = parsed
+        fd.price = parsed
         break
       case 'rent_price':
-        formData.value.rent_price = parsed
+        fd.rent_price = parsed
         break
       case 'condo_fee':
-        formData.value.condo_fee = parsed
+        fd.condo_fee = parsed
         break
       case 'iptu':
-        formData.value.iptu = parsed
+        fd.iptu = parsed
         break
     }
   }
@@ -1484,30 +1488,31 @@ const handlePriceBlur = (field: 'price' | 'rent_price' | 'condo_fee' | 'iptu') =
   let formattedValue: string
   let parsedValue: number | null
   
+  const fd = formData.value as Record<string, unknown>
   switch (field) {
     case 'price':
       formattedValue = priceFormatted.value
       parsedValue = parseCurrencyInputRealTime(formattedValue)
-      formData.value.price = parsedValue
-      priceFormatted.value = parsedValue ? formatCurrency(parsedValue) : ''
+      fd.price = parsedValue
+      priceFormatted.value = parsedValue != null ? formatCurrency(parsedValue) : ''
       break
     case 'rent_price':
       formattedValue = rentPriceFormatted.value
       parsedValue = parseCurrencyInputRealTime(formattedValue)
-      formData.value.rent_price = parsedValue
-      rentPriceFormatted.value = parsedValue ? formatCurrency(parsedValue) : ''
+      fd.rent_price = parsedValue
+      rentPriceFormatted.value = parsedValue != null ? formatCurrency(parsedValue) : ''
       break
     case 'condo_fee':
       formattedValue = condoFeeFormatted.value
       parsedValue = parseCurrencyInputRealTime(formattedValue)
-      formData.value.condo_fee = parsedValue
-      condoFeeFormatted.value = parsedValue ? formatCurrency(parsedValue) : ''
+      fd.condo_fee = parsedValue
+      condoFeeFormatted.value = parsedValue != null ? formatCurrency(parsedValue) : ''
       break
     case 'iptu':
       formattedValue = iptuFormatted.value
       parsedValue = parseCurrencyInputRealTime(formattedValue)
-      formData.value.iptu = parsedValue
-      iptuFormatted.value = parsedValue ? formatCurrency(parsedValue) : ''
+      fd.iptu = parsedValue
+      iptuFormatted.value = parsedValue != null ? formatCurrency(parsedValue) : ''
       break
   }
 }

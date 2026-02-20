@@ -198,7 +198,6 @@ import {
   type ClientStatus,
   type UrgencyLevel,
 } from '@/shared/services/clients.service'
-import { usersService, type User } from '@/shared/services/users.service'
 import { formatPhone } from '@/shared/utils/masks'
 import ClientCreateDialog from '@/shared/components/ClientCreateDialog.vue'
 

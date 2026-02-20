@@ -695,7 +695,7 @@ const parseNextSteps = (nextSteps: string): Array<{ text: string; isUrgent: bool
 }
 
 // Format AI Next Steps
-const formatAINextSteps = (nextSteps: string): string => {
+const _formatAINextSteps = (nextSteps: string): string => {
   if (!nextSteps) return ''
   
   // Translation maps for common English terms

@@ -199,7 +199,7 @@ const hasPendingFile = computed(() => !!pendingFile.value)
  * File validation rules
  * Note: v-file-input may pass File[] or File | null, so we handle both cases
  */
-const fileRules = [
+const _fileRules = [
   (value: File[] | File | null) => {
     // Handle empty/null values
     if (!value) return true

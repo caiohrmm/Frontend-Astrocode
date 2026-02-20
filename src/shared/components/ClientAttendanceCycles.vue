@@ -381,7 +381,7 @@ const formatDateTime = (dateString: string | null | undefined): string => {
   }).format(date)
 }
 
-const formatDuration = (seconds: number): string => {
+const _formatDuration = (seconds: number): string => {
   if (seconds < 60) {
     return `${seconds}s`
   }

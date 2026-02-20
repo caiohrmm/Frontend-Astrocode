@@ -1627,13 +1627,13 @@
                           </div>
                           <v-chip
                             v-if="aggregatedInsights.urgencyFromCycle"
-                            :color="getUrgencyColor(aggregatedInsights.urgencyFromCycle)"
+                            :color="getUrgencyColor(aggregatedInsights.urgencyFromCycle as UrgencyLevel)"
                             variant="flat"
                             size="small"
                             class="ml-auto"
                           >
                             <v-icon start size="14">mdi-clock-alert</v-icon>
-                            Urgência neste ciclo: {{ getUrgencyLabel(aggregatedInsights.urgencyFromCycle) }}
+                            Urgência neste ciclo: {{ getUrgencyLabel(aggregatedInsights.urgencyFromCycle as UrgencyLevel) }}
                           </v-chip>
                         </div>
                       </div>
@@ -1832,7 +1832,7 @@ const aiSummaries = ref<AISummary[]>([])
 const recommendedProperties = ref<Property[]>([])
 const profileBasedProperties = ref<Property[]>([])
 const clientAttendances = ref<Attendance[]>([])
-const expandedAttendances = ref<string[]>([])
+const _expandedAttendances = ref<string[]>([])
 const specificProperty = ref<Property | null>(null) // Property the client is specifically interested in
 
 // Editable fields (for inline editing)
@@ -1841,7 +1841,7 @@ const budgetMinFormatted = ref('')
 const budgetMaxFormatted = ref('')
 
 // Options
-const statusOptions = [
+const _statusOptions = [
   { title: 'Novo Lead', value: 'NEW_LEAD' },
   { title: 'Contatado', value: 'CONTACTED' },
   { title: 'Qualificado', value: 'QUALIFIED' },
@@ -2425,12 +2425,12 @@ const handleFieldUpdate = async (field: keyof ClientUpdate, value: any) => {
 
 // Status is now AI-controlled, no manual update handler needed
 
-const handleBudgetMinUpdate = async () => {
+const _handleBudgetMinUpdate = async () => {
   const parsed = parseCurrency(budgetMinFormatted.value)
   await handleFieldUpdate('current_budget_min', parsed ? String(parsed) : null)
 }
 
-const handleBudgetMaxUpdate = async () => {
+const _handleBudgetMaxUpdate = async () => {
   const parsed = parseCurrency(budgetMaxFormatted.value)
   await handleFieldUpdate('current_budget_max', parsed ? String(parsed) : null)
 }
@@ -2537,7 +2537,7 @@ const formatDateTime = (dateString: string): string => {
 
 
 
-const getAttendanceStatusLabel = (status: string): string => {
+const _getAttendanceStatusLabel = (status: string): string => {
   const labels: Record<string, string> = {
     IN_PROGRESS: 'Em Andamento',
     COMPLETED: 'Concluído',
@@ -2547,7 +2547,7 @@ const getAttendanceStatusLabel = (status: string): string => {
   return labels[status] || status
 }
 
-const getAttendanceStatusColor = (status: string): string => {
+const _getAttendanceStatusColor = (status: string): string => {
   const colors: Record<string, string> = {
     IN_PROGRESS: 'info',
     COMPLETED: 'success',
@@ -2557,7 +2557,7 @@ const getAttendanceStatusColor = (status: string): string => {
   return colors[status] || 'grey'
 }
 
-const getAttendanceStatusIcon = (status: string): string => {
+const _getAttendanceStatusIcon = (status: string): string => {
   const icons: Record<string, string> = {
     IN_PROGRESS: 'mdi-clock-outline',
     COMPLETED: 'mdi-check-circle',
@@ -2574,7 +2574,7 @@ const truncateText = (text: string, maxLength: number): string => {
 }
 
 // Translate and format AI next steps
-const formatAINextSteps = (nextSteps: string): string => {
+const _formatAINextSteps = (nextSteps: string): string => {
   if (!nextSteps) return ''
 
   // Translation maps for common English terms
@@ -2634,7 +2634,7 @@ const formatAINextSteps = (nextSteps: string): string => {
 }
 
 // Check if next steps has valid content (not just metadata)
-const hasValidNextSteps = (nextSteps: string): boolean => {
+const _hasValidNextSteps = (nextSteps: string): boolean => {
   if (!nextSteps) return false
 
   const lines = nextSteps.split('\n')
@@ -2656,7 +2656,7 @@ const hasValidNextSteps = (nextSteps: string): boolean => {
   return false
 }
 
-const formatDuration = (seconds: number): string => {
+const _formatDuration = (seconds: number): string => {
   if (seconds < 60) return `${seconds}s`
   if (seconds < 3600) {
     const minutes = Math.floor(seconds / 60)
@@ -2676,11 +2676,11 @@ const formatBudgetDetected = (min: number | null, max: number | null): string =>
   return 'Não definido'
 }
 
-const goToAttendance = (attendanceId: string) => {
+const _goToAttendance = (attendanceId: string) => {
   router.push({ name: 'attendances-details', params: { id: attendanceId } })
 }
 
-const goToCreateAttendance = () => {
+const _goToCreateAttendance = () => {
   router.push({ name: 'attendances-create', query: { client_id: client.value?.id } })
 }
 
@@ -2898,7 +2898,7 @@ const handleDeleteClient = async () => {
 }
 
 // Sale registration functions
-const openSaleDialog = async () => {
+const _openSaleDialog = async () => {
   showSaleDialog.value = true
   // Initialize formatted values
   if (newSale.value.sale_value) {
@@ -3163,7 +3163,7 @@ const paymentMethodsTotal = computed(() => {
 })
 
 // Loss registration functions
-const openLossDialog = () => {
+const _openLossDialog = () => {
   // Set initial stage based on current client status
   const statusToStage: Record<string, string> = {
     'NEW_LEAD': 'INITIAL_CONTACT',

@@ -68,7 +68,7 @@
       <!-- Timeline Visual -->
       <v-timeline align="start" density="comfortable" side="end" class="journey-timeline">
         <v-timeline-item
-          v-for="(attendance, index) in sortedAttendances"
+          v-for="(attendance, _index) in sortedAttendances"
           :key="attendance.id"
           :dot-color="getStatusColor(attendance.status)"
           size="large"

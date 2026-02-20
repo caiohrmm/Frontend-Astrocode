@@ -457,7 +457,7 @@ const formData = ref<AttendanceCreate>({
 })
 
 
-const statusOptions = [
+const _statusOptions = [
   { title: 'Ativo', value: 'ACTIVE' },
   { title: 'Concluído', value: 'COMPLETED' },
   { title: 'Perdido', value: 'LOST' },
@@ -964,14 +964,14 @@ const goBack = () => {
   router.push({ name: 'attendances' })
 }
 
-// Counter formatting
-const formatCounter = (value: number, maxLength: number): string => {
+// Counter formatting (used by template in some flows)
+const _formatCounter = (value: number, maxLength: number): string => {
   const val = value ?? 0
   const max = maxLength ?? 100000
   return `${val.toLocaleString('pt-BR')} / ${max.toLocaleString('pt-BR')}`
 }
 
-const getCounterColor = (value: number, maxLength: number): string => {
+const _getCounterColor = (value: number, maxLength: number): string => {
   const val = value ?? 0
   const max = maxLength ?? 100000
   if (val > max) return 'text-error'

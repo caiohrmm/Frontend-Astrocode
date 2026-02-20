@@ -75,7 +75,6 @@ import {
   type ClientCreate,
   type ClientUpdate,
   type ClientWithClassification,
-  type LeadSource,
 } from '@/shared/services/clients.service'
 import { formatPhone, formatPhoneInput, parsePhone } from '@/shared/utils/masks'
 

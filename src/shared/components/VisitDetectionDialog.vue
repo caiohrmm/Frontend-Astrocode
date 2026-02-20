@@ -40,34 +40,34 @@
                   <div class="text-caption text-medium-emphasis">Data</div>
                   <div class="text-body-1 font-weight-medium">
                     <v-icon size="small" class="mr-1">mdi-calendar</v-icon>
-                    {{ visitInfo.date || 'Não especificada' }}
+                    {{ visitInfo?.date || 'Não especificada' }}
                   </div>
                 </v-col>
                 <v-col cols="12" sm="6">
                   <div class="text-caption text-medium-emphasis">Horário</div>
                   <div class="text-body-1 font-weight-medium">
                     <v-icon size="small" class="mr-1">mdi-clock</v-icon>
-                    {{ visitInfo.time || 'Não especificado' }}
+                    {{ visitInfo?.time || 'Não especificado' }}
                   </div>
                 </v-col>
-                <v-col cols="12" v-if="visitInfo.extracted_text">
+                <v-col cols="12" v-if="visitInfo?.extracted_text">
                   <div class="text-caption text-medium-emphasis">Texto Extraído</div>
                   <div class="text-body-2">
                     "{{ visitInfo.extracted_text }}"
                   </div>
                 </v-col>
-                <v-col cols="12" v-if="visitInfo.confidence">
+                <v-col cols="12" v-if="visitInfo?.confidence">
                   <div class="text-caption text-medium-emphasis">Confiança da Detecção</div>
                   <div class="d-flex align-center">
                     <v-progress-linear
-                      :model-value="(visitInfo.confidence * 100)"
+                      :model-value="((visitInfo?.confidence ?? 0) * 100)"
                       color="primary"
                       height="8"
                       rounded
                       class="mr-2"
                       style="flex: 1; max-width: 200px;"
                     ></v-progress-linear>
-                    <span class="text-body-2">{{ Math.round(visitInfo.confidence * 100) }}%</span>
+                    <span class="text-body-2">{{ Math.round((visitInfo?.confidence ?? 0) * 100) }}%</span>
                   </div>
                 </v-col>
               </v-row>
@@ -75,13 +75,13 @@
           </v-card>
 
           <v-alert
-            v-if="visitInfo.notes"
+            v-if="visitInfo?.notes"
             type="warning"
             variant="tonal"
             density="compact"
             class="mb-4"
           >
-            <div class="text-caption">{{ visitInfo.notes }}</div>
+            <div class="text-caption">{{ visitInfo?.notes }}</div>
           </v-alert>
         </div>
 

@@ -110,8 +110,8 @@ export interface ClientUpdate {
   email?: string | null
   lead_source?: LeadSource | null
   current_status?: ClientStatus | null
-  // current_lead_score is controlled exclusively by AI - do not include in updates
-  // current_lead_score?: number | null
+  /** AI-derived; backend may ignore when applying updates */
+  current_lead_score?: number | null
   current_urgency_level?: UrgencyLevel | null
   assigned_agent_id?: string | null
   current_interest_type?: InterestType | null

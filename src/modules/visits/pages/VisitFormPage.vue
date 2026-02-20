@@ -124,7 +124,7 @@
                     @search="handleAttendanceSearch"
                     @select="handleAttendanceSelect"
                   >
-                    <template #item-prepend="{ item }">
+                    <template #item-prepend>
                       <v-avatar color="primary" size="40">
                         <v-icon color="white">mdi-phone-in-talk</v-icon>
                       </v-avatar>
@@ -761,13 +761,13 @@ const handleAttendanceSearch = async (_query: string, page: number = 1) => {
   }
 }
 
-const handleAttendanceSelect = (item: Attendance | (Attendance & { name: string; subtitle: string }) | null) => {
+const handleAttendanceSelect = (item: { id: string; client_id?: string; agent_id?: string } | null) => {
   if (item) {
     formData.value.attendance_id = item.id
     if (!formData.value.client_id && item.client_id) {
       formData.value.client_id = item.client_id
       if (!clients.value.some(c => c.id === item.client_id)) {
-        clientsService.getClientById(item.client_id).then(client => {
+        clientsService.getClientById(item.client_id!).then(client => {
           if (!clients.value.find(c => c.id === client.id)) {
             clients.value = [client, ...clients.value]
           }

@@ -584,7 +584,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { dashboardService, type DashboardMetrics } from '@/shared/services/dashboard.service'
 import { useAuthStore } from '@/app/store/auth.store'
 
-const authStore = useAuthStore()
+const _authStore = useAuthStore()
 
 // State
 const metrics = ref<DashboardMetrics | null>(null)
@@ -782,7 +782,7 @@ const getSourceColor = (source: string): string => {
   return colors[source] || 'grey'
 }
 
-const getSourcePercentage = (source: string, count: number): number => {
+const getSourcePercentage = (_source: string, count: number): number => {
   if (!metrics.value) return 0
   const total = Object.values(metrics.value.clients_by_source).reduce((a, b) => a + b, 0)
   return total > 0 ? (count / total) * 100 : 0

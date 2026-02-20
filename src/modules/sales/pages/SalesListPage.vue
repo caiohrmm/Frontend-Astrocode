@@ -861,8 +861,8 @@ import {
   getSaleStatusIcon,
   getPaymentMethodLabel,
 } from '@/shared/services/sales.service'
-import { clientsService, type Client } from '@/shared/services/clients.service'
-import { propertiesService, type Property } from '@/shared/services/properties.service'
+import { clientsService } from '@/shared/services/clients.service'
+import { propertiesService } from '@/shared/services/properties.service'
 import { usersService, type User } from '@/shared/services/users.service'
 import SearchSelectDialog from '@/shared/components/SearchSelectDialog.vue'
 import { formatPhone, formatCurrency, formatCurrencyInputRealTime, parseCurrencyInputRealTime } from '@/shared/utils/masks'
@@ -1231,7 +1231,7 @@ const removePaymentMethod = (index: number) => {
     delete paymentValueFormatted.value[index]
     // Reindex remaining formatted values
     const newFormatted: Record<number, string> = {}
-    paymentMethods.value.forEach((pm, i) => {
+    paymentMethods.value.forEach((_pm, i) => {
       if (paymentValueFormatted.value[i]) {
         newFormatted[i] = paymentValueFormatted.value[i]
       }

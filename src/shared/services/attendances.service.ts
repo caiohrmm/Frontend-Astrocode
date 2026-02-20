@@ -128,6 +128,9 @@ export interface ListAttendancesParams {
   status?: AttendanceStatus | null
   /** If true, only attendances that can receive a new visit (no pending visit) */
   available_for_visit?: boolean
+  /** Filter by created_at date range (ISO string) */
+  started_from?: string
+  started_to?: string
 }
 
 class AttendancesService {

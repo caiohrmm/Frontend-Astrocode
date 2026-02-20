@@ -824,9 +824,9 @@
               :error-messages="newConversationErrorMessages"
               :error="newConversationErrorMessages.length > 0"
             >
-              <template #counter="{ value, maxLength }">
-                <span :class="getCounterColor(value ?? 0, maxLength ?? 100000)">
-                  {{ formatCounter(value ?? 0, maxLength ?? 100000) }}
+              <template #counter="{ value, max }">
+                <span :class="getCounterColor(Number(value) || 0, Number(max) || 100000)">
+                  {{ formatCounter(Number(value) || 0, Number(max) || 100000) }}
                 </span>
               </template>
             </v-textarea>
@@ -1110,8 +1110,6 @@ import { attendancesService, type Attendance, type AttendanceStatus, type Detect
 import { clientsService, type Client } from '@/shared/services/clients.service'
 import { propertiesService, type Property } from '@/shared/services/properties.service'
 import { aiSummariesService, type AISummary, type Sentiment, type DetectedIntent } from '@/shared/services/aiSummaries.service'
-import { salesService } from '@/shared/services/sales.service'
-import { lossesService } from '@/shared/services/losses.service'
 import { visitsService, type Visit } from '@/shared/services/visits.service'
 import { formatPhone } from '@/shared/utils/masks'
 import SearchSelectDialog from '@/shared/components/SearchSelectDialog.vue'
@@ -1841,10 +1839,10 @@ const handleChangePropertySearch = async (query: string, page: number) => {
     propertySearchItems.value = paginated.map((p) => ({
       id: p.id,
       title: p.title,
-      code: p.code,
-      city: p.city,
-      neighborhood: p.neighborhood,
-      main_image_url: p.main_image_url,
+      code: p.code ?? undefined,
+      city: p.city ?? undefined,
+      neighborhood: p.neighborhood ?? undefined,
+      main_image_url: p.main_image_url ?? undefined,
     }))
     propertiesTotalItems.value = filtered.length
   } catch (e) {
@@ -1877,7 +1875,7 @@ const confirmChangeProperty = async () => {
   } catch (err: any) {
     console.error('Error updating property:', err)
     error.value = err.response?.data?.detail || err.message || 'Erro ao atualizar imóvel'
-    showSnackbar('error', error.value, 'mdi-alert-circle')
+    showSnackbar('error', error.value ?? 'Erro ao atualizar imóvel', 'mdi-alert-circle')
   } finally {
     isUpdatingProperty.value = false
   }

@@ -40,8 +40,10 @@ export class ApiClient {
     // Check if body is FormData - if so, don't set Content-Type (browser will set it with boundary)
     const isFormData = options.body instanceof FormData
     
-    const headers: HeadersInit = {
-      ...(options.headers as HeadersInit),
+    const headers: Record<string, string> = {
+      ...(options.headers && typeof options.headers === 'object' && !(options.headers instanceof Headers)
+        ? (options.headers as Record<string, string>)
+        : {}),
     }
     
     // Only set Content-Type for non-FormData requests
@@ -136,18 +138,16 @@ export class ApiClient {
     const isFormData = data instanceof FormData
     
     // Prepare headers - explicitly exclude Content-Type for FormData
-    const headers: HeadersInit = { ...(options?.headers as HeadersInit) }
+    const headers: Record<string, string> = {
+      ...(options?.headers && typeof options.headers === 'object' && !(options.headers instanceof Headers)
+        ? (options.headers as Record<string, string>)
+        : {}),
+    }
     
     // Only set Content-Type for JSON, not for FormData
-    // For FormData, browser will set Content-Type automatically with boundary
     if (isFormData) {
-      // Remove Content-Type if it exists (browser will set it)
-      if ('Content-Type' in headers) {
-        delete (headers as any)['Content-Type']
-      }
-      if ('content-type' in headers) {
-        delete (headers as any)['content-type']
-      }
+      delete headers['Content-Type']
+      delete headers['content-type']
     } else if (!headers['Content-Type']) {
       headers['Content-Type'] = 'application/json'
     }

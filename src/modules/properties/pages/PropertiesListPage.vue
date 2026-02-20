@@ -301,8 +301,15 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import type { DataTableHeader } from 'vuetify/components'
 import { propertiesService, type Property, type PropertyType, type BusinessType, type PropertyStatus } from '@/shared/services/properties.service'
+
+interface DataTableColumn {
+  title: string
+  key: string
+  sortable?: boolean
+  width?: string
+  align?: 'start' | 'center' | 'end'
+}
 import { useAuthStore } from '@/app/store/auth.store'
 
 const router = useRouter()
@@ -351,7 +358,7 @@ const statusOptions = [
 ]
 
 // Table headers
-const headers: DataTableHeader[] = [
+const headers: DataTableColumn[] = [
   { title: 'Código', key: 'code', sortable: false, width: '120px' },
   { title: 'Imóvel', key: 'title', sortable: false },
   { title: 'Tipo', key: 'property_type', sortable: false, width: '140px' },

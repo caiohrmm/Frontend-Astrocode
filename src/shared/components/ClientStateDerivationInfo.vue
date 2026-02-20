@@ -13,7 +13,7 @@
     <v-card-text class="pa-4">
       <v-row dense>
         <!-- Last Derivation -->
-        <v-col cols="12" v-if="client.last_state_derivation_at">
+        <v-col cols="12" v-if="client?.last_state_derivation_at">
           <div class="d-flex align-center mb-2">
             <v-icon size="20" color="success" class="mr-2">mdi-check-circle</v-icon>
             <div class="flex-grow-1">
@@ -29,7 +29,7 @@
         </v-col>
 
         <!-- Derivation Count -->
-        <v-col cols="12" sm="6" v-if="client.state_derivation_count !== undefined && client.state_derivation_count > 0">
+        <v-col cols="12" sm="6" v-if="client && client.state_derivation_count !== undefined && client.state_derivation_count > 0">
           <div class="d-flex align-center">
             <v-icon size="20" color="info" class="mr-2">mdi-counter</v-icon>
             <div>
@@ -42,7 +42,7 @@
         </v-col>
 
         <!-- Attendances Used -->
-        <v-col cols="12" sm="6" v-if="client.state_derived_from_attendances_count">
+        <v-col cols="12" sm="6" v-if="client?.state_derived_from_attendances_count">
           <div class="d-flex align-center">
             <v-icon size="20" color="primary" class="mr-2">mdi-target</v-icon>
             <div>

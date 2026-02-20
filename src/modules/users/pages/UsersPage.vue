@@ -236,11 +236,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { usersService, type User } from '@/shared/services/users.service'
 import { useAuthStore } from '@/app/store/auth.store'
 
-const authStore = useAuthStore()
+const _authStore = useAuthStore()
 
 const users = ref<User[]>([])
 const isLoading = ref(false)
