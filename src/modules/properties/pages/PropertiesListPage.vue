@@ -222,6 +222,7 @@
                 title="Editar"
                 @click="goToEdit(item.id)"
               ></v-list-item>
+              <!-- Excluir imóvel: apenas gestor e corretor; atendente não vê esta opção -->
               <v-list-divider v-if="canDelete"></v-list-divider>
               <v-list-item
                 v-if="canDelete"
@@ -369,10 +370,10 @@ const headers: DataTableColumn[] = [
   { title: 'Ações', key: 'actions', sortable: false, align: 'end', width: '80px' },
 ]
 
-// Computed
-const canDelete = computed(() => {
-  return authStore.hasRole('corretor') || authStore.hasRole('gestor')
-})
+// Excluir imóvel: somente gestor e corretor; atendente não vê o botão
+const canDelete = computed(() =>
+  authStore.hasRole('gestor') || authStore.hasRole('corretor'),
+)
 
 // Methods
 const getPropertyTypeLabel = (type: PropertyType): string => {
