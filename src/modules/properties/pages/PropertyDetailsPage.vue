@@ -11,6 +11,16 @@
 
     <!-- Content -->
     <div v-else-if="property">
+      <!-- Aviso quando redirecionado por tentativa de editar imóvel vendido/alugado -->
+      <v-alert
+        v-if="route.query.blocked === 'sold-or-rented'"
+        type="info"
+        variant="tonal"
+        class="mb-4"
+        closable
+      >
+        Este imóvel está vendido ou alugado e não pode mais ser editado (está vinculado a uma venda/aluguel concluído).
+      </v-alert>
       <!-- Hero Section with Image -->
       <v-card
         v-if="property.main_image_url"
@@ -74,6 +84,7 @@
             {{ getStatusLabel(property.status) }}
           </v-chip>
           <v-btn
+            v-if="property.status !== 'SOLD' && property.status !== 'RENTED'"
             color="primary"
             prepend-icon="mdi-pencil"
             @click="goToEdit"

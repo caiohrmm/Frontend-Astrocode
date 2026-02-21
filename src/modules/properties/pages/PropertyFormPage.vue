@@ -1152,7 +1152,17 @@ const loadProperty = async () => {
   try {
     const propertyId = route.params.id as string
     property.value = await propertiesService.getPropertyById(propertyId)
-    
+
+    // Imóvel vendido ou alugado não pode ser editado
+    if (property.value.status === 'SOLD' || property.value.status === 'RENTED') {
+      router.push({
+        name: 'properties-details',
+        params: { id: propertyId },
+        query: { blocked: 'sold-or-rented' },
+      })
+      return
+    }
+
     // Populate form with property data
     formData.value = {
       code: property.value.code,
