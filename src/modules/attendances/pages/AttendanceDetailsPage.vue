@@ -80,8 +80,9 @@
             >
               Adicionar Conversa
             </v-btn>
-            <!-- Alterar imóvel (única edição permitida) -->
+            <!-- Alterar imóvel (única edição permitida; só quando o ciclo está ativo) -->
             <v-btn
+              v-if="attendance.status === 'ACTIVE'"
               color="secondary"
               variant="tonal"
               prepend-icon="mdi-home-edit"
