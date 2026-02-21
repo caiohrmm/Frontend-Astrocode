@@ -858,10 +858,16 @@
                 <strong>Revise o texto abaixo.</strong> Este conteúdo será adicionado ao ciclo e a IA reprocessará o atendimento. Confirme apenas se estiver correto.
               </div>
             </v-alert>
-            <div class="conversation-preview pa-3 rounded-lg bg-surface-variant">
-              <div class="text-body-2 text-medium-emphasis mb-2">O que será adicionado:</div>
-              <div class="text-body-1 conversation-preview-text" style="white-space: pre-wrap;">{{ newConversationContent.trim() }}</div>
-            </div>
+            <v-card variant="outlined" class="conversation-preview-card rounded-lg overflow-hidden">
+              <v-card-title class="conversation-preview-title text-body-1 font-weight-medium d-flex align-center py-3">
+                <v-icon size="20" class="mr-2" color="primary">mdi-text-box-outline</v-icon>
+                O que será adicionado
+              </v-card-title>
+              <v-divider></v-divider>
+              <v-card-text class="conversation-preview-text-wrap pa-4">
+                <div class="conversation-preview-text">{{ newConversationContent.trim() }}</div>
+              </v-card-text>
+            </v-card>
           </template>
         </v-card-text>
         <v-card-actions>
@@ -2317,15 +2323,44 @@ onMounted(() => {
 
 .conversation-card {
   transition: all 0.2s ease;
+  background: rgb(var(--v-theme-surface));
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
 }
 
 .conversation-card:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
 
 .conversation-content {
-  line-height: 1.6;
-  color: rgba(var(--v-theme-on-surface), 0.87);
+  line-height: 1.65;
+  color: rgba(var(--v-theme-on-surface), 0.95);
+  font-size: 0.9375rem;
+}
+
+/* Confirm step: preview da conversa antes de enviar */
+.conversation-preview-card {
+  background: rgb(var(--v-theme-surface));
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+}
+
+.conversation-preview-title {
+  background: rgba(var(--v-theme-primary), 0.06);
+  color: rgb(var(--v-theme-on-surface));
+}
+
+.conversation-preview-text-wrap {
+  max-height: 320px;
+  overflow-y: auto;
+  background: rgb(var(--v-theme-surface));
+}
+
+.conversation-preview-text {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-size: 1rem;
+  line-height: 1.65;
+  color: rgba(var(--v-theme-on-surface), 0.95);
+  font-family: inherit;
 }
 </style>
 
