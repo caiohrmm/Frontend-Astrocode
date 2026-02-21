@@ -245,54 +245,107 @@
     </v-row>
 
     <!-- Confirmação antes de criar atendimento (só em modo criação) -->
-    <v-dialog v-model="showCreateConfirmDialog" max-width="560" persistent>
-      <v-card>
-        <v-card-title class="d-flex align-center">
-          <v-icon color="primary" class="mr-3">mdi-check-decagram</v-icon>
-          Confirmar dados do atendimento
-        </v-card-title>
-        <v-card-text>
-          <v-alert type="warning" variant="tonal" density="comfortable" class="mb-4">
+    <v-dialog
+      v-model="showCreateConfirmDialog"
+      max-width="640"
+      persistent
+      transition="dialog-transition"
+      content-class="attendance-confirm-dialog"
+    >
+      <v-card rounded="lg" elevation="8" class="overflow-hidden">
+        <!-- Header -->
+        <div class="attendance-confirm-header pa-4 d-flex align-center">
+          <v-avatar color="primary" size="48" variant="tonal" class="mr-4">
+            <v-icon size="28">mdi-check-decagram</v-icon>
+          </v-avatar>
+          <div>
+            <div class="text-h6 font-weight-bold">Confirmar dados do atendimento</div>
+            <div class="text-body-2 text-medium-emphasis mt-1">Revise as informações antes de criar o ciclo</div>
+          </div>
+        </div>
+        <v-divider></v-divider>
+
+        <v-card-text class="pa-4">
+          <v-alert type="warning" variant="tonal" density="comfortable" class="mb-4" rounded="lg">
             <div class="text-body-2">
-              Depois de criar, o atendimento <strong>não poderá ser editado</strong>. Apenas o <strong>imóvel vinculado</strong> pode ser alterado na página de detalhes (botão "Alterar imóvel"). Confira os dados abaixo antes de confirmar.
+              Após criar, o atendimento <strong>não poderá ser editado</strong> (cliente, agente, objetivo e conversa). Apenas o <strong>imóvel vinculado</strong> pode ser alterado na página de detalhes.
             </div>
           </v-alert>
-          <v-list density="comfortable" class="bg-transparent">
-            <v-list-item>
-              <template #prepend><v-icon>mdi-account</v-icon></template>
-              <v-list-item-title>Cliente</v-list-item-title>
-              <v-list-item-subtitle>{{ createConfirmClientName || formData.client_id || '—' }}</v-list-item-subtitle>
-            </v-list-item>
-            <v-list-item>
-              <template #prepend><v-icon>mdi-account-tie</v-icon></template>
-              <v-list-item-title>Agente</v-list-item-title>
-              <v-list-item-subtitle>{{ createConfirmAgentName || formData.agent_id || '—' }}</v-list-item-subtitle>
-            </v-list-item>
-            <v-list-item>
-              <template #prepend><v-icon>mdi-home</v-icon></template>
-              <v-list-item-title>Imóvel (único editável depois)</v-list-item-title>
-              <v-list-item-subtitle>{{ createConfirmPropertyTitle || (formData.property_id ? 'ID: ' + formData.property_id : 'Nenhum') }}</v-list-item-subtitle>
-            </v-list-item>
-            <v-list-item v-if="formData.objective">
-              <template #prepend><v-icon>mdi-target</v-icon></template>
-              <v-list-item-title>Objetivo</v-list-item-title>
-              <v-list-item-subtitle>{{ formData.objective }}</v-list-item-subtitle>
-            </v-list-item>
-            <v-list-item>
-              <template #prepend><v-icon>mdi-text</v-icon></template>
-              <v-list-item-title>Conversa</v-list-item-title>
-              <v-list-item-subtitle>
-                {{ (formData.raw_content?.trim() || '').length }} caracteres
-                <span v-if="formData.raw_content?.trim()" class="d-block mt-2 text-caption text-medium-emphasis">
-                  {{ formData.raw_content.trim().length > 120 ? formData.raw_content.trim().slice(0, 120) + '...' : formData.raw_content.trim() }}
-                </span>
-              </v-list-item-subtitle>
-            </v-list-item>
-          </v-list>
+
+          <!-- Resumo em blocos legíveis -->
+          <v-row dense>
+            <v-col cols="12" md="6">
+              <div class="confirm-field pa-3 rounded-lg">
+                <div class="text-caption text-medium-emphasis mb-1 d-flex align-center">
+                  <v-icon size="16" class="mr-1">mdi-account</v-icon>
+                  Cliente
+                </div>
+                <div class="text-body-1 font-weight-medium confirm-field-value">
+                  {{ createConfirmClientName || formData.client_id || '—' }}
+                </div>
+              </div>
+            </v-col>
+            <v-col cols="12" md="6">
+              <div class="confirm-field pa-3 rounded-lg">
+                <div class="text-caption text-medium-emphasis mb-1 d-flex align-center">
+                  <v-icon size="16" class="mr-1">mdi-account-tie</v-icon>
+                  Agente responsável
+                </div>
+                <div class="text-body-1 font-weight-medium confirm-field-value">
+                  {{ createConfirmAgentName || formData.agent_id || '—' }}
+                </div>
+              </div>
+            </v-col>
+            <v-col cols="12">
+              <div class="confirm-field pa-3 rounded-lg">
+                <div class="text-caption text-medium-emphasis mb-1 d-flex align-center">
+                  <v-icon size="16" class="mr-1">mdi-home</v-icon>
+                  Imóvel <span class="text-caption ml-1">(único dado editável depois)</span>
+                </div>
+                <div class="text-body-1 font-weight-medium confirm-field-value">
+                  {{ createConfirmPropertyTitle || (formData.property_id ? 'ID: ' + formData.property_id : 'Nenhum vinculado') }}
+                </div>
+              </div>
+            </v-col>
+            <v-col v-if="formData.objective" cols="12">
+              <div class="confirm-field pa-3 rounded-lg">
+                <div class="text-caption text-medium-emphasis mb-1 d-flex align-center">
+                  <v-icon size="16" class="mr-1">mdi-target</v-icon>
+                  Objetivo do ciclo
+                </div>
+                <div class="text-body-1 confirm-field-value">{{ formData.objective }}</div>
+              </div>
+            </v-col>
+            <v-col cols="12">
+              <v-card variant="outlined" class="confirm-conversation-card rounded-lg overflow-hidden">
+                <v-card-title class="confirm-conversation-title py-2 px-3 d-flex align-center justify-space-between">
+                  <span class="text-body-2 font-weight-medium d-flex align-center">
+                    <v-icon size="18" class="mr-2">mdi-text</v-icon>
+                    Conteúdo da conversa
+                  </span>
+                  <v-chip size="small" variant="tonal" color="primary">
+                    {{ (formData.raw_content?.trim() || '').length }} caracteres
+                  </v-chip>
+                </v-card-title>
+                <v-divider></v-divider>
+                <v-card-text class="confirm-conversation-text-wrap pa-3">
+                  <div class="confirm-conversation-text">
+                    {{ formData.raw_content?.trim() || 'Nenhum conteúdo informado.' }}
+                  </div>
+                </v-card-text>
+              </v-card>
+            </v-col>
+          </v-row>
         </v-card-text>
-        <v-card-actions>
+
+        <v-divider></v-divider>
+        <v-card-actions class="pa-4">
           <v-spacer></v-spacer>
-          <v-btn variant="text" @click="showCreateConfirmDialog = false" :disabled="isSaving">
+          <v-btn
+            variant="text"
+            @click="showCreateConfirmDialog = false"
+            :disabled="isSaving"
+          >
             Voltar
           </v-btn>
           <v-btn
@@ -301,8 +354,9 @@
             prepend-icon="mdi-check"
             :loading="isSaving"
             @click="confirmCreateAttendance"
+            size="large"
           >
-            Confirmar e criar
+            Confirmar e criar atendimento
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -1023,5 +1077,50 @@ onMounted(async () => {
 
 .cursor-pointer {
   cursor: pointer;
+}
+
+/* Modal de confirmação de criação do atendimento */
+.attendance-confirm-dialog :deep(.v-overlay__content) {
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.attendance-confirm-header {
+  background: rgba(var(--v-theme-primary), 0.08);
+}
+
+.confirm-field {
+  background: rgba(var(--v-theme-on-surface), 0.04);
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+}
+
+.confirm-field-value {
+  color: rgba(var(--v-theme-on-surface), 0.95);
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.confirm-conversation-card {
+  background: rgb(var(--v-theme-surface));
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+}
+
+.confirm-conversation-title {
+  background: rgba(var(--v-theme-primary), 0.06);
+  min-height: 40px;
+}
+
+.confirm-conversation-text-wrap {
+  max-height: 200px;
+  overflow-y: auto;
+  background: rgb(var(--v-theme-surface));
+}
+
+.confirm-conversation-text {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: rgba(var(--v-theme-on-surface), 0.95);
 }
 </style>
