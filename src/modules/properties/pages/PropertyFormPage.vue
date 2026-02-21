@@ -794,13 +794,21 @@ const businessTypeOptions = [
   { title: 'Venda e Aluguel', value: 'BOTH' },
 ]
 
-const statusOptions = [
-  { title: 'Rascunho', value: 'DRAFT' },
-  { title: 'Publicado', value: 'PUBLISHED' },
-  { title: 'Vendido', value: 'SOLD' },
-  { title: 'Alugado', value: 'RENTED' },
-  { title: 'Indisponível', value: 'UNAVAILABLE' },
-]
+// Na criação: apenas Rascunho e Publicado. Vendido/Alugado/Indisponível só ao editar.
+const statusOptions = computed(() => {
+  const base = [
+    { title: 'Rascunho', value: 'DRAFT' },
+    { title: 'Publicado', value: 'PUBLISHED' },
+  ]
+  if (isEditMode.value) {
+    base.push(
+      { title: 'Vendido', value: 'SOLD' },
+      { title: 'Alugado', value: 'RENTED' },
+      { title: 'Indisponível', value: 'UNAVAILABLE' },
+    )
+  }
+  return base
+})
 
 // Computed
 const showSalePrice = computed(() => {

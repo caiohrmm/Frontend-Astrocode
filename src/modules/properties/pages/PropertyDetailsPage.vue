@@ -439,28 +439,6 @@
                   {{ getStatusLabel(property.status) }}
                 </v-chip>
               </div>
-              <v-divider class="my-4"></v-divider>
-              <div v-if="assignedAgent">
-                <div class="text-caption text-medium-emphasis mb-2">Corretor Responsável</div>
-                <v-card variant="outlined" class="pa-3">
-                  <div class="d-flex align-center">
-                    <v-avatar color="primary" size="48" class="mr-3">
-                      <v-icon color="white">mdi-account</v-icon>
-                    </v-avatar>
-                    <div>
-                      <div class="text-body-1 font-weight-medium">
-                        {{ assignedAgent.full_name }}
-                      </div>
-                      <div class="text-caption text-medium-emphasis">
-                        {{ assignedAgent.email }}
-                      </div>
-                    </div>
-                  </div>
-                </v-card>
-              </div>
-              <div v-else class="text-body-2 text-medium-emphasis">
-                Nenhum corretor atribuído
-              </div>
             </v-card-text>
           </v-card>
 
@@ -525,13 +503,11 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { propertiesService, type Property, type PropertyType, type BusinessType, type PropertyStatus } from '@/shared/services/properties.service'
-import { usersService, type User } from '@/shared/services/users.service'
 
 const route = useRoute()
 const router = useRouter()
 
 const property = ref<Property | null>(null)
-const assignedAgent = ref<User | null>(null)
 const isLoading = ref(true)
 
 // Computed
@@ -544,18 +520,6 @@ const loadProperty = async () => {
   try {
     const propertyId = route.params.id as string
     property.value = await propertiesService.getPropertyById(propertyId)
-    
-    // Load assigned agent if exists
-    // Note: This requires manager role, so we catch errors gracefully
-    if (property.value.assigned_agent_id) {
-      try {
-        assignedAgent.value = await usersService.getUserById(property.value.assigned_agent_id)
-      } catch (error: any) {
-        // User might not have manager role to view agent details
-        // Continue without agent info - this is acceptable
-        console.debug('Could not load assigned agent (may require manager role):', error?.message)
-      }
-    }
   } catch (error) {
     console.error('Error loading property:', error)
     property.value = null
