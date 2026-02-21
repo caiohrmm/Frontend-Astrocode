@@ -11,6 +11,8 @@
 
 **Aplicação em produção (Vercel):** [https://frontend-astrocode.vercel.app/](https://frontend-astrocode.vercel.app/)
 
+**Repositório do backend (API):** [Projeto-Tecnico-Astrocode-Backend](https://github.com/caiohrmm/Projeto-Tecnico-Astrocode-Backend)
+
 </div>
 
 ---
@@ -18,6 +20,7 @@
 ## 📋 Índice
 
 - [1. Visão geral](#1-visão-geral)
+  - [Aviso sobre tempo de resposta](#aviso-sobre-tempo-de-resposta)
 - [2. Arquitetura e tecnologias](#2-arquitetura-e-tecnologias)
 - [3. Estrutura do projeto e instalação](#3-estrutura-do-projeto-e-instalação)
 - [4. Funcionalidades por módulo](#4-funcionalidades-por-módulo)
@@ -44,6 +47,10 @@ Frontend do **CRM imobiliário** com **IA integrada**, oferecendo interface resp
 - **Integrações externas** no cadastro de imóveis (ViaCEP, Google Geocoding, IBGE, Nominatim).
 - **Máscaras de entrada** em tempo real (moeda, telefone, CEP).
 - **Deploy** preparado para **Vercel** (SPA com rewrites).
+
+### Aviso sobre tempo de resposta
+
+Alguns **botões ou ações** que disparam processamento pela IA no backend (por exemplo: adicionar conversa no atendimento, gerar resumo, chat com a IA, atualização de perfil do cliente) podem **demorar alguns segundos** para concluir. O projeto utiliza um **plano de IA mais econômico e menos premium**, com requisições mais lentas. É normal aguardar um pouco após clicar; evite clicar novamente para não duplicar a ação.
 
 ---
 
