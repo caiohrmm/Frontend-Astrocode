@@ -1829,6 +1829,8 @@ const newLoss = ref<{
 })
 
 const aiSummaries = ref<AISummary[]>([])
+/** Skip first watcher run when summaries are initially loaded to avoid double reload on page enter */
+const _aiSummariesInitialLoadDone = ref(false)
 const recommendedProperties = ref<Property[]>([])
 const profileBasedProperties = ref<Property[]>([])
 const clientAttendances = ref<Attendance[]>([])
@@ -2389,12 +2391,21 @@ watch(activeTab, (newTab) => {
   }
 })
 
-// Watch AI summaries to reload client when they change (to get updated lead score)
+// Reset "initial load" flag when navigating to another client so we skip reload once per client
+watch(clientId, () => {
+  _aiSummariesInitialLoadDone.value = false
+})
+
+// Watch AI summaries to reload client when they change (to get updated lead score).
+// Skip the first run (initial load) to avoid double reload ~2s after entering the page.
 watch(aiSummaries, async (newSummaries) => {
-  if (newSummaries.length > 0 && client.value) {
-    // Reload client to get updated lead score from AI
-    await loadClient()
+  if (newSummaries.length === 0 || !client.value) return
+  if (!_aiSummariesInitialLoadDone.value) {
+    _aiSummariesInitialLoadDone.value = true
+    return
   }
+  // Summaries changed after initial load (e.g. new/reprocessed summary) — refresh client
+  await loadClient()
 }, { deep: true })
 
 const handleFieldUpdate = async (field: keyof ClientUpdate, value: any) => {
