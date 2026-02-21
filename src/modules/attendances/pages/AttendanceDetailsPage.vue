@@ -43,24 +43,42 @@
           </div>
           <!-- Action Buttons -->
           <div class="d-flex ga-2">
-            <!-- Register Sale Button (only for ACTIVE cycles) -->
-            <v-btn
-              v-if="attendance.status === 'ACTIVE'"
-              color="success"
-              prepend-icon="mdi-cash-check"
-              @click="openSaleDialog"
-            >
-              Registrar Venda
-            </v-btn>
-            <!-- Register Loss Button (only for ACTIVE cycles) -->
-            <v-btn
-              v-if="attendance.status === 'ACTIVE'"
-              color="error"
-              prepend-icon="mdi-cancel"
-              @click="openLossDialog"
-            >
-              Registrar Perda
-            </v-btn>
+            <!-- Register Sale Button (only for ACTIVE; requer imóvel vinculado) -->
+            <v-tooltip location="bottom">
+              <template #activator="{ props }">
+                <span v-bind="props">
+                  <v-btn
+                    v-if="attendance.status === 'ACTIVE'"
+                    color="success"
+                    prepend-icon="mdi-cash-check"
+                    :disabled="!attendance.property_id"
+                    @click="openSaleDialog"
+                  >
+                    Registrar Venda
+                  </v-btn>
+                </span>
+              </template>
+              <span v-if="!attendance.property_id">Vincule um imóvel ao atendimento (botão "Alterar imóvel") para registrar venda.</span>
+              <span v-else>Registrar venda para este ciclo</span>
+            </v-tooltip>
+            <!-- Register Loss Button (only for ACTIVE; requer imóvel vinculado) -->
+            <v-tooltip location="bottom">
+              <template #activator="{ props }">
+                <span v-bind="props">
+                  <v-btn
+                    v-if="attendance.status === 'ACTIVE'"
+                    color="error"
+                    prepend-icon="mdi-cancel"
+                    :disabled="!attendance.property_id"
+                    @click="openLossDialog"
+                  >
+                    Registrar Perda
+                  </v-btn>
+                </span>
+              </template>
+              <span v-if="!attendance.property_id">Vincule um imóvel ao atendimento (botão "Alterar imóvel") para registrar perda.</span>
+              <span v-else>Registrar perda deste ciclo</span>
+            </v-tooltip>
             <!-- Complete Button -->
             <v-btn
               v-if="attendance.status === 'ACTIVE'"
