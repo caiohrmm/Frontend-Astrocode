@@ -41,7 +41,6 @@ Frontend do **CRM imobiliário** com **IA integrada**, oferecendo interface resp
 ### Características principais
 
 - **Interface moderna** com Material Design (Vuetify 3) e TypeScript.
-- **Totalmente responsiva** (desktop, tablet e mobile).
 - **Proteção de rotas** por autenticação e por role (RBAC: gestor vs atendente).
 - **Integração com IA**: resumos de atendimento, detecção de visitas/imóveis, jornada do cliente, chat com IA, recomendações.
 - **Integrações externas** no cadastro de imóveis (ViaCEP, Google Geocoding, IBGE, Nominatim).
